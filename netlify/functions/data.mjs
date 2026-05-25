@@ -19,7 +19,7 @@ export default async (req) => {
   const key = (url.searchParams.get('key') || '').trim();
   if (!key) return json({ error: 'missing key' }, 400);
 
-  const store = getStore('winnie');
+  const store = getStore({ name: 'winnie', consistency: 'strong' });
 
   if (req.method === 'GET') {
     const data = await store.get(key, { type: 'json' });
