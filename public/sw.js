@@ -1,10 +1,11 @@
-const CACHE = 'winnie-v20-netlify-blobs';
+const CACHE = 'winnie-v21-icon-refresh';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './transparent-512.png'
 ];
 
 self.addEventListener('install', (e) => {
