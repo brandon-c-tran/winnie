@@ -462,9 +462,7 @@ function migrateAll(eventsOrPayload) {
 async function fetchRemote() {
   if (state.mode !== 'shared' || !state.binId) return null;
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${state.binId}/latest`, {
-      headers: { 'X-Bin-Meta': 'false' }
-    });
+    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`);
     if (!res.ok) throw new Error('fetch failed: ' + res.status);
     const data = await res.json();
     return migrateAll(data);
@@ -482,7 +480,7 @@ async function pushRemote() {
     return true;
   }
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${state.binId}`, {
+    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ events: state.events, schemaVersion: SCHEMA_VERSION })
@@ -546,9 +544,7 @@ async function fetchRemoteWithRetry(maxAttempts) {
     if (delays[i] > 0) await new Promise(r => setTimeout(r, delays[i]));
     if (state.mode !== 'shared' || !state.binId) return null;
     try {
-      const res = await fetch(`https://api.jsonbin.io/v3/b/${state.binId}/latest`, {
-        headers: { 'X-Bin-Meta': 'false' }
-      });
+      const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`);
       if (!res.ok) throw new Error('fetch failed: ' + res.status);
       const data = await res.json();
       return migrateAll(data);
@@ -1906,7 +1902,7 @@ async function runDiagnostics() {
   let remoteEvents = null;
   try {
     const t0 = Date.now();
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${state.binId}/latest`, { headers: { 'X-Bin-Meta': 'false' } });
+    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`);
     info('Response: ' + res.status + ' (' + (Date.now() - t0) + 'ms)');
     if (!res.ok) { bad('Read failed.'); return; }
     const data = await res.json();
@@ -1918,7 +1914,7 @@ async function runDiagnostics() {
   const probeId = 'diag-' + Date.now().toString(36);
   const probeEvents = [...remoteEvents, { id: probeId, type: 'meal', time: Date.now(), tags: ['_diagnostic'], who: 'us', note: '__diagnostic_probe__', retroactive: false, created: Date.now() }];
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${state.binId}`, {
+    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ events: probeEvents, schemaVersion: SCHEMA_VERSION })
@@ -1928,14 +1924,14 @@ async function runDiagnostics() {
   } catch (e) { bad('Write threw: ' + e.message); return; }
   log('--- Read-back ---');
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${state.binId}/latest`, { headers: { 'X-Bin-Meta': 'false' } });
+    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`);
     const data = await res.json();
     if ((data.events || []).find(e => e.id === probeId)) ok('Round-trip works!');
     else { bad('Probe NOT found.'); return; }
   } catch (e) { bad('Read-back threw: ' + e.message); return; }
   log('--- Cleanup ---');
   try {
-    await fetch(`https://api.jsonbin.io/v3/b/${state.binId}`, {
+    await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ events: remoteEvents, schemaVersion: SCHEMA_VERSION })
@@ -2286,7 +2282,7 @@ function init() {
   // Periodic timestamp re-render
   setInterval(() => { if (state.tab === 'today') renderToday(); }, 30000);
 
-  // Periodic remote sync — gentle cadence to stay well under JSONBin rate limits.
+  // Periodic remote sync — gentle cadence is fine on Netlify Blobs, but no reason to be chatty.
   // Visibility-change covers the common case of returning to the app.
   setInterval(() => {
     if (!document.hidden && state.mode === 'shared') syncFromRemote();

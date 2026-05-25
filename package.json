@@ -1,0 +1,9 @@
+{
+  "name": "winnie-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Winnie puppy tracker PWA",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

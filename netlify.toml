@@ -2,6 +2,10 @@
   publish = "public"
   command = ""
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 # Cache static assets aggressively, but never the HTML or service worker
 # (those need to update on every deploy)
 [[headers]]

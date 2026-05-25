@@ -1,4 +1,4 @@
-const CACHE = 'winnie-v19-log-grid-consolidation';
+const CACHE = 'winnie-v20-netlify-blobs';
 const ASSETS = [
   './',
   './index.html',
@@ -21,8 +21,8 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  // Don't cache JSONBin API calls — always go to network
-  if (url.hostname === 'api.jsonbin.io') {
+  // Don't cache backend sync calls — always go to network
+  if (url.pathname.startsWith('/.netlify/functions/')) {
     return; // pass through
   }
   // Cache-first for own assets, network fallback
