@@ -1,4 +1,4 @@
-const CACHE = 'winnie-v22-logo-resize';
+const CACHE = 'winnie-v23-logo-45pct';
 const ASSETS = [
   './',
   './index.html',
