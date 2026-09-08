@@ -271,7 +271,15 @@ function entry(e) {
       : ["nap", "slumber", "walk"].includes(e.type)
         ? "In progress"
         : "";
-  return `<button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}${e.photos?.length ? ` · ▧ ${e.photos.length}` : ""}</span><span class="entry-note">${esc(e.note || [e.loggedBy ? person(e.loggedBy) : "Shared history", duration, ...(e.tags || [])].filter(Boolean).join(" · "))}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>`;
+  const detail = [
+    e.loggedBy ? person(e.loggedBy) : "Shared history",
+    duration,
+    e.note !== eventLabel(e) ? e.note : "",
+    ...(e.tags || []),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return `<button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}${e.photos?.length ? ` · ▧ ${e.photos.length}` : ""}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>`;
 }
 function renderStory() {
   $("story-tools").hidden = filter === "patterns";
