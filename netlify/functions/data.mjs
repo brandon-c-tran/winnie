@@ -1,47 +1,38 @@
-import { getStore } from '@netlify/blobs';
-
-const SCHEMA_VERSION = 3;
-const EMPTY = { events: [], schemaVersion: SCHEMA_VERSION };
-
-function json(body, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
-      ...extraHeaders
-    }
-  });
-}
-
+import { stores } from "../lib/store.mjs";
+import { hash } from "../lib/core.mjs";
+import { json } from "../lib/api.mjs";
+// Old clients may read/export, but may never replace the shared log.
 export default async (req) => {
-  const url = new URL(req.url);
-  const key = (url.searchParams.get('key') || '').trim();
-  if (!key) return json({ error: 'missing key' }, 400);
-
-  const store = getStore({ name: 'winnie', consistency: 'strong' });
-
-  if (req.method === 'GET') {
-    const data = await store.get(key, { type: 'json' });
-    return json(data || EMPTY);
+  if (req.method !== "GET")
+    return json(
+      {
+        error:
+          "Winnie has been upgraded. Close and reopen the app. Your saved phone history will be preserved.",
+        upgradeRequired: true,
+      },
+      426,
+    );
+  const key = new URL(req.url).searchParams.get("key") || "";
+  if (!/^[a-zA-Z0-9_-]{12,100}$/.test(key))
+    return json({ error: "Missing shared code." }, 400);
+  try {
+    const { main, legacy } = stores(req);
+    const current = await main.get(`home/${hash(key)}`, { type: "json" });
+    if (current)
+      return json({
+        schemaVersion: 3,
+        events: current.events
+          .filter((e) => !e.deletedAt)
+          .map(({ revision, photos, loggedBy, deviceId, editedBy, ...e }) => e),
+        upgradeRequired: true,
+      });
+    return json(
+      (await legacy.get(key, { type: "json" })) || {
+        schemaVersion: 3,
+        events: [],
+      },
+    );
+  } catch {
+    return json({ error: "Please retry shortly." }, 503);
   }
-
-  if (req.method === 'PUT') {
-    let body;
-    try {
-      body = await req.json();
-    } catch {
-      return json({ error: 'invalid json' }, 400);
-    }
-    if (!body || !Array.isArray(body.events)) {
-      return json({ error: 'body must include events array' }, 400);
-    }
-    await store.setJSON(key, {
-      events: body.events,
-      schemaVersion: body.schemaVersion || SCHEMA_VERSION
-    });
-    return json({ ok: true, count: body.events.length });
-  }
-
-  return json({ error: 'method not allowed' }, 405);
 };

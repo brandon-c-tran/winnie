@@ -1,9 +1,20 @@
 {
   "name": "winnie-project",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "private": true,
-  "description": "Winnie puppy tracker PWA",
+  "description": "Winnie's shared care and family story",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "dev": "node scripts/dev.mjs",
+    "check": "node --check public/app.js && node --check public/sync.js && node --check public/sw.js"
+  },
   "dependencies": {
-    "@netlify/blobs": "^8.1.0"
+    "@netlify/blobs": "11.0.3",
+    "web-push": "3.6.7"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.5",
+    "prettier": "3.9.6"
   }
 }
