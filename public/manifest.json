@@ -1,11 +1,11 @@
 {
   "name": "Winnie 🐶",
   "short_name": "Winnie",
-  "description": "Shared potty + activity log for Winnie",
+  "description": "Winnie's shared care, photos, and little moments",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#fafaf7",
-  "theme_color": "#fafaf7",
+  "background_color": "#f7f5ee",
+  "theme_color": "#f7f5ee",
   "orientation": "portrait",
   "icons": [
     {

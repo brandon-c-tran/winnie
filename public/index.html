@@ -1,376 +1,219 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Winnie" />
-<meta name="theme-color" content="#fafaf7" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
-<link rel="manifest" href="manifest.json" />
-<link rel="apple-touch-icon" href="icon-192.png" />
-<link rel="icon" type="image/png" href="icon-192.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&display=swap" />
-<link rel="stylesheet" href="styles.css?v=25" />
-<title>Winnie 🐶</title>
-</head>
-<body>
-
-<div id="setup" class="hidden setup-screen">
-  <h2>🐶 Winnie</h2>
-  <p>One-time setup: paste your shared bin ID below.<br>(Tap "How?" for instructions.)</p>
-  <input type="text" id="setup-bin" placeholder="e.g. 65f3a8c1234567890abcdef0" autocapitalize="off" autocorrect="off" spellcheck="false" />
-  <div style="margin-top: 12px;">
-    <button class="btn-primary" id="setup-save" style="padding: 12px 24px; border: none; border-radius: 10px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; background: var(--accent); color: var(--accent-text);">Save</button>
-  </div>
-  <div style="margin-top: 16px;">
-    <button class="help-link" id="setup-help-btn">How do I get a bin ID?</button>
-    <button class="help-link" id="setup-skip-btn">Just use this device only</button>
-  </div>
-  <div id="setup-help" class="help-block">
-    <strong>Quick setup (do this once):</strong><br>
-    1. Pick any unique code — long random string works best (e.g. <code>winnie-smith-42a9</code>)<br>
-    2. Type the same code on both phones<br>
-    3. Done — events sync between phones via this code<br>
-  </div>
-</div>
-
-<div id="main" class="hidden">
-
-  <!-- ===== TODAY ===== -->
-  <div id="tab-today" class="tab-pane app">
-    <div class="app-header">
-      <div class="brand">
-        <div class="brand-logo" aria-hidden="true"><img src="transparent-512.png" alt=""></div>
-        <div class="brand-meta">
-          <div class="brand-name">Winnie</div>
-          <button class="sync-state sync-btn" id="sync-btn" type="button" aria-label="Sync status — tap to refresh"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">starting…</span></button>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f7f5ee" />
+    <meta
+      name="description"
+      content="A shared day and a little life worth remembering. Winnie's care, together."
+    />
+    <title>Winnie · His day, together</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="stylesheet" href="/styles.css?v=3" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to Winnie's day</a>
+    <div class="shell">
+      <header class="topbar">
+        <a class="wordmark" href="/" aria-label="Winnie home"
+          >winnie<span class="brand-dot">✳</span></a
+        ><button id="settings" class="person-button" aria-label="Open settings">
+          <span class="person-dot">♡</span><span id="person-name">Our boy</span
+          ><span aria-hidden="true">⌄</span>
+        </button>
+      </header>
+      <main id="main" tabindex="-1">
+        <section id="connect" hidden class="connect card">
+          <img
+            class="welcome-photo"
+            src="/.netlify/images?url=/photos/winnie-smile.png&amp;w=480&amp;fm=webp&amp;q=85"
+            alt="Winnie, smiling in his yellow harness"
+          />
+          <p class="eyebrow">OUR LITTLE FAMILY</p>
+          <h1>His day, together.</h1>
+          <p>A familiar face. A shared day. Every little moment kept.</p>
+          <form id="connect-form">
+            <label
+              >Your shared code<input
+                id="shared-code"
+                autocomplete="off"
+                spellcheck="false"
+                required
+                minlength="12"
+                placeholder="The code you already use"
+            /></label>
+            <fieldset>
+              <legend>Who’s using this device?</legend>
+              <label class="radio-person"
+                ><input type="radio" name="person" value="brandon" required />
+                Brandon</label
+              ><label class="radio-person"
+                ><input type="radio" name="person" value="kim" /> Kim</label
+              >
+            </fieldset>
+            <label
+              >Device name<input
+                id="device-name"
+                value="My phone"
+                maxlength="60"
+                required /></label
+            ><button type="submit" class="primary">
+              Open our shared day <span aria-hidden="true">→</span>
+            </button>
+            <p id="connect-error" class="error" role="alert"></p>
+          </form>
+          <p class="fine">
+            Your existing history stays with Winnie. Each phone keeps a copy of
+            any older saved entries for review.
+          </p>
+        </section>
+        <div id="experience" hidden>
+          <div class="sync-line">
+            <span id="sync-status" role="status">Opening our shared day…</span
+            ><button id="retry" class="text-button">Refresh</button>
+          </div>
+          <div id="pending-banner" class="notice" hidden></div>
+          <nav class="tabs" aria-label="Main navigation">
+            <button class="selected" id="today-tab" aria-current="page">
+              Today</button
+            ><button id="story-tab">
+              His story <span aria-hidden="true">♡</span>
+            </button>
+          </nav>
+          <section id="today-view">
+            <div class="hero">
+              <div>
+                <p id="today-date" class="eyebrow"></p>
+                <h1>His day,<br /><em>together.</em></h1>
+                <p id="hero-caption">The little things, lovingly kept.</p>
+              </div>
+              <div class="portrait-wrap">
+                <img
+                  class="portrait"
+                  src="/.netlify/images?url=/photos/winnie-smile.png&amp;w=480&amp;fm=webp&amp;q=85"
+                  alt="Winnie smiling"
+                /><span class="portrait-label">our good boy ♡</span>
+              </div>
+            </div>
+            <div class="section-heading">
+              <h2>A little care</h2>
+              <button id="earlier" class="text-button">
+                Log earlier <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+            <div id="care-actions" class="care-grid"></div>
+            <div class="more-actions">
+              <button id="more" class="quiet-button">＋ More care</button
+              ><button id="add-moment" class="quiet-button">
+                ▧ Add a moment
+              </button>
+            </div>
+            <section
+              id="photo-prompt"
+              class="photo-prompt"
+              hidden
+              aria-label="Add a poop photo"
+            >
+              <div>
+                <span class="mini-label">ONE FOR THE COLLECTION</span>
+                <h3>His finest work. 💩</h3>
+                <p id="poop-save-state">Poop logged. Photo optional.</p>
+              </div>
+              <div class="button-row">
+                <button id="poop-camera" class="primary small">
+                  Take photo</button
+                ><button id="poop-library" class="secondary small">
+                  Choose photo</button
+                ><button id="poop-dismiss" class="text-button">Done</button>
+              </div>
+            </section>
+            <section id="trainer-card" class="card plan-card" hidden></section>
+            <section id="walk-card" class="card walk-card" hidden></section>
+            <section id="plan-card" class="card plan-card" hidden></section>
+            <div class="section-heading">
+              <h2>Our shared day</h2>
+              <label class="date-label"
+                ><span class="sr-only">Choose day</span
+                ><input id="day-picker" type="date"
+              /></label>
+            </div>
+            <div id="day-summary" class="day-summary"></div>
+            <div id="timeline" class="timeline"></div>
+          </section>
+          <section id="story-view" hidden>
+            <div class="story-cover">
+              <img
+                src="/.netlify/images?url=/photos/winnie-story.png&amp;w=1000&amp;fm=webp&amp;q=85"
+                alt="Winnie in his blue gingham bandana"
+                loading="lazy"
+              />
+              <div>
+                <p class="eyebrow">WINNIE BERNARD</p>
+                <h1>A life worth<br /><em>remembering.</em></h1>
+              </div>
+            </div>
+            <div class="section-heading">
+              <h2>All the little moments</h2>
+              <button id="story-add" class="text-button">
+                ＋ Add a moment
+              </button>
+            </div>
+            <div class="filters" role="group" aria-label="Story collection">
+              <button data-filter="moments" class="selected">Moments</button
+              ><button data-filter="poop">💩 Poop photos</button
+              ><button data-filter="care">All care</button
+              ><button data-filter="patterns">Patterns</button>
+            </div>
+            <div id="story-tools">
+              <label class="search-box"
+                ><span aria-hidden="true">⌕</span
+                ><input
+                  id="story-search"
+                  type="search"
+                  placeholder="Find a memory or entry"
+                  aria-label="Search history"
+              /></label>
+              <div class="history-filters">
+                <label
+                  >Type<select id="history-type">
+                    <option value="">All types</option>
+                  </select></label
+                ><label>From<input type="date" id="history-from" /></label
+                ><label>To<input type="date" id="history-to" /></label>
+              </div>
+            </div>
+            <p id="story-count" class="fine"></p>
+            <div id="story-items"></div>
+            <button id="load-more" class="secondary" hidden>Show more</button>
+          </section>
         </div>
+      </main>
+      <footer class="footer"><span>Winnie · v3.0</span></footer>
+    </div>
+    <div id="toast" class="toast" hidden role="status">
+      <span id="toast-text"></span><button id="undo">Undo</button
+      ><button id="toast-close" aria-label="Dismiss confirmation">×</button>
+    </div>
+    <dialog id="dialog" aria-labelledby="dialog-title">
+      <div class="dialog-top">
+        <p class="eyebrow">WINNIE · OUR SHARED DAY</p>
+        <button id="dialog-close" class="close" aria-label="Close">×</button>
       </div>
-      <button class="icon-btn" id="settings-btn">⚙</button>
-    </div>
-
-    <div class="status-card">
-      <div class="motives">
-        <div class="motive-row" id="motive-bladder">
-          <span class="motive-label">Bladder</span>
-          <div class="motive-bar"><div class="motive-fill"></div></div>
-          <span class="motive-status">—</span>
-        </div>
-        <div class="motive-row" id="motive-poop">
-          <span class="motive-label">Poop</span>
-          <div class="motive-bar"><div class="motive-fill"></div></div>
-          <span class="motive-status">—</span>
-        </div>
-        <div class="motive-row" id="motive-energy">
-          <span class="motive-label">Energy</span>
-          <div class="motive-bar"><div class="motive-fill"></div></div>
-          <span class="motive-status">—</span>
-        </div>
-        <div class="motive-row" id="motive-hunger">
-          <span class="motive-label">Hunger</span>
-          <div class="motive-bar"><div class="motive-fill"></div></div>
-          <span class="motive-status">—</span>
-        </div>
-      </div>
-      <div class="day-insight hidden" id="bedtime-eta"></div>
-      <div class="day-insight anomaly hidden" id="anomalies"></div>
-    </div>
-
-    <div class="undo-bar" id="undo-bar">
-      <span id="undo-text">Logged.</span>
-      <button class="undo-btn" id="undo-btn">Undo</button>
-    </div>
-
-    <div class="log-grid">
-      <button class="log-tile" data-type="pee" type="button">
-        <span class="icon">🟨</span>
-        <div class="label">Pee</div>
-        <span class="tag-pill" data-type="pee">+ tag</span>
-      </button>
-      <button class="log-tile" data-type="poop" type="button">
-        <span class="icon">💩</span>
-        <div class="label">Poop</div>
-        <span class="tag-pill" data-type="poop">+ tag</span>
-      </button>
-      <button class="log-tile" data-type="meal" type="button">
-        <span class="icon">🍽</span>
-        <div class="label">Meal</div>
-        <span class="tag-pill" data-type="meal">+ tag</span>
-      </button>
-      <button class="log-tile" id="range-sleep" data-range-type="sleep" type="button">
-        <span class="icon">💤</span>
-        <div class="label">Start sleep</div>
-        <div class="sub">tap to begin</div>
-      </button>
-    </div>
-
-    <button class="more-events-btn" id="manual-add-btn" type="button">+ More events</button>
-
-    <div class="section-header">
-      <span>Today</span>
-      <span id="event-count">—</span>
-    </div>
-    <div class="timeline" id="timeline">
-      <div class="empty-state">Loading from cloud…</div>
-    </div>
-  </div>
-
-  <!-- ===== CALENDAR ===== -->
-  <div id="tab-calendar" class="tab-pane app hidden">
-    <div class="header">
-      <div>
-        <h1>Calendar</h1>
-        <div class="sync-state"><span class="sync-dot"></span><span>history</span></div>
-      </div>
-      <button class="icon-btn" type="button" onclick="document.getElementById('settings-btn').click()">⚙</button>
-    </div>
-
-    <div class="cal-head">
-      <button class="cal-nav-btn" id="cal-prev" type="button">‹</button>
-      <h2 id="cal-month-label">—</h2>
-      <button class="cal-nav-btn" id="cal-next" type="button">›</button>
-    </div>
-    <div class="cal-grid" id="cal-grid"></div>
-
-    <div id="day-view" class="hidden">
-      <div class="section-header">
-        <span id="day-view-label">—</span>
-      </div>
-      <div class="day-strip" id="day-strip"></div>
-      <div class="day-summary">
-        <div class="day-summary-row"><span class="lbl">Pees</span><span class="val" id="day-pees">0</span></div>
-        <div class="day-summary-row"><span class="lbl">Poops</span><span class="val" id="day-poops">0</span></div>
-        <div class="day-summary-row"><span class="lbl">Meals</span><span class="val" id="day-meals">0</span></div>
-        <div class="day-summary-row"><span class="lbl">Naps</span><span class="val" id="day-naps">—</span></div>
-        <div class="day-summary-row"><span class="lbl">Slumber</span><span class="val" id="day-slumber">—</span></div>
-        <div class="day-summary-row"><span class="lbl">Walks</span><span class="val" id="day-walks">—</span></div>
-        <div class="day-summary-row"><span class="lbl">Total events</span><span class="val" id="day-events">0</span></div>
-        <div class="day-summary-vs" id="day-vs"></div>
-      </div>
-      <div class="day-list" id="day-list"></div>
-    </div>
-  </div>
-
-  <!-- ===== GROWTH ===== -->
-  <div id="tab-growth" class="tab-pane app hidden">
-    <div class="header">
-      <div>
-        <h1>Growth</h1>
-        <div class="sync-state"><span class="sync-dot"></span><span id="growth-days">— days of data</span></div>
-      </div>
-      <button class="icon-btn" type="button" onclick="document.getElementById('settings-btn').click()">⚙</button>
-    </div>
-
-    <div class="growth-header">
-      <h2>🐶 Winnie · <span id="growth-age">—</span></h2>
-      <div class="sub">Born July 25, 2025</div>
-      <div class="growth-progress">
-        <div class="growth-progress-bar" id="growth-progress-bar" style="width: 0%"></div>
-      </div>
-    </div>
-
-    <div class="section-label">Stats over puppyhood</div>
-
-    <div class="stat-card" id="stat-pees">
-      <div class="stat-card-head"><span class="stat-card-title">pees per day</span><span class="stat-card-current">—</span></div>
-      <div class="stat-card-trend">—</div>
-      <div class="stat-chart"></div>
-    </div>
-    <div class="stat-card" id="stat-accidents">
-      <div class="stat-card-head"><span class="stat-card-title">accidents per week</span><span class="stat-card-current">—</span></div>
-      <div class="stat-card-trend">—</div>
-      <div class="stat-chart"></div>
-    </div>
-    <div class="stat-card" id="stat-hold">
-      <div class="stat-card-head"><span class="stat-card-title">longest pee gap</span><span class="stat-card-current">—</span></div>
-      <div class="stat-card-trend">—</div>
-      <div class="stat-chart"></div>
-    </div>
-    <div class="stat-card" id="stat-sleep">
-      <div class="stat-card-head"><span class="stat-card-title">sleep per day</span><span class="stat-card-current">—</span></div>
-      <div class="stat-card-trend">—</div>
-      <div class="stat-chart"></div>
-    </div>
-    <div class="stat-card" id="stat-active">
-      <div class="stat-card-head"><span class="stat-card-title">active hours</span><span class="stat-card-current">—</span></div>
-      <div class="stat-card-trend">—</div>
-      <div class="stat-chart"></div>
-    </div>
-    <div class="stat-card" id="stat-bedtime">
-      <div class="stat-card-head"><span class="stat-card-title">avg bedtime</span><span class="stat-card-current">—</span></div>
-      <div class="stat-card-trend">—</div>
-      <div class="stat-chart"></div>
-    </div>
-
-    <div class="section-label" style="margin-top: 16px;">Milestones</div>
-    <div id="milestone-list" class="milestone-list">
-      <div class="empty-state">Milestones will appear as data builds up.</div>
-    </div>
-  </div>
-
-  <nav class="tab-bar">
-    <button class="tab-btn active" data-tab="today" type="button">
-      <span class="tab-icon">🐶</span><span>Today</span>
-    </button>
-    <button class="tab-btn" data-tab="calendar" type="button">
-      <span class="tab-icon">📅</span><span>Calendar</span>
-    </button>
-    <button class="tab-btn" data-tab="growth" type="button">
-      <span class="tab-icon">📈</span><span>Growth</span>
-    </button>
-  </nav>
-</div>
-
-<!-- ===== Manual add / Edit modal ===== -->
-<div class="modal-backdrop" id="modal-backdrop">
-  <div class="modal">
-    <h3 id="modal-title">Manual add</h3>
-    <div class="field">
-      <label>Event type</label>
-      <div class="type-grid-v3" id="type-grid-v3">
-        <button class="type-btn-v3" data-type="pee" type="button"><span class="icon">🟨</span><span class="name">pee</span></button>
-        <button class="type-btn-v3" data-type="poop" type="button"><span class="icon">💩</span><span class="name">poop</span></button>
-        <button class="type-btn-v3" data-type="meal" type="button"><span class="icon">🍽</span><span class="name">meal</span></button>
-        <button class="type-btn-v3" data-type="enrichment" type="button"><span class="icon">🦴</span><span class="name">enrich</span></button>
-        <button class="type-btn-v3" data-type="nap" type="button"><span class="icon">💤</span><span class="name">nap</span></button>
-        <button class="type-btn-v3" data-type="slumber" type="button"><span class="icon">🌙</span><span class="name">slumber</span></button>
-        <button class="type-btn-v3" data-type="walk" type="button"><span class="icon">🚶</span><span class="name">walk</span></button>
-        <button class="type-btn-v3" data-type="outing" type="button"><span class="icon">🎒</span><span class="name">outing</span></button>
-        <button class="type-btn-v3" data-type="appointment" type="button"><span class="icon">📋</span><span class="name">appt</span></button>
-        <button class="type-btn-v3" data-type="medication" type="button"><span class="icon">💊</span><span class="name">med</span></button>
-        <button class="type-btn-v3" data-type="vomit" type="button"><span class="icon">🤮</span><span class="name">vomit</span></button>
-        <button class="type-btn-v3" data-type="episode" type="button"><span class="icon">⚠️</span><span class="name">episode</span></button>
-        <button class="type-btn-v3" data-type="travel" type="button"><span class="icon">✈️</span><span class="name">travel</span></button>
-        <button class="type-btn-v3" data-type="covered_gap" type="button"><span class="icon">👤</span><span class="name">covered</span></button>
-        <button class="type-btn-v3" data-type="note" type="button"><span class="icon">📝</span><span class="name">note</span></button>
-      </div>
-    </div>
-    <div class="field">
-      <label>When?</label>
-      <div class="preset-row" id="preset-row">
-        <button class="preset-btn" data-mins="15" type="button">15m ago</button>
-        <button class="preset-btn" data-mins="30" type="button">30m ago</button>
-        <button class="preset-btn" data-mins="60" type="button">1h ago</button>
-        <button class="preset-btn" data-mins="120" type="button">2h ago</button>
-        <button class="preset-btn" data-mins="custom" type="button">Custom</button>
-      </div>
-      <div id="custom-time-row" class="hidden" style="margin-top: 8px;">
-        <div class="dt-row"><span class="dt-label">start</span><input type="datetime-local" id="custom-time" /></div>
-      </div>
-      <div id="end-time-row" class="hidden" style="margin-top: 6px;">
-        <div class="dt-row"><span class="dt-label">end</span><input type="datetime-local" id="end-time" /></div>
-      </div>
-    </div>
-    <div class="field">
-      <label>Time precision</label>
-      <div class="precision-row" id="precision-row">
-        <button class="precision-btn selected" data-prec="exact" type="button">exact</button>
-        <button class="precision-btn" data-prec="approx" type="button">~approx</button>
-        <button class="precision-btn" data-prec="unknown" type="button">unknown</button>
-      </div>
-    </div>
-    <div class="field" id="subkind-row">
-      <label id="subkind-label">Sub-kind</label>
-      <input type="text" id="event-subkind" autocapitalize="off" />
-    </div>
-    <div class="field">
-      <label>Tags</label>
-      <div class="tag-row" id="tag-row">
-        <button class="tag-btn" data-tag="accident" type="button">accident</button>
-        <button class="tag-btn" data-tag="self-signaled" type="button">self-signaled</button>
-        <button class="tag-btn" data-tag="tiny" type="button">tiny</button>
-        <button class="tag-btn" data-tag="big" type="button">big</button>
-        <button class="tag-btn" data-tag="wet" type="button">wet</button>
-        <button class="tag-btn" data-tag="dry" type="button">dry</button>
-        <button class="tag-btn" data-tag="indoors" type="button">indoors</button>
-        <button class="tag-btn" data-tag="outdoors" type="button">outdoors</button>
-      </div>
-    </div>
-    <div class="field" id="location-row">
-      <label>Location</label>
-      <input type="text" id="event-location" placeholder="downtown / hallway / Heather's / etc" autocapitalize="off" />
-    </div>
-    <div class="field">
-      <label>Who</label>
-      <div class="who-row" id="who-row">
-        <button class="who-btn selected" data-who="us" type="button">us</button>
-        <button class="who-btn" data-who="trainer" type="button">👤 trainer</button>
-        <button class="who-btn" data-who="sitter" type="button">🧑 sitter</button>
-        <button class="who-btn" data-who="unknown" type="button">🤔 unknown</button>
-      </div>
-    </div>
-    <div class="field">
-      <label>Note (optional)</label>
-      <textarea id="event-note" placeholder="anything notable?"></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="modal-cancel" type="button">Cancel</button>
-      <button class="btn-danger hidden" id="modal-delete" type="button">Delete</button>
-      <button class="btn-primary" id="modal-save" type="button">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== Settings modal ===== -->
-<div class="modal-backdrop" id="settings-modal">
-  <div class="modal">
-    <h3>Settings</h3>
-    <div class="field">
-      <label>Shared bin ID</label>
-      <input type="text" id="settings-bin" autocapitalize="off" autocorrect="off" spellcheck="false" />
-      <p style="font-size: 12px; color: var(--text-secondary); margin: 6px 0 0;">
-        Same ID on both phones = shared log.
-      </p>
-    </div>
-    <div class="field">
-      <label>Locations</label>
-      <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 8px;">
-        Pee/poop events auto-tag with the nearest zone. Tap 📍 to update a zone's coords to your current location.
-      </p>
-      <div id="zones-list"></div>
-      <button class="zone-add-btn" id="add-zone-btn" type="button">+ Add zone at current location</button>
-      <div id="zone-form" class="zone-form hidden">
-        <input type="text" id="zone-form-name" placeholder="Zone name (e.g. Park)" autocomplete="off" />
-        <div class="zone-form-row">
-          <input type="number" id="zone-form-radius" min="20" max="2000" step="10" value="100" />
-          <span>m radius</span>
-        </div>
-        <div class="zone-form-actions">
-          <button type="button" id="zone-form-cancel">Cancel</button>
-          <button type="button" class="btn-primary" id="zone-form-save">Capture &amp; save</button>
-        </div>
-        <div id="zone-form-status" class="zone-form-status"></div>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Install on home screen</label>
-      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0;">
-        <strong style="color: var(--text);">iPhone:</strong> Safari → share icon → "Add to Home Screen"<br>
-        <strong style="color: var(--text);">Android:</strong> Chrome → menu → "Install app"
-      </p>
-    </div>
-    <div class="field">
-      <label>Diagnostics</label>
-      <button class="btn-secondary" id="diag-btn" type="button" style="width:100%; padding:10px; margin-bottom: 6px; font-family:inherit; font-size: 13px; cursor:pointer; border-radius: 8px;">🔬 Test backend connection</button>
-      <div id="diag-output" class="hidden" style="margin-top: 8px; padding: 10px; background: var(--surface-2); border-radius: 8px; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.6; white-space: pre-wrap; word-break: break-all;"></div>
-    </div>
-    <div class="field">
-      <label>Data</label>
-      <button class="btn-secondary" id="export-btn" type="button" style="width:100%; padding:10px; margin-bottom: 6px; font-family:inherit; font-size: 13px; cursor:pointer; border-radius: 8px;">Export as JSON</button>
-      <button class="btn-danger" id="clear-btn" type="button" style="width:100%; padding:10px; font-family:inherit; font-size: 13px; cursor:pointer; border-radius: 8px;">Clear all events</button>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="settings-cancel" type="button">Close</button>
-      <button class="btn-primary" id="settings-save" type="button">Save</button>
-    </div>
-  </div>
-</div>
-
-<script src="app.js?v=19"></script>
-</body>
+      <div id="dialog-content"></div>
+    </dialog>
+    <input
+      id="camera-input"
+      type="file"
+      accept="image/*"
+      capture="environment"
+      hidden
+    /><input id="library-input" type="file" accept="image/*" multiple hidden />
+    <script type="module" src="/app.js?v=3"></script>
+  </body>
 </html>

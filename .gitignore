@@ -7,7 +7,9 @@
 
 # Node (only if you ever add the seed script)
 node_modules/
-package-lock.json
+.netlify/
+.local/
+test-results/
 
 # Local env (if you ever store JSONBin keys etc.)
 .env

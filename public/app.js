@@ -1,2299 +1,1075 @@
-// ============================================================
-// Winnie v2.5 — Schema v3 + Sims motives
-// ============================================================
-
-const SCHEMA_VERSION = 3;
-
-// All event types in v3
-const TYPE_DEFS = {
-  pee:         { icon: '🟨', label: 'Pee',        color: 'pee',         kind: 'point' },
-  poop:        { icon: '💩', label: 'Poop',       color: 'poop',        kind: 'point' },
-  meal:        { icon: '🍽',  label: 'Meal',       color: 'meal',        kind: 'point' },
-  enrichment:  { icon: '🦴', label: 'Enrichment', color: 'enrichment',  kind: 'point' },
-  medication:  { icon: '💊', label: 'Medication', color: 'medication',  kind: 'point' },
-  vomit:       { icon: '🤮', label: 'Vomit',      color: 'vomit',       kind: 'point' },
-  nap:         { icon: '💤', label: 'Nap',        color: 'nap',         kind: 'range' },
-  slumber:     { icon: '🌙', label: 'Slumber',    color: 'slumber',     kind: 'range' },
-  walk:        { icon: '🚶', label: 'Walk',       color: 'walk',        kind: 'range' },
-  outing:      { icon: '🎒', label: 'Outing',     color: 'outing',      kind: 'range' },
-  episode:     { icon: '⚠️', label: 'Episode',    color: 'episode',     kind: 'range' },
-  appointment: { icon: '📋', label: 'Appointment', color: 'appointment', kind: 'range' },
-  travel:      { icon: '✈️', label: 'Travel',     color: 'travel',      kind: 'range' },
-  covered_gap: { icon: '👤', label: 'Covered gap', color: 'gap',        kind: 'range' },
-  note:        { icon: '📝', label: 'Note',       color: 'gap',         kind: 'point' },
-};
-
-const POINT_TYPES = Object.keys(TYPE_DEFS).filter(t => TYPE_DEFS[t].kind === 'point');
-const RANGE_TYPES = Object.keys(TYPE_DEFS).filter(t => TYPE_DEFS[t].kind === 'range');
-
-// Tag definitions, with applies_to to enable/disable in modal
-const TAG_DEFS = [
-  // Context — multi-select
-  { id: 'accident',      label: 'accident',      group: 'context', appliesTo: ['pee', 'poop'] },
-  { id: 'self-signaled', label: 'self-signaled', group: 'context', appliesTo: ['pee', 'poop'] },
-  { id: 'tiny',          label: 'tiny',          group: 'context', appliesTo: ['pee'] },
-  { id: 'big',           label: 'big',           group: 'context', appliesTo: ['pee', 'poop'] },
-  { id: 'wet',           label: 'wet',           group: 'context', appliesTo: ['poop'] },
-  { id: 'dry',           label: 'dry',           group: 'context', appliesTo: ['poop'] },
-  // Indoor / outdoor — single select within group
-  { id: 'indoors',       label: 'indoors',       group: 'where',   appliesTo: ['pee', 'poop'], single: true },
-  { id: 'outdoors',      label: 'outdoors',      group: 'where',   appliesTo: ['pee', 'poop'], single: true },
-];
-
-const WHO_OPTIONS = [
-  { id: 'us',      label: 'us'         },
-  { id: 'trainer', label: '👤 trainer' },
-  { id: 'sitter',  label: '🧑 sitter'  },
-  { id: 'unknown', label: '🤔 unknown' },
-];
-
-// Common enrichment kinds (free-form, but suggested)
-const ENRICHMENT_SUGGESTIONS = ['kong', 'lick mat', 'snuffle ball', 'snuffle mat', 'bully stick', 'yak chew', 'teething ring', 'rawhide', 'puzzle'];
-
-// Episode kinds
-const EPISODE_SUGGESTIONS = ['barking', 'distress', 'tweak', 'alert', 'whining'];
-
-// Appointment kinds
-const APPOINTMENT_KINDS = ['vet', 'grooming', 'training_class', 'playgroup'];
-
-// Winnie's birthday
-const BIRTHDAY = new Date('2025-07-25T00:00:00').getTime();
-
-// Storage keys
-const LS = {
-  bin: 'winnie:bin',
-  local: 'winnie:local',
-  mode: 'winnie:mode',
-  tab: 'winnie:tab',
-  schemaVersion: 'winnie:schema',
-  fingerprint: 'winnie:fp',
-  zones: 'winnie:zones',
-};
-
-// Default location zones (per-device, pre-seeded with Winnie's home turf).
-// Each event captures raw GPS coords; zones are matched at display time, with
-// a Nominatim reverse-geocode fallback to a city name when no zone matches.
-const DEFAULT_ZONES = [
-  { id: 'zone_home',     name: 'Home',                lat: 37.5084434, lng: -122.2612171, radius: 120 },
-  { id: 'zone_downtown', name: 'Downtown San Carlos', lat: 37.4957691, lng: -122.2482575, radius: 500 },
-];
-
-// ============================================================
-// State
-// ============================================================
-const state = {
-  events: [],
-  binId: localStorage.getItem(LS.bin) || '',
-  mode: localStorage.getItem(LS.mode) || '',
-  tab: localStorage.getItem(LS.tab) || 'today',
-  zones: loadZones(),
-  lastUndo: null,
-  undoTimer: null,
-  saveDebounce: null,
-  editingId: null,
-  modalState: blankModalState(),
-  calCursor: monthStart(new Date()),
-  calSelected: null,
-  rangeTickInterval: null,
-  syncing: false,
-  lastSyncOk: 0,
-  lastSyncError: false,
-  manualSyncFlash: false,
-  syncFlashTimer: null,
-  remoteKnown: false, // true once we've successfully observed remote at least once
-};
-
-function blankModalState() {
-  return { type: null, mins: null, customTime: null, customEndTime: null, tags: [], who: 'us', precision: 'exact', subkind: '' };
-}
-
-function loadZones() {
-  const raw = localStorage.getItem(LS.zones);
-  if (raw) try { return JSON.parse(raw); } catch {}
-  return JSON.parse(JSON.stringify(DEFAULT_ZONES));
-}
-function saveZones() { localStorage.setItem(LS.zones, JSON.stringify(state.zones)); }
-
-// ============================================================
-// Geolocation + zone resolution
-// ============================================================
-const GEO_OPTIONS = { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 };
-
-// Fire a GPS fix in the background and attach coords to the event when it arrives.
-// Browser caches recent fixes (maximumAge), so back-to-back logs at the same spot
-// resolve instantly without re-prompting.
-function captureLocationFor(eventId) {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const evt = state.events.find(e => e.id === eventId);
-      if (!evt) return;
-      evt.coords = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        acc: pos.coords.accuracy
-      };
-      saveDebounced();
-      if (state.tab === 'today') renderToday();
-    },
-    () => { /* denied / timeout — leave event un-located */ },
-    GEO_OPTIONS
-  );
-}
-
-function _haversineMeters(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const rad = d => d * Math.PI / 180;
-  const dLat = rad(lat2 - lat1);
-  const dLng = rad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
-
-function resolveZone(coords) {
-  if (!coords) return null;
-  let best = null, bestD = Infinity;
-  for (const z of state.zones) {
-    const d = _haversineMeters(coords.lat, coords.lng, z.lat, z.lng);
-    if (d <= z.radius && d < bestD) { best = z; bestD = d; }
-  }
-  return best ? best.name : null;
-}
-
-// Reverse-geocode to city via Nominatim. Cached per ~1km bucket so repeat
-// queries don't re-hit the network. Returns null on first call, then re-renders
-// when the fetch resolves so the label fills in.
-const _cityCache = new Map();
-const _cityFetching = new Set();
-function cityFor(coords) {
-  if (!coords) return null;
-  const key = coords.lat.toFixed(2) + ',' + coords.lng.toFixed(2);
-  if (_cityCache.has(key)) return _cityCache.get(key);
-  if (!_cityFetching.has(key)) _fetchCity(coords, key);
-  return null;
-}
-async function _fetchCity(coords, key) {
-  _cityFetching.add(key);
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lng}&format=json&zoom=10&addressdetails=1`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-    const data = await res.json();
-    const a = data.address || {};
-    const city = a.city || a.town || a.village || a.suburb || a.county || 'elsewhere';
-    _cityCache.set(key, city);
-    if (state.tab === 'today') renderToday();
-  } catch {
-    _cityCache.set(key, 'elsewhere');
-  } finally {
-    _cityFetching.delete(key);
-  }
-}
-
-function locationLabel(coords) {
-  if (!coords) return null;
-  return resolveZone(coords) || cityFor(coords);
-}
-
-// ============================================================
-// Zones — settings UI
-// ============================================================
-function renderZonesList() {
-  const list = document.getElementById('zones-list');
-  if (!list) return;
-  list.innerHTML = state.zones.map(z => `
-    <div class="zone-row" data-zone-id="${z.id}">
-      <div class="zone-info">
-        <input class="zone-name-input" type="text" value="${escapeHtml(z.name)}" data-zone-id="${z.id}" data-field="name" />
-        <div class="zone-meta">
-          <input class="zone-radius-input" type="number" min="20" max="2000" step="10" value="${z.radius}" data-zone-id="${z.id}" data-field="radius" title="radius (m)" />m
-          <input class="zone-coord-input" type="number" step="0.000001" inputmode="decimal" value="${z.lat.toFixed(7)}" data-zone-id="${z.id}" data-field="lat" title="latitude" />
-          <input class="zone-coord-input" type="number" step="0.000001" inputmode="decimal" value="${z.lng.toFixed(7)}" data-zone-id="${z.id}" data-field="lng" title="longitude" />
-        </div>
-      </div>
-      <button class="zone-action" data-action="recapture" data-zone-id="${z.id}" type="button" title="Update to current location">📍</button>
-      <button class="zone-action" data-action="delete" data-zone-id="${z.id}" type="button" title="Delete">×</button>
-    </div>
-  `).join('');
-
-  // Auto-save inline name + radius edits on change
-  list.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('change', () => {
-      const zone = state.zones.find(z => z.id === inp.dataset.zoneId);
-      if (!zone) return;
-      if (inp.dataset.field === 'name') {
-        zone.name = inp.value.trim() || 'Unnamed';
-      } else if (inp.dataset.field === 'radius') {
-        zone.radius = Math.max(20, Math.min(2000, parseInt(inp.value, 10) || 100));
-        inp.value = zone.radius;
-      } else if (inp.dataset.field === 'lat') {
-        const v = parseFloat(inp.value);
-        if (!isNaN(v) && v >= -90 && v <= 90) { zone.lat = v; inp.value = v.toFixed(7); }
-        else inp.value = zone.lat.toFixed(7);
-      } else if (inp.dataset.field === 'lng') {
-        const v = parseFloat(inp.value);
-        if (!isNaN(v) && v >= -180 && v <= 180) { zone.lng = v; inp.value = v.toFixed(7); }
-        else inp.value = zone.lng.toFixed(7);
-      }
-      saveZones();
-      if (state.tab === 'today') renderToday();
-    });
+import { recordedPatterns } from "./insights.js?v=3";
+import { WinnieSync } from "./sync.js?v=3";
+if (["localhost", "127.0.0.1"].includes(location.hostname))
+  document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
+    img.src = new URL(img.src).searchParams.get("url");
   });
-
-  list.querySelectorAll('.zone-action').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.zoneId;
-      const action = btn.dataset.action;
-      if (action === 'delete') {
-        const zone = state.zones.find(z => z.id === id);
-        if (zone && confirm(`Delete "${zone.name}"?`)) {
-          state.zones = state.zones.filter(z => z.id !== id);
-          saveZones();
-          renderZonesList();
-          if (state.tab === 'today') renderToday();
-        }
-      } else if (action === 'recapture') {
-        recaptureZoneCoords(id, btn);
-      }
-    });
+const $ = (id) => document.getElementById(id),
+  sync = new WinnieSync();
+const TYPES = {
+  pee: ["💧", "Pee"],
+  poop: ["💩", "Poop"],
+  meal: ["🍽", "Meal"],
+  nap: ["☾", "Nap"],
+  slumber: ["☾", "Night sleep"],
+  walk: ["🐾", "Walk"],
+  outing: ["☀", "Outing"],
+  enrichment: ["🦴", "Enrichment"],
+  medication: ["💊", "Medication"],
+  vomit: ["◌", "Vomit"],
+  episode: ["⚑", "Episode"],
+  appointment: ["▤", "Appointment"],
+  travel: ["✈", "Travel"],
+  covered_gap: ["♡", "Care cover"],
+  note: ["✎", "Note"],
+  moment: ["▧", "Moment"],
+};
+const esc = (value) =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
+  );
+const person = (id) =>
+  ({ brandon: "Brandon", kim: "Kim" })[id] || "Shared history";
+const dayKey = (time) => {
+  const d = new Date(time);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const dateTime = (time) =>
+  `${dayKey(time)}T${new Date(time).toTimeString().slice(0, 5)}`;
+const clock = (time) =>
+  new Date(time).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+const dateLabel = (time) =>
+  new Date(time).toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
+const when = (time) => {
+  const age = Date.now() - time;
+  if (age < 0) return clock(time);
+  if (age < 60000) return "just now";
+  if (age < 3600000) return `${Math.floor(age / 60000)}m ago`;
+  if (dayKey(time) === dayKey(Date.now())) return clock(time);
+  return new Date(time).toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
+};
+const active = (e) => !e.deletedAt && e.end_time == null;
+const uid = () => crypto.randomUUID();
+let patternDays = 28;
+let tab = "today",
+  filter = "moments",
+  limit = 60,
+  poopId = null,
+  photoTarget = null,
+  lastUndo = null,
+  actionLock = 0,
+  formPhotos = [],
+  formType = null,
+  detailId = null,
+  dialogReturn = null;
+const photoURLs = new Map(),
+  photoLoading = new Set();
+let toastTimer;
+$("day-picker").value = dayKey(Date.now());
+document.body.classList.toggle(
+  "quiet",
+  localStorage.getItem("winnie:quiet") === "true",
+);
+function toast(message, undo = null) {
+  $("toast-text").textContent = message;
+  $("toast").hidden = false;
+  $("undo").hidden = !undo;
+  lastUndo = undo;
+  clearTimeout(toastTimer);
+  if (!undo)
+    toastTimer = setTimeout(() => {
+      $("toast").hidden = true;
+    }, 7000);
 }
-
-function recaptureZoneCoords(id, btn) {
-  if (!navigator.geolocation) { alert('GPS not available on this device.'); return; }
-  const orig = btn.textContent;
-  btn.textContent = '…'; btn.disabled = true;
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const zone = state.zones.find(z => z.id === id);
-      if (zone) {
-        zone.lat = pos.coords.latitude;
-        zone.lng = pos.coords.longitude;
-        saveZones();
-      }
-      renderZonesList();
-      if (state.tab === 'today') renderToday();
-    },
-    err => {
-      alert('Could not get GPS fix: ' + (err.message || 'unknown'));
-      btn.textContent = orig; btn.disabled = false;
-    },
-    { ...GEO_OPTIONS, maximumAge: 0 }
-  );
+function error(err) {
+  const box = $("form-error");
+  if ($("dialog").open && box) box.textContent = err.message;
+  else toast(err.message);
 }
-
-function openAddZoneForm() {
-  document.getElementById('add-zone-btn').classList.add('hidden');
-  const form = document.getElementById('zone-form');
-  form.classList.remove('hidden');
-  document.getElementById('zone-form-name').value = '';
-  document.getElementById('zone-form-radius').value = '100';
-  document.getElementById('zone-form-status').textContent = '';
-  document.getElementById('zone-form-save').disabled = false;
-  document.getElementById('zone-form-name').focus();
-}
-function closeAddZoneForm() {
-  document.getElementById('zone-form').classList.add('hidden');
-  document.getElementById('add-zone-btn').classList.remove('hidden');
-}
-function saveNewZone() {
-  const name = document.getElementById('zone-form-name').value.trim();
-  const statusEl = document.getElementById('zone-form-status');
-  if (!name) { statusEl.textContent = 'Name required.'; return; }
-  if (!navigator.geolocation) { statusEl.textContent = 'GPS not available.'; return; }
-  const radius = Math.max(20, Math.min(2000, parseInt(document.getElementById('zone-form-radius').value, 10) || 100));
-  statusEl.textContent = 'Capturing location…';
-  const saveBtn = document.getElementById('zone-form-save');
-  saveBtn.disabled = true;
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      state.zones.push({
-        id: 'zone_' + Date.now().toString(36),
-        name, radius,
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-      });
-      saveZones();
-      closeAddZoneForm();
-      renderZonesList();
-      if (state.tab === 'today') renderToday();
-    },
-    err => {
-      statusEl.textContent = 'GPS failed: ' + (err.message || 'unknown');
-      saveBtn.disabled = false;
-    },
-    { ...GEO_OPTIONS, maximumAge: 0 }
-  );
-}
-
-// ============================================================
-// Utilities
-// ============================================================
-function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-
-function escapeHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x.getTime(); }
-function endOfDay(d) { const x = new Date(d); x.setHours(23,59,59,999); return x.getTime(); }
-function monthStart(d) { const x = new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x.getTime(); }
-function addMonths(ts, n) { const d = new Date(ts); d.setMonth(d.getMonth() + n); return d.getTime(); }
-function sameDay(a, b) {
-  const da = new Date(a), db = new Date(b);
-  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
-}
-function dayKey(ts) {
-  const d = new Date(ts);
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
-// Calendar-day attribution: events between midnight and 5am attribute to previous day
-const OVERNIGHT_CUTOFF_HOUR = 5;
-function attributedDayStart(ts) {
-  const d = new Date(ts);
-  if (d.getHours() < OVERNIGHT_CUTOFF_HOUR) {
-    d.setDate(d.getDate() - 1);
-  }
-  d.setHours(0,0,0,0);
-  return d.getTime();
-}
-
-function timeAgo(ts) {
-  const diff = Date.now() - ts;
-  if (diff < 0) return 'in ' + Math.round(-diff / 60000) + 'm';
-  if (diff < 60000) return 'just now';
-  const mins = Math.round(diff / 60000);
-  if (mins < 60) return mins + 'm ago';
-  if (mins < 1440) {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return (m === 0 ? `${h}h` : `${h}h ${m}m`) + ' ago';
-  }
-  const days = Math.round(mins / 1440);
-  return days + 'd ago';
-}
-function formatClock(ts) {
-  return new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
-function formatClockLong(ts) {
-  if (sameDay(ts, Date.now())) return formatClock(ts);
-  return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + formatClock(ts);
-}
-function formatDuration(ms) {
-  const totalMins = Math.round(ms / 60000);
-  if (totalMins < 60) return totalMins + 'm';
-  const h = Math.floor(totalMins / 60);
-  const m = totalMins % 60;
-  if (m === 0) return h + 'h';
-  return h + 'h ' + m + 'm';
-}
-
-function ageAt(ts) {
-  const ms = ts - BIRTHDAY;
-  const days = ms / (1000 * 60 * 60 * 24);
-  const months = days / 30.44;
-  if (days < 0) return { months: 0, label: 'pre-birth' };
-  if (months < 12) {
-    return { months, label: Math.floor(months) + ' months' };
-  }
-  return { months, label: (months / 12).toFixed(1) + ' years' };
-}
-
-// ============================================================
-// Schema migration v1/v2 -> v3
-// ============================================================
-function migrateEvent(e) {
-  if (!e.id) e.id = newId();
-  if (!e.created) e.created = e.time || Date.now();
-
-  // v1 -> v2: trainer/sitter/estimated tags -> who
-  if (e.who == null) {
-    if (Array.isArray(e.tags)) {
-      if (e.tags.includes('trainer')) e.who = 'trainer';
-      else if (e.tags.includes('sitter')) e.who = 'sitter';
-      else if (e.tags.includes('unknown') || e.tags.includes('estimated')) e.who = 'unknown';
-      else e.who = 'us';
-      e.tags = e.tags.filter(t => !['trainer', 'sitter', 'unknown', 'estimated'].includes(t));
-    } else {
-      e.who = 'us';
-      e.tags = [];
-    }
-  }
-  if (!Array.isArray(e.tags)) e.tags = [];
-
-  // v2 -> v3: add new fields with defaults
-  if (e.time_precision == null) e.time_precision = 'exact';
-  if (e.retroactive == null) e.retroactive = false;
-  if (!e.timezone) e.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles';
-  if (!e.source) e.source = 'manual';
-
-  // Renames: 'loose' tag was an early v2 alias for 'wet'
-  if (e.tags.includes('loose')) {
-    e.tags = e.tags.filter(t => t !== 'loose');
-    if (!e.tags.includes('wet')) e.tags.push('wet');
-  }
-
-  // Type validation
-  if (!TYPE_DEFS[e.type]) {
-    // Map old types we no longer have
-    if (e.type === 'wake') {
-      // Wake events become a tag/note on the next slumber's end_time
-      e.type = 'note';
-      e.note = (e.note || '') + ' [legacy wake event]';
-    }
-  }
-
-  return e;
-}
-
-function migrateAll(eventsOrPayload) {
-  // Could be array of events or wrapper object {events, schemaVersion}
-  let events = eventsOrPayload;
-  if (eventsOrPayload && !Array.isArray(eventsOrPayload)) {
-    events = eventsOrPayload.events || [];
-  }
-  return events.map(migrateEvent);
-}
-
-// ============================================================
-// Sync
-// ============================================================
-async function fetchRemote() {
-  if (state.mode !== 'shared' || !state.binId) return null;
-  try {
-    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`);
-    if (!res.ok) throw new Error('fetch failed: ' + res.status);
-    const data = await res.json();
-    return migrateAll(data);
-  } catch (e) {
-    console.error('fetchRemote error:', e);
-    setSyncState('error');
-    return null;
-  }
-}
-
-async function pushRemote() {
-  if (state.mode !== 'shared' || !state.binId) {
-    localStorage.setItem(LS.local, JSON.stringify(state.events));
-    setSyncState('local');
-    return true;
-  }
-  try {
-    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ events: state.events, schemaVersion: SCHEMA_VERSION })
-    });
-    if (!res.ok) throw new Error('push failed: ' + res.status);
-    setSyncState('ok');
-    return true;
-  } catch (e) {
-    console.error('pushRemote error:', e);
-    setSyncState('error');
-    localStorage.setItem(LS.local, JSON.stringify(state.events));
-    return false;
-  }
-}
-
-function setSyncState(s) {
-  const btn = document.getElementById('sync-btn');
-  const dot = document.getElementById('sync-dot');
-  const text = document.getElementById('sync-text');
-  if (!dot) return;
-  dot.classList.remove('offline', 'error', 'syncing', 'flash');
-  if (btn) btn.classList.remove('retry');
-  if (s === 'offline') {
-    dot.classList.add('offline');
-    text.textContent = 'offline · tap to retry';
-    if (btn) btn.classList.add('retry');
-  } else if (s === 'error') {
-    dot.classList.add('error');
-    text.textContent = 'sync error · tap to retry';
-    if (btn) btn.classList.add('retry');
-  } else if (s === 'syncing') {
-    dot.classList.add('syncing');
-    text.textContent = 'syncing…';
-  } else if (s === 'local') {
-    dot.classList.add('offline');
-    text.textContent = 'this device only';
-  } else {
-    // ok / synced — flash check briefly if user just manually retried or recovered from a failure
-    const wasError = state.lastSyncError;
-    state.lastSyncError = false;
-    state.lastSyncOk = Date.now();
-    if (state.manualSyncFlash || wasError) {
-      state.manualSyncFlash = false;
-      dot.classList.add('flash');
-      text.textContent = '✓ up to date';
-      clearTimeout(state.syncFlashTimer);
-      state.syncFlashTimer = setTimeout(() => {
-        if (text) text.textContent = 'synced';
-        if (dot) dot.classList.remove('flash');
-      }, 1500);
-    } else {
-      text.textContent = 'synced';
-    }
-  }
-  if (s === 'error' || s === 'offline') state.lastSyncError = true;
-}
-
-async function fetchRemoteWithRetry(maxAttempts) {
-  const delays = [0, 1500, 4000, 8000];
-  for (let i = 0; i < maxAttempts; i++) {
-    if (delays[i] > 0) await new Promise(r => setTimeout(r, delays[i]));
-    if (state.mode !== 'shared' || !state.binId) return null;
+function safe(fn) {
+  return (...args) => {
     try {
-      const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`);
-      if (!res.ok) throw new Error('fetch failed: ' + res.status);
-      const data = await res.json();
-      return migrateAll(data);
-    } catch (e) {
-      console.warn(`fetchRemote attempt ${i + 1}/${maxAttempts}:`, e);
-      if (i === maxAttempts - 1) {
-        setSyncState('error');
-        return null;
-      }
+      return Promise.resolve(fn(...args)).catch(error);
+    } catch (err) {
+      error(err);
     }
-  }
-  return null;
-}
-
-function fingerprint(events) {
-  if (!events || events.length === 0) return '0:0:0:';
-  let maxC = 0, maxM = 0, lastId = '';
-  for (const e of events) {
-    const c = e.created || 0;
-    const m = e.modified || 0;
-    if (c >= maxC) { maxC = c; lastId = e.id || ''; }
-    if (m > maxM) maxM = m;
-  }
-  return events.length + ':' + maxC + ':' + maxM + ':' + lastId;
-}
-
-function loadFromCache() {
-  const cached = localStorage.getItem(LS.local);
-  state.events = cached ? migrateAll(JSON.parse(cached)) : [];
-  state.events.sort((a, b) => b.time - a.time);
-  if (state.mode !== 'shared') {
-    state.remoteKnown = true;
-    setSyncState('local');
-  }
-}
-
-async function syncFromRemote({ retries = 0 } = {}) {
-  if (state.mode !== 'shared' || !state.binId) return;
-  if (state.syncing) return;
-  state.syncing = true;
-  setSyncState('syncing');
-  try {
-    const remote = retries > 0
-      ? await fetchRemoteWithRetry(retries + 1)
-      : await fetchRemote();
-    if (remote === null) return; // fetch already set 'error'
-
-    const remoteIds = new Set(remote.map(e => e.id));
-    const pending = state.events.filter(e => !remoteIds.has(e.id));
-    const merged = [...remote, ...pending].sort((a, b) => b.time - a.time);
-
-    const prevFp = fingerprint(state.events);
-    const newFp = fingerprint(merged);
-
-    state.events = merged;
-    state.remoteKnown = true;
-    localStorage.setItem(LS.local, JSON.stringify(state.events));
-    localStorage.setItem(LS.fingerprint, fingerprint(remote));
-
-    if (pending.length > 0) {
-      await pushRemote();
-    } else {
-      setSyncState('ok');
-    }
-
-    if (newFp !== prevFp) setTab(state.tab);
-  } finally {
-    state.syncing = false;
-  }
-}
-
-async function manualSync() {
-  if (state.mode !== 'shared' || !state.binId) {
-    setSyncState('local');
-    return;
-  }
-  if (state.syncFlashTimer) {
-    clearTimeout(state.syncFlashTimer);
-    state.syncFlashTimer = null;
-  }
-  state.manualSyncFlash = true;
-  await syncFromRemote({ retries: 2 });
-}
-
-function saveDebounced() {
-  localStorage.setItem(LS.local, JSON.stringify(state.events));
-  if (state.saveDebounce) clearTimeout(state.saveDebounce);
-  setSyncState('syncing');
-  // Defer push until we've successfully observed remote — pushing partial
-  // state.events before initial fetch returns would overwrite remote with
-  // a mostly-empty bin.
-  if (state.mode === 'shared' && !state.remoteKnown) return;
-  state.saveDebounce = setTimeout(async () => { await pushRemote(); }, 600);
-}
-
-// ============================================================
-// Event CRUD
-// ============================================================
-function logPoint(type, opts = {}) {
-  const evt = {
-    id: newId(),
-    type: type,
-    time: opts.time || Date.now(),
-    time_precision: opts.precision || 'exact',
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles',
-    tags: opts.tags || [],
-    who: opts.who || 'us',
-    note: opts.note || '',
-    retroactive: opts.retroactive || false,
-    source: 'manual',
-    created: Date.now()
   };
-  if (opts.location) evt.location = opts.location;
-  if (opts.description) evt.description = opts.description;
-  if (opts.subkind) {
-    if (type === 'enrichment') evt.enrichment_kind = opts.subkind;
-    if (type === 'medication') evt.medication_name = opts.subkind;
-    if (type === 'episode') evt.episode_kind = opts.subkind;
-    if (type === 'appointment') evt.appointment_kind = opts.subkind;
-    if (type === 'outing') evt.outing_kind = opts.subkind;
-    if (type === 'meal') evt.meal_type = opts.subkind;
+}
+function openDialog(html) {
+  dialogReturn = document.activeElement;
+  $("dialog-content").innerHTML = html;
+  detailId = null;
+  if (!$("dialog").open) $("dialog").showModal();
+}
+function closeDialog() {
+  $("dialog").close();
+  detailId = null;
+  formPhotos = [];
+  formType = null;
+  dialogReturn?.focus?.();
+}
+$("dialog-close").onclick = closeDialog;
+$("dialog").addEventListener("cancel", () => {
+  detailId = null;
+  formPhotos = [];
+  formType = null;
+});
+$("toast-close").onclick = () => {
+  $("toast").hidden = true;
+};
+$("undo").onclick = safe(async () => {
+  const undo = lastUndo;
+  if (!undo) return;
+  lastUndo = null;
+  $("undo").disabled = true;
+  try {
+    await undo();
+    toast("Undo saved on this device.");
+  } finally {
+    $("undo").disabled = false;
   }
-  state.events.unshift(evt);
-  state.events.sort((a, b) => b.time - a.time);
-  saveDebounced();
-  // Pee/poop get a background GPS fix attached when it resolves.
-  if ((type === 'pee' || type === 'poop') && !opts.retroactive) {
-    captureLocationFor(evt.id);
+});
+function setTab(next) {
+  tab = next;
+  $("today-view").hidden = tab !== "today";
+  $("story-view").hidden = tab !== "story";
+  for (const t of ["today", "story"]) {
+    $(`${t}-tab`).classList.toggle("selected", t === tab);
+    if (t === tab) $(`${t}-tab`).setAttribute("aria-current", "page");
+    else $(`${t}-tab`).removeAttribute("aria-current");
   }
-  return evt;
+  render();
 }
-
-function startRange(type, opts = {}) {
-  const active = findActiveRange(type);
-  if (active) return active;
-  return logPoint(type, opts);
+$("today-tab").onclick = () => setTab("today");
+$("story-tab").onclick = () => setTab("story");
+$("day-picker").onchange = render;
+$("retry").onclick = () => sync.flush();
+function html(id, value) {
+  if ($(id).innerHTML !== value) $(id).innerHTML = value;
 }
-function endRange(id, endTime = Date.now()) {
-  const idx = state.events.findIndex(e => e.id === id);
-  if (idx >= 0) {
-    state.events[idx].end_time = endTime;
-    saveDebounced();
+function facts() {
+  return sync
+    .view()
+    .events.filter((e) => !e.deletedAt)
+    .sort((a, b) => b.time - a.time);
+}
+function render() {
+  const paired = !!sync.session;
+  $("connect").hidden = paired;
+  $("experience").hidden = !paired;
+  if (!paired) return;
+  const view = sync.view(),
+    events = facts(),
+    pending = sync.data.queue.length,
+    errors = sync.data.queue.filter((q) => q.error),
+    oldCount = legacyDiff().length;
+  $("person-name").textContent = person(sync.session.person);
+  $("sync-status").textContent =
+    sync.lastError ||
+    (pending
+      ? `${pending} ${pending === 1 ? "action" : "actions"} saved on this device · ${errors.length ? "review needed" : sync.busy ? "sharing…" : "waiting to share"}`
+      : sync.lastChecked
+        ? `Shared log checked ${when(sync.lastChecked)}`
+        : "Opening our shared day…");
+  document
+    .querySelector(".sync-line")
+    .classList.toggle("offline", !!sync.lastError || !!pending);
+  $("pending-banner").hidden = !errors.length && !oldCount;
+  if (errors.length || oldCount)
+    $("pending-banner").innerHTML =
+      `${errors.length ? `${errors.length} saved changes need review. ` : ""}${oldCount ? `${oldCount} older phone entries to review. ` : ""}<button data-act="review">Review saved changes</button>`;
+  $("today-date").textContent = new Date()
+    .toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })
+    .toUpperCase();
+  const sleeping = events.find(
+    (e) => ["nap", "slumber"].includes(e.type) && active(e),
+  );
+  $("hero-caption").textContent = sleeping
+    ? `Sleep started at ${clock(sleeping.time)}.`
+    : view.profile.withPerson
+      ? `${person(view.profile.withPerson)} is with Winnie.`
+      : "Latest care, in one place.";
+  const icons = {
+    pee: '<svg viewBox="0 0 24 24"><path d="M12 3C10 7 5 11 5 15a7 7 0 0 0 14 0c0-4-5-8-7-12Z"/><path d="M8 15c0 2 1 3 3 3"/></svg>',
+    poop: "💩",
+    meal: '<svg viewBox="0 0 24 24"><path d="M3 10h18c0 6-3 9-9 9s-9-3-9-9Z"/><path d="M8 6V3m4 3V2m4 4V3M5 21h14"/></svg>',
+    sleep:
+      '<svg viewBox="0 0 24 24"><path d="M19 15A8 8 0 0 1 9 5a8 8 0 1 0 10 10Z"/><path d="M17 2v4m-2-2h4"/></svg>',
+  };
+  html(
+    "care-actions",
+    ["pee", "poop", "meal", "sleep"]
+      .map((type) => {
+        const last =
+          type === "sleep"
+            ? events.find((e) => ["nap", "slumber"].includes(e.type))
+            : events.find((e) => e.type === type);
+        const label =
+          type === "sleep"
+            ? sleeping
+              ? sleeping.type === "nap"
+                ? "End nap"
+                : "End night sleep"
+              : "Start night sleep"
+            : `Log ${type}`;
+        return `<button class="care-tile ${type}" data-log="${type}"><span class="tile-icon" aria-hidden="true">${icons[type]}</span><span class="tile-plus" aria-hidden="true">${type === "sleep" && sleeping ? "↗" : "＋"}</span><span class="tile-label">${label}</span><span class="tile-last">${last ? `${type === "sleep" && sleeping ? "Started" : type === "sleep" && last.end_time ? "Ended" : "Last"} ${esc(when(type === "sleep" && last.end_time ? last.end_time : last.time))} · ${last.loggedBy ? esc(person(last.loggedBy)) : "shared log"}` : "Ready when he is"}</span></button>`;
+      })
+      .join(""),
+  );
+  const walk = events.find((e) => e.type === "walk" && active(e)),
+    showWalk = localStorage.getItem("winnie:walks") === "true" || walk;
+  $("walk-card").hidden = !showWalk;
+  if (showWalk)
+    $("walk-card").innerHTML =
+      `<div class="section-heading"><h2>${walk ? "Out for a walk" : "A walk, together"}</h2><span aria-hidden="true">🐾</span></div><p class="fine">${walk ? `Started ${clock(walk.time)} · ${esc(person(walk.loggedBy))}` : "An optional way to let each other know you’re out."}</p><div class="button-row"><button class="secondary small" data-act="${walk ? "finish-walk" : "start-walk"}">${walk ? "Finish walk" : "Start walk"}</button>${walk ? '<button class="text-button" data-log="pee">Log pee</button><button class="text-button" data-log="poop">Log poop</button>' : ""}</div>`;
+  const p = view.profile;
+  $("plan-card").hidden = !p.routine && !p.goal && !p.withPerson;
+  if (!$("plan-card").hidden)
+    $("plan-card").innerHTML =
+      `<div class="section-heading"><h2>What works for him</h2><button class="text-button" data-act="plan">Edit</button></div>${p.routine ? `<p>${esc(p.routine)}</p>` : ""}${p.goal ? `<div class="plan-line"><span class="mini-label">WE’RE PRACTICING</span><p>${esc(p.goal)}</p></div>` : ""}${p.withPerson ? `<p class="fine">${esc(person(p.withPerson))} is with Winnie.</p>` : ""}`;
+  const day = events.filter((e) => dayKey(e.time) === $("day-picker").value);
+  $("day-summary").textContent = ["pee", "poop", "meal"]
+    .map(
+      (t) =>
+        `${day.filter((e) => e.type === t).length} ${t}${day.filter((e) => e.type === t).length === 1 ? "" : "s"}`,
+    )
+    .join(" · ");
+  html(
+    "timeline",
+    day.length
+      ? day.map(entry).join("")
+      : '<div class="empty"><p>No entries for this day yet.</p></div>',
+  );
+  if (poopId) {
+    const e = view.events.find((e) => e.id === poopId && !e.deletedAt);
+    $("photo-prompt").hidden = !e;
+    if (e)
+      $("poop-save-state").textContent = e.pending
+        ? "Poop saved on this phone. Photo optional."
+        : "Poop saved to your shared log. Photo optional.";
   }
+  renderTrainer(events);
+  if (tab === "story") renderStory();
 }
-function findActiveRange(type) {
-  return state.events.find(e => e.type === type && !e.end_time);
+function entry(e) {
+  const duration =
+    e.end_time != null
+      ? e.end_time < e.time
+        ? "Time needs review"
+        : `${Math.round((e.end_time - e.time) / 60000)} min`
+      : ["nap", "slumber", "walk"].includes(e.type)
+        ? "In progress"
+        : "";
+  const detail = [
+    e.loggedBy ? person(e.loggedBy) : "Shared history",
+    duration,
+    e.note !== eventLabel(e) ? e.note : "",
+    ...(e.tags || []),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return `<button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}${e.photos?.length ? ` · ▧ ${e.photos.length}` : ""}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>`;
 }
-function deleteEvent(id) {
-  state.events = state.events.filter(e => e.id !== id);
-  saveDebounced();
-}
-function updateEvent(id, updates) {
-  const idx = state.events.findIndex(e => e.id === id);
-  if (idx >= 0) {
-    state.events[idx] = { ...state.events[idx], ...updates, modified: Date.now() };
-    state.events.sort((a, b) => b.time - a.time);
-    saveDebounced();
-  }
-}
-
-// ============================================================
-// Predictions
-// ============================================================
-// Any in-progress sleep, nap or slumber alike. The unified "Sleep" tile and the
-// motive-suppression logic both treat naps and slumbers as the same event for live
-// purposes — they only differ in *classification at start time* (clock-based).
-function activeSleep() {
-  return state.events.find(e => (e.type === 'nap' || e.type === 'slumber') && !e.end_time);
-}
-
-// Decide nap vs slumber based on when sleep is *starting*. Anything begun between
-// 6:30pm and 6am counts as slumber; everything else is a nap. Classification is
-// locked at start — a long late-afternoon nap (e.g. 4pm–7pm) stays a nap.
-function classifySleepStart(now = Date.now()) {
-  const d = new Date(now);
-  const mins = d.getHours() * 60 + d.getMinutes();
-  const slumberStart = 18 * 60 + 30;  // 18:30
-  const slumberEnd = 6 * 60;          // 06:00
-  return (mins >= slumberStart || mins < slumberEnd) ? 'slumber' : 'nap';
-}
-
-// --- Motive bars (Sims-style) ---
-// Each bar is a "level" in [0, 1]; 1 = satisfied (green), 0 = empty (urgent).
-// Level can dip slightly negative for "overdue" (urgent zone). Models are driven by
-// Winnie's last 14d of events with a sparsity fallback to fixed defaults.
-const MOTIVE_WINDOW_DAYS = 14;
-const MIN_LEARN_SAMPLES = 5;
-
-// Bladder
-const TRIGGER_LOOKBACK_MS = 60 * 60 * 1000;
-const BUMP_DECAY_MS = 90 * 60 * 1000;
-const PEE_MIN_GAP_MS = 10 * 60 * 1000;
-const PEE_MAX_GAP_MS = 4 * 60 * 60 * 1000;
-const BLADDER_DEFAULT_CAPACITY_MS = 90 * 60 * 1000;
-const DEFAULT_WAKE_BUMP = 0.20;
-const DEFAULT_MEAL_BUMP = 0.25;
-const BUMP_CLAMP_LO = 0.10;
-const BUMP_CLAMP_HI = 0.50;
-
-// Poop (gaps are long & noisy — no upper-end filter beyond a day, no trigger bumps for v1)
-const POOP_MIN_GAP_MS = 30 * 60 * 1000;
-const POOP_MAX_GAP_MS = 24 * 60 * 60 * 1000;
-const POOP_DEFAULT_CAPACITY_MS = 8 * 60 * 60 * 1000;
-
-// Hunger (filter overnight gaps so the slumber gap doesn't dominate the median)
-const MEAL_MIN_GAP_MS = 30 * 60 * 1000;
-const MEAL_MAX_GAP_MS = 12 * 60 * 60 * 1000;
-const HUNGER_DEFAULT_CAPACITY_MS = 6 * 60 * 60 * 1000;
-
-// Energy
-const WAKE_MIN_MS = 30 * 60 * 1000;
-const WAKE_MAX_MS = 6 * 60 * 60 * 1000;
-const SLEEP_MIN_MS = 5 * 60 * 1000;
-const ENERGY_DEFAULT_WAKE_CAPACITY_MS = 2.5 * 60 * 60 * 1000;
-const ENERGY_DEFAULT_SLEEP_MS = 60 * 60 * 1000;
-
-// Zones: high level = satisfied/green, low level = urgent/red.
-function motiveZone(level) {
-  if (level < 0) return 'urgent';
-  if (level < 0.20) return 'low';
-  if (level < 0.50) return 'mid';
-  return 'ok';
-}
-
-function _median(arr) {
-  if (!arr.length) return 0;
-  const s = [...arr].sort((a, b) => a - b);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-function _mean(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
-
-function _wakeTimesInWindow(windowStart) {
-  return state.events
-    .filter(e => (e.type === 'nap' || e.type === 'slumber') && e.end_time && e.end_time >= windowStart)
-    .map(e => e.end_time);
-}
-function _mealTimesInWindow(windowStart) {
-  return state.events
-    .filter(e => e.type === 'meal' && e.time >= windowStart)
-    .map(e => e.time);
-}
-
-function _learnBumps(peeEvents, wakeTimes, mealTimes) {
-  // For each pee, classify the gap from the previous pee by which trigger (if any)
-  // fell within 60min before it (and after the previous pee).
-  const buckets = { none: [], wake: [], meal: [] };
-  for (let i = 1; i < peeEvents.length; i++) {
-    const gap = peeEvents[i].time - peeEvents[i - 1].time;
-    if (gap < PEE_MIN_GAP_MS || gap > PEE_MAX_GAP_MS) continue;
-    const winLo = peeEvents[i].time - TRIGGER_LOOKBACK_MS;
-    const winHi = peeEvents[i].time;
-    const after = peeEvents[i - 1].time;
-    const hadWake = wakeTimes.some(t => t > after && t >= winLo && t <= winHi);
-    const hadMeal = mealTimes.some(t => t > after && t >= winLo && t <= winHi);
-    if (hadMeal) buckets.meal.push(gap);
-    else if (hadWake) buckets.wake.push(gap);
-    else buckets.none.push(gap);
-  }
-  const baseAvg = _mean(buckets.none);
-  const clamp = v => Math.min(BUMP_CLAMP_HI, Math.max(BUMP_CLAMP_LO, v));
-  let wakeBump = DEFAULT_WAKE_BUMP;
-  let mealBump = DEFAULT_MEAL_BUMP;
-  if (baseAvg > 0 && buckets.wake.length >= MIN_LEARN_SAMPLES) {
-    wakeBump = clamp(1 - _mean(buckets.wake) / baseAvg);
-  }
-  if (baseAvg > 0 && buckets.meal.length >= MIN_LEARN_SAMPLES) {
-    mealBump = clamp(1 - _mean(buckets.meal) / baseAvg);
-  }
-  return { wakeBump, mealBump };
-}
-
-// Generic drain model: level = 1 - (time_since_last_event / capacity). Caller computes
-// capacity from history with a sparsity fallback. Slumber pauses the bar (UX choice).
-function _drainMotive({ now, eventType, minGap, maxGap, defaultCapacity }) {
-  if (activeSleep()) return { level: 1, zone: 'ok', suppressed: 'sleep' };
-
-  const windowStart = now - MOTIVE_WINDOW_DAYS * 86400000;
-  const events = state.events
-    .filter(e => e.type === eventType && e.time >= windowStart && e.time <= now)
-    .sort((a, b) => a.time - b.time);
-
-  if (events.length < 1) return { level: 1, zone: 'ok', suppressed: 'no-data' };
-
-  const gaps = [];
-  for (let i = 1; i < events.length; i++) {
-    const g = events[i].time - events[i - 1].time;
-    if (g >= minGap && g <= maxGap) gaps.push(g);
-  }
-  const capacity = gaps.length >= 3 ? _median(gaps) : defaultCapacity;
-  const lastTime = events[events.length - 1].time;
-  const fill = (now - lastTime) / capacity;
-  const level = Math.max(-0.3, 1 - fill);
-  return { level, zone: motiveZone(level), suppressed: null };
-}
-
-function bladderState(now = Date.now()) {
-  if (activeSleep()) return { level: 1, zone: 'ok', suppressed: 'sleep' };
-
-  const windowStart = now - MOTIVE_WINDOW_DAYS * 86400000;
-  const peeEvents = state.events
-    .filter(e => e.type === 'pee' && e.time >= windowStart && e.time <= now)
-    .sort((a, b) => a.time - b.time);
-
-  if (peeEvents.length < 2) return { level: 1, zone: 'ok', suppressed: 'no-data' };
-
-  const cleanGaps = [];
-  for (let i = 1; i < peeEvents.length; i++) {
-    const g = peeEvents[i].time - peeEvents[i - 1].time;
-    if (g >= PEE_MIN_GAP_MS && g <= PEE_MAX_GAP_MS) cleanGaps.push(g);
-  }
-  const capacity = cleanGaps.length >= 3 ? _median(cleanGaps) : BLADDER_DEFAULT_CAPACITY_MS;
-
-  const wakeTimes = _wakeTimesInWindow(windowStart);
-  const mealTimes = _mealTimesInWindow(windowStart);
-  const { wakeBump, mealBump } = _learnBumps(peeEvents, wakeTimes, mealTimes);
-
-  const lastPee = peeEvents[peeEvents.length - 1].time;
-  const baseFill = (now - lastPee) / capacity;
-
-  let bumps = 0;
-  for (const t of wakeTimes) {
-    if (t > lastPee && t <= now) {
-      bumps += wakeBump * Math.max(0, 1 - (now - t) / BUMP_DECAY_MS);
-    }
-  }
-  for (const t of mealTimes) {
-    if (t > lastPee && t <= now) {
-      bumps += mealBump * Math.max(0, 1 - (now - t) / BUMP_DECAY_MS);
-    }
-  }
-
-  const level = Math.max(-0.3, 1 - (baseFill + bumps));
-  return { level, zone: motiveZone(level), suppressed: null };
-}
-
-function poopState(now = Date.now()) {
-  return _drainMotive({
-    now, eventType: 'poop',
-    minGap: POOP_MIN_GAP_MS, maxGap: POOP_MAX_GAP_MS,
-    defaultCapacity: POOP_DEFAULT_CAPACITY_MS,
-  });
-}
-
-function hungerState(now = Date.now()) {
-  return _drainMotive({
-    now, eventType: 'meal',
-    minGap: MEAL_MIN_GAP_MS, maxGap: MEAL_MAX_GAP_MS,
-    defaultCapacity: HUNGER_DEFAULT_CAPACITY_MS,
-  });
-}
-
-// Energy is unique: drains while awake, refills during active nap/slumber.
-function energyState(now = Date.now()) {
-  const windowStart = now - MOTIVE_WINDOW_DAYS * 86400000;
-  const sleeps = state.events
-    .filter(e => (e.type === 'nap' || e.type === 'slumber') && e.time >= windowStart)
-    .sort((a, b) => a.time - b.time);
-
-  // Typical sleep length (median of completed sleeps in window)
-  const sleepDurations = sleeps
-    .filter(e => e.end_time && e.end_time - e.time >= SLEEP_MIN_MS)
-    .map(e => e.end_time - e.time);
-  const typicalSleepMs = sleepDurations.length >= 3
-    ? _median(sleepDurations) : ENERGY_DEFAULT_SLEEP_MS;
-
-  // Typical wake-window length
-  const wakeWindows = [];
-  for (let i = 0; i < sleeps.length - 1; i++) {
-    if (!sleeps[i].end_time) continue;
-    const w = sleeps[i + 1].time - sleeps[i].end_time;
-    if (w >= WAKE_MIN_MS && w <= WAKE_MAX_MS) wakeWindows.push(w);
-  }
-  const wakeCapacity = wakeWindows.length >= 3 ? _median(wakeWindows) : ENERGY_DEFAULT_WAKE_CAPACITY_MS;
-
-  const activeSleepEvt = sleeps.find(e => !e.end_time);
-  if (activeSleepEvt) {
-    // Estimate level at sleep start from the preceding wake window, then linearly
-    // refill toward 1.0 over typicalSleepMs.
-    const priorEnd = sleeps
-      .filter(e => e.end_time && e.end_time <= activeSleepEvt.time)
-      .map(e => e.end_time)
-      .sort((a, b) => b - a)[0];
-    let levelAtStart = 1;
-    if (priorEnd) {
-      const wakeBefore = activeSleepEvt.time - priorEnd;
-      levelAtStart = Math.max(-0.3, 1 - wakeBefore / wakeCapacity);
-    }
-    const sleepDur = now - activeSleepEvt.time;
-    const refill = Math.min(1, sleepDur / typicalSleepMs);
-    const level = Math.min(1, levelAtStart + (1 - levelAtStart) * refill);
-    return { level, zone: motiveZone(level), suppressed: null };
-  }
-
-  const sleepEnds = sleeps.filter(e => e.end_time).map(e => e.end_time);
-  if (sleepEnds.length === 0) return { level: 1, zone: 'ok', suppressed: 'no-data' };
-  const lastSleepEnd = Math.max(...sleepEnds);
-  const level = Math.max(-0.3, 1 - (now - lastSleepEnd) / wakeCapacity);
-  return { level, zone: motiveZone(level), suppressed: null };
-}
-
-function renderMotive(rowId, st, textFn) {
-  const row = document.getElementById(rowId);
-  if (!row) return;
-  const fillEl = row.querySelector('.motive-fill');
-  const statusEl = row.querySelector('.motive-status');
-  if (!fillEl || !statusEl) return;
-
-  row.classList.toggle('suppressed', !!st.suppressed);
-
-  if (st.suppressed) {
-    fillEl.style.width = '100%';
-    fillEl.className = 'motive-fill';
-  } else {
-    const pct = Math.max(0, Math.min(1, st.level)) * 100;
-    fillEl.style.width = pct + '%';
-    fillEl.className = 'motive-fill zone-' + st.zone;
-  }
-  statusEl.textContent = textFn(st);
-}
-
-// Right-column text for the drain motives (bladder/poop/hunger): time since last
-// matching event, with a "· sleeping" suffix when slumber has paused the bar.
-function drainMotiveText(eventType, st, now) {
-  const evt = state.events.find(e => e.type === eventType);
-  if (!evt) return 'no data';
-  const t = formatDuration(now - evt.time);
-  return st.suppressed === 'sleep' ? `${t} · sleeping` : t;
-}
-
-// Right-column text for the energy motive: phase-aware (awake / asleep / napping).
-function energyMotiveText(now) {
-  const evt = activeSleep();
-  if (evt) {
-    const dur = formatDuration(now - evt.time);
-    return evt.type === 'slumber' ? `${dur} asleep` : `${dur} napping`;
-  }
-  const sleepEnds = state.events
-    .filter(e => (e.type === 'slumber' || e.type === 'nap') && e.end_time)
-    .map(e => e.end_time);
-  if (!sleepEnds.length) return 'no data';
-  return `${formatDuration(now - Math.max(...sleepEnds))} awake`;
-}
-
-// Day-level predictions. Returns:
-//   bedtimeEta — predicted "last event of the day" timestamp, or null when not relevant
-//   anomalies  — array of short strings flagging unusual partial-day-so-far state
-// Both hide during active sleep.
-function predictions() {
-  const now = Date.now();
-  if (activeSleep()) return { bedtimeEta: null, anomalies: [], suppressed: 'sleep' };
-
-  const todayStart = startOfDay(now);
-  const hourNow = (now - todayStart) / 3600000; // 0..24
-
-  // Build per-day history once for both signals.
-  const histDays = [];
-  for (let i = 1; i <= 30 && histDays.length < 14; i++) {
-    const dStart = startOfDay(now - i * 86400000);
-    const dEnd = endOfDay(dStart);
-    const evts = state.events.filter(e => e.time >= dStart && e.time <= dEnd);
-    if (evts.length === 0) continue;
-    histDays.push({ start: dStart, evts });
-  }
-
-  // --- Bedtime ETA: average time-of-last-event across history, shown only when
-  // it's still meaningfully ahead of now (after 5pm, more than 30min away).
-  let bedtimeEta = null;
-  if (histDays.length >= 3 && hourNow >= 17) {
-    const lastMinsList = histDays.map(d => (Math.max(...d.evts.map(e => e.time)) - d.start) / 60000);
-    const avgLastMins = lastMinsList.reduce((a, b) => a + b, 0) / lastMinsList.length;
-    const eta = todayStart + avgLastMins * 60000;
-    if (eta > now + 30 * 60000) bedtimeEta = eta;
-  }
-
-  // --- Anomalies: today's partial counts vs typical-by-this-hour, plus an
-  // "overdue poop" flag based on the 90th percentile of poop-to-poop gaps.
-  const anomalies = [];
-  if (histDays.length >= 5) {
-    const typicalCountByHour = (type) => {
-      const counts = histDays.map(d =>
-        d.evts.filter(e => e.type === type && (e.time - d.start) / 3600000 <= hourNow).length
-      );
-      return counts.reduce((a, b) => a + b, 0) / counts.length;
-    };
-    const todayCount = (type) =>
-      state.events.filter(e => e.type === type && e.time >= todayStart && e.time <= now).length;
-
-    const checkCount = (type, label, minBase, threshold) => {
-      const avg = typicalCountByHour(type);
-      if (avg < minBase) return; // too sparse to compare meaningfully
-      const cur = todayCount(type);
-      const diff = cur - avg;
-      const pct = Math.round(Math.abs(diff) / avg * 100);
-      if (pct >= threshold) anomalies.push(`${label} ${diff > 0 ? '↑' : '↓'}${pct}%`);
-    };
-    checkCount('pee',  'pees',  3, 30);
-    checkCount('poop', 'poops', 1, 40);
-
-    // Overdue poop: time since last vs p90 of recent gaps, with a 12h floor.
-    const lastPoop = state.events.find(e => e.type === 'poop');
-    if (lastPoop) {
-      const sinceH = (now - lastPoop.time) / 3600000;
-      const poops = state.events
-        .filter(e => e.type === 'poop' && e.time >= now - 14 * 86400000)
-        .sort((a, b) => a.time - b.time);
-      const gaps = [];
-      for (let i = 1; i < poops.length; i++) {
-        gaps.push((poops[i].time - poops[i - 1].time) / 3600000);
-      }
-      if (gaps.length >= 5) {
-        const sorted = [...gaps].sort((a, b) => a - b);
-        const p90 = sorted[Math.floor(sorted.length * 0.9)];
-        if (sinceH > p90 && sinceH > 12) {
-          anomalies.push(`poop ${Math.round(sinceH)}h overdue`);
-        }
-      }
-    }
-  }
-
-  return { bedtimeEta, anomalies, suppressed: null };
-}
-
-// ============================================================
-// Timeline collapse (3-min pee+poop merge)
-// ============================================================
-function buildTimelineRows(events) {
-  const rows = [];
-  const used = new Set();
-  const sorted = [...events].sort((a, b) => b.time - a.time);
-  for (let i = 0; i < sorted.length; i++) {
-    if (used.has(sorted[i].id)) continue;
-    const e = sorted[i];
-    if (e.type === 'pee' || e.type === 'poop') {
-      const partnerType = e.type === 'pee' ? 'poop' : 'pee';
-      const partner = sorted.find(p =>
-        !used.has(p.id) && p.id !== e.id &&
-        p.type === partnerType &&
-        Math.abs(p.time - e.time) <= 3 * 60 * 1000
-      );
-      if (partner) {
-        used.add(e.id);
-        used.add(partner.id);
-        rows.push({ kind: 'combined', primary: e, partner: partner });
-        continue;
-      }
-    }
-    used.add(e.id);
-    rows.push({ kind: 'single', evt: e });
-  }
-  return rows;
-}
-
-// ============================================================
-// Tab routing
-// ============================================================
-function setTab(tab) {
-  state.tab = tab;
-  localStorage.setItem(LS.tab, tab);
-  document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
-  document.getElementById('tab-' + tab).classList.remove('hidden');
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === tab);
-  });
-  if (tab === 'today') renderToday();
-  if (tab === 'calendar') {
-    // Default to today's expanded view each time the tab opens
-    state.calCursor = monthStart(new Date());
-    state.calSelected = startOfDay(Date.now());
-    renderCalendar();
-  }
-  if (tab === 'growth') renderGrowth();
-}
-
-// ============================================================
-// TODAY tab
-// ============================================================
-function renderToday() {
-  const now = Date.now();
-
-  // Motive bars (Sims-style) — right column shows time-since-last; color carries urgency.
-  renderMotive('motive-bladder', bladderState(now), st => drainMotiveText('pee', st, now));
-  renderMotive('motive-poop',    poopState(now),    st => drainMotiveText('poop', st, now));
-  renderMotive('motive-energy',  energyState(now),  ()  => energyMotiveText(now));
-  renderMotive('motive-hunger',  hungerState(now),  st => drainMotiveText('meal', st, now));
-
-  const { bedtimeEta, anomalies } = predictions();
-  const bedtimeEl = document.getElementById('bedtime-eta');
-  const anomalyEl = document.getElementById('anomalies');
-  if (bedtimeEl) {
-    if (bedtimeEta) {
-      bedtimeEl.textContent = `Wind down ~${formatClock(bedtimeEta)}`;
-      bedtimeEl.classList.remove('hidden');
-    } else {
-      bedtimeEl.classList.add('hidden');
-    }
-  }
-  if (anomalyEl) {
-    if (anomalies.length) {
-      anomalyEl.textContent = anomalies.join(' · ');
-      anomalyEl.classList.remove('hidden');
-    } else {
-      anomalyEl.classList.add('hidden');
-    }
-  }
-
-  // Range tiles
-  renderRangeTiles();
-
-  // Timeline (today only)
-  const today = startOfDay(now);
-  const todayEvents = state.events.filter(e => e.time >= today);
-  document.getElementById('event-count').textContent = todayEvents.length + ' today';
-
-  const timeline = document.getElementById('timeline');
-  if (todayEvents.length === 0) {
-    timeline.innerHTML = '<div class="empty-state">Quiet so far today 🌙</div>';
+function renderStory() {
+  $("story-tools").hidden = filter === "patterns";
+  if (filter === "patterns") {
+    renderPatterns();
     return;
   }
-  const rows = buildTimelineRows(todayEvents);
-  timeline.innerHTML = '';
-  rows.forEach(row => timeline.appendChild(renderEventRow(row)));
-}
 
-function renderEventRow(row) {
-  const el = document.createElement('button');
-  el.className = 'event';
-  el.type = 'button';
-
-  if (row.kind === 'combined') {
-    const e1 = row.primary, e2 = row.partner;
-    const earlier = e1.time < e2.time ? e1 : e2;
-    const later = e1.time < e2.time ? e2 : e1;
-    const gapMin = Math.round((later.time - earlier.time) / 60000);
-    const tags = [...new Set([...(e1.tags || []), ...(e2.tags || [])])];
-    el.dataset.id = e1.id;
-
-    const tagPills = renderTagPills(tags, e1.who, e1);
-    const retroPill = (e1.retroactive || e2.retroactive) ? '<span class="tag retro">added later</span>' : '';
-    const displayLoc = e1.location || e2.location || locationLabel(e1.coords || e2.coords) || '';
-    const locText = displayLoc ? ` <span class="tag location">📍${escapeHtml(displayLoc)}</span>` : '';
-    el.innerHTML = `
-      <div class="event-icon">🟨💩</div>
-      <div class="event-main">
-        <div class="event-type">Pee + poop ${tagPills}${locText}${retroPill}</div>
-        <div class="event-meta">
-          <span>${formatClockLong(earlier.time)}</span><span>·</span>
-          <span>${gapMin}m apart</span><span>·</span>
-          <span>${timeAgo(earlier.time)}</span>
-        </div>
-      </div>
-    `;
-    el.addEventListener('click', () => openEditModal(e1));
-  } else {
-    const e = row.evt;
-    el.dataset.id = e.id;
-    const tagPills = renderTagPills(e.tags || [], e.who, e);
-    const retroPill = e.retroactive ? '<span class="tag retro">added later</span>' : '';
-    const precPill = e.time_precision === 'approx' ? '<span class="tag approx">~approx</span>' :
-                     e.time_precision === 'unknown' ? '<span class="tag unknown-time">~unknown</span>' : '';
-
-    let metaText = formatClockLong(e.time);
-    if (RANGE_TYPES.includes(e.type)) {
-      if (e.end_time) {
-        metaText = `${formatClock(e.time)} – ${formatClock(e.end_time)} · ${formatDuration(e.end_time - e.time)}`;
-      } else {
-        metaText = `${formatClock(e.time)} – now · ${formatDuration(Date.now() - e.time)} (active)`;
-      }
-    }
-
-    let label = TYPE_DEFS[e.type]?.label || e.type;
-    // Append subkind if present
-    const subkind = e.enrichment_kind || e.medication_name || e.episode_kind || e.appointment_kind || e.outing_kind || e.meal_type;
-    if (subkind) label += ` · ${subkind}`;
-
-    const noteText = e.note ? `<div class="event-note">"${escapeHtml(e.note)}"</div>` :
-                     e.description ? `<div class="event-note">${escapeHtml(e.description)}</div>` : '';
-    const displayLoc = e.location || ((e.type === 'pee' || e.type === 'poop') ? (locationLabel(e.coords) || '') : '');
-    const locText = displayLoc ? ` <span class="tag location">📍${escapeHtml(displayLoc)}</span>` : '';
-
-    el.innerHTML = `
-      <div class="event-icon">${TYPE_DEFS[e.type]?.icon || '?'}</div>
-      <div class="event-main">
-        <div class="event-type">${escapeHtml(label)} ${tagPills}${locText}${retroPill}${precPill}</div>
-        <div class="event-meta">
-          <span>${metaText}</span>${(e.type !== 'note' && !RANGE_TYPES.includes(e.type)) ? `<span>·</span><span>${timeAgo(e.time)}</span>` : ''}
-        </div>
-        ${noteText}
-      </div>
-    `;
-    el.addEventListener('click', () => openEditModal(e));
-  }
-  return el;
-}
-
-function renderTagPills(tags, who, evt) {
-  let pills = (tags || []).map(t => {
-    const def = TAG_DEFS.find(d => d.id === t);
-    const cls = def ? (def.group === 'context' ? t : 'where') : (t === 'indoors' || t === 'outdoors' ? 'where' : 'location');
-    return `<span class="tag ${cls}">${escapeHtml(t)}</span>`;
-  });
-  if (who && who !== 'us') {
-    const whoOpt = WHO_OPTIONS.find(w => w.id === who);
-    if (whoOpt) pills.push(`<span class="tag who-${who}">${escapeHtml(whoOpt.label)}</span>`);
-  }
-  return pills.join(' ');
-}
-
-function renderRangeTiles() {
-  // 'sleep' is a virtual tile — it represents any active nap or slumber. When the
-  // user starts one, classifySleepStart() picks the underlying type by clock.
-  renderRangeTile('sleep', activeSleep(), { icon: '💤', startLabel: 'Start sleep' });
-}
-function renderRangeTile(tileKey, active, opts) {
-  const tile = document.getElementById('range-' + tileKey);
-  if (!tile) return;
-  if (active) {
-    const dur = formatDuration(Date.now() - active.time);
-    const def = TYPE_DEFS[active.type];
-    tile.classList.add('active');
-    tile.innerHTML = `
-      <span class="icon">${def.icon}</span>
-      <div class="label">End ${active.type}</div>
-      <div class="sub">${dur}</div>
-    `;
-    tile.dataset.activeId = active.id;
-  } else {
-    tile.classList.remove('active');
-    tile.innerHTML = `
-      <span class="icon">${opts.icon}</span>
-      <div class="label">${opts.startLabel}</div>
-      <div class="sub">tap to begin</div>
-    `;
-    delete tile.dataset.activeId;
-  }
-}
-
-// ============================================================
-// CALENDAR tab
-// ============================================================
-function renderCalendar() {
-  const cursor = state.calCursor;
-  const monthDate = new Date(cursor);
-  document.getElementById('cal-month-label').textContent =
-    monthDate.toLocaleDateString([], { month: 'long', year: 'numeric' });
-  const isCurrentMonth = sameDay(monthStart(Date.now()), cursor);
-  document.getElementById('cal-next').disabled = isCurrentMonth;
-
-  const grid = document.getElementById('cal-grid');
-  grid.innerHTML = '';
-  ['S','M','T','W','T','F','S'].forEach(d => {
-    const h = document.createElement('div');
-    h.className = 'cal-dow';
-    h.textContent = d;
-    grid.appendChild(h);
-  });
-
-  const firstDow = monthDate.getDay();
-  const monthEnd = addMonths(cursor, 1) - 1;
-  const daysInMonth = new Date(monthEnd).getDate();
-
-  for (let i = 0; i < firstDow; i++) {
-    const e = document.createElement('div');
-    e.className = 'cal-day empty';
-    grid.appendChild(e);
-  }
-  const today = startOfDay(Date.now());
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dayStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), d).getTime();
-    const dayEnd = endOfDay(dayStart);
-    const cell = document.createElement('button');
-    cell.type = 'button';
-    cell.className = 'cal-day';
-    if (dayStart > today) cell.classList.add('future');
-    if (dayStart === today) cell.classList.add('today');
-    if (state.calSelected === dayStart) cell.classList.add('selected');
-
-    const dayEvents = state.events.filter(e => e.time >= dayStart && e.time <= dayEnd);
-    const pees = dayEvents.filter(e => e.type === 'pee').length;
-    const poops = dayEvents.filter(e => e.type === 'poop').length;
-    const accidents = dayEvents.filter(e => (e.tags || []).includes('accident')).length;
-    const episodes = dayEvents.filter(e => e.type === 'episode').length;
-    const vomits = dayEvents.filter(e => e.type === 'vomit').length;
-
-    let dotsHtml = '';
-    const peeShown = Math.min(pees, 6);
-    const poopShown = Math.min(poops, 4);
-    for (let i = 0; i < peeShown; i++) dotsHtml += '<span class="cal-dot pee"></span>';
-    for (let i = 0; i < poopShown; i++) dotsHtml += '<span class="cal-dot poop"></span>';
-    if (accidents > 0) dotsHtml += '<span class="cal-dot accident"></span>';
-    if (episodes > 0) dotsHtml += '<span class="cal-dot episode"></span>';
-    if (vomits > 0) dotsHtml += '<span class="cal-dot vomit"></span>';
-
-    cell.innerHTML = `
-      <span class="cal-day-num">${d}</span>
-      <div class="cal-day-dots">${dotsHtml}</div>
-    `;
-    if (dayStart <= today) {
-      cell.addEventListener('click', () => {
-        state.calSelected = dayStart;
-        renderCalendar();
-      });
-    }
-    grid.appendChild(cell);
-  }
-
-  const dayView = document.getElementById('day-view');
-  if (state.calSelected != null) {
-    dayView.classList.remove('hidden');
-    renderDayView(state.calSelected);
-  } else {
-    dayView.classList.add('hidden');
-  }
-}
-
-function renderDayView(dayStart) {
-  const dayEnd = endOfDay(dayStart);
-  const dayEvents = state.events.filter(e => e.time >= dayStart && e.time <= dayEnd)
-                                .sort((a, b) => a.time - b.time);
-  const labelEl = document.getElementById('day-view-label');
-  const dt = new Date(dayStart);
-  labelEl.textContent = dt.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
-
-  const strip = document.getElementById('day-strip');
-  let stripHtml = '';
-  for (let h = 0; h <= 24; h += 6) {
-    const x = (h / 24) * 100;
-    stripHtml += `<div class="day-strip-hour" style="left:${x}%">${h === 0 ? '' : (h > 12 ? (h-12)+'p' : h+'a')}</div>`;
-  }
-  dayEvents.forEach(e => {
-    const offset = (e.time - dayStart) / 86400000;
-    const x = Math.max(0, Math.min(1, offset)) * 100;
-    if (RANGE_TYPES.includes(e.type) && e.end_time) {
-      const xEnd = Math.max(0, Math.min(1, (e.end_time - dayStart) / 86400000)) * 100;
-      const w = Math.max(1, xEnd - x);
-      const colorVar = `var(--${TYPE_DEFS[e.type].color})`;
-      stripHtml += `<div class="day-strip-range" style="left:${x}%;width:${w}%;background:${colorVar};"></div>`;
-    } else {
-      const colorVar = `var(--${TYPE_DEFS[e.type]?.color || 'gap'})`;
-      stripHtml += `<div class="day-strip-mark" style="left:${x}%;background:${colorVar};"></div>`;
-    }
-  });
-  strip.innerHTML = stripHtml;
-
-  const pees = dayEvents.filter(e => e.type === 'pee').length;
-  const poops = dayEvents.filter(e => e.type === 'poop').length;
-  const accidents = dayEvents.filter(e => (e.tags || []).includes('accident')).length;
-  const meals = dayEvents.filter(e => e.type === 'meal').length;
-  const napMs = dayEvents.filter(e => e.type === 'nap' && e.end_time)
-                        .reduce((sum, e) => sum + (e.end_time - e.time), 0);
-  const slumberMs = dayEvents.filter(e => e.type === 'slumber' && e.end_time)
-                            .reduce((sum, e) => sum + (e.end_time - e.time), 0);
-  const walkMs = dayEvents.filter(e => e.type === 'walk' && e.end_time)
-                         .reduce((sum, e) => sum + (e.end_time - e.time), 0);
-
-  document.getElementById('day-pees').textContent = pees;
-  document.getElementById('day-poops').textContent = poops + (accidents > 0 ? ` (${accidents}🚨)` : '');
-  document.getElementById('day-meals').textContent = meals;
-  document.getElementById('day-naps').textContent = napMs > 0 ? formatDuration(napMs) : '—';
-  document.getElementById('day-slumber').textContent = slumberMs > 0 ? formatDuration(slumberMs) : '—';
-  document.getElementById('day-walks').textContent = walkMs > 0 ? formatDuration(walkMs) : '—';
-  document.getElementById('day-events').textContent = dayEvents.length;
-
-  const vsEl = document.getElementById('day-vs');
-  const monthAvgPees = avgPerDayOverPast(30, 'pee', dayStart);
-  const monthAvgPoops = avgPerDayOverPast(30, 'poop', dayStart);
-  if (monthAvgPees > 0) {
-    const vsPees = pees - monthAvgPees;
-    const vsPoops = poops - monthAvgPoops;
-    const arrowPee = vsPees > 0 ? '↑' : (vsPees < 0 ? '↓' : '·');
-    const arrowPoop = vsPoops > 0 ? '↑' : (vsPoops < 0 ? '↓' : '·');
-    vsEl.textContent = `vs 30-day avg: pees ${arrowPee} (${monthAvgPees.toFixed(1)}), poops ${arrowPoop} (${monthAvgPoops.toFixed(1)})`;
-  } else {
-    vsEl.textContent = '';
-  }
-
-  const list = document.getElementById('day-list');
-  if (dayEvents.length === 0) {
-    list.innerHTML = '<div class="empty-state">No events on this day.</div>';
+  let events = facts();
+  const query = $("story-search").value.toLowerCase().trim();
+  if (filter === "moments")
+    events = events.filter((e) => e.type === "moment" || e.photos?.length);
+  if (filter === "poop")
+    events = events.filter((e) => e.type === "poop" && e.photos?.length);
+  if (query)
+    events = events.filter((e) =>
+      `${e.note || ""} ${eventLabel(e)} ${e.location || ""} ${(e.tags || []).join(" ")} ${person(e.loggedBy)}`
+        .toLowerCase()
+        .includes(query),
+    );
+  if ($("history-type").value)
+    events = events.filter((e) => e.type === $("history-type").value);
+  if ($("history-from").value)
+    events = events.filter((e) => dayKey(e.time) >= $("history-from").value);
+  if ($("history-to").value)
+    events = events.filter((e) => dayKey(e.time) <= $("history-to").value);
+  $("story-count").textContent =
+    filter === "poop"
+      ? `${events.reduce((n, e) => n + (e.photos?.length || 0), 0)} ${events.reduce((n, e) => n + (e.photos?.length || 0), 0) === 1 ? "photo" : "photos"} · ${events.length} ${events.length === 1 ? "entry" : "entries"}`
+      : `${events.length.toLocaleString()} ${filter === "care" ? "entries" : "moments"}`;
+  $("load-more").hidden = events.length <= limit;
+  if (!events.length) {
+    $("story-items").innerHTML =
+      `<div class="empty card"><div class="big">${filter === "poop" ? "💩" : "♡"}</div><h3>${filter === "poop" ? "His finest work." : filter === "care" ? "Nothing here yet." : "The moments we’ll keep."}</h3><p>${query ? "Try a different search." : filter === "poop" ? "Add a photo after logging a poop, or open an older poop entry and add one there." : "A funny face. A little milestone. An ordinary afternoon with our boy."}</p><div class="button-row"><button class="secondary small" data-act="${filter === "poop" ? "find-poop" : "moment"}">${filter === "poop" ? "Find a poop entry" : "Add a moment"}</button></div></div>`;
     return;
   }
-  list.innerHTML = '';
-  dayEvents.forEach(e => {
-    const row = document.createElement('div');
-    row.className = 'day-list-row';
-    let timeLabel, icon, label;
-    if (RANGE_TYPES.includes(e.type)) {
-      const endLabel = e.end_time ? formatClock(e.end_time) : 'now';
-      timeLabel = `${formatClock(e.time)}–${endLabel}`;
-      icon = TYPE_DEFS[e.type].icon;
-      const dur = e.end_time ? formatDuration(e.end_time - e.time) : 'active';
-      label = `${TYPE_DEFS[e.type].label} (${dur})`;
-    } else {
-      timeLabel = formatClock(e.time);
-      icon = TYPE_DEFS[e.type]?.icon || '?';
-      label = TYPE_DEFS[e.type]?.label || e.type;
-    }
-    const subkind = e.enrichment_kind || e.medication_name || e.episode_kind || e.appointment_kind || e.outing_kind || e.meal_type;
-    if (subkind) label += ` · ${subkind}`;
-
-    let extras = '';
-    if (e.tags && e.tags.length) extras += ' ' + e.tags.map(t => `<span class="day-tags">${escapeHtml(t)}</span>`).join('');
-    if (e.who && e.who !== 'us') {
-      const w = WHO_OPTIONS.find(w => w.id === e.who);
-      if (w) extras += ` <span class="day-tags">${escapeHtml(w.label)}</span>`;
-    }
-    const calLoc = e.location || ((e.type === 'pee' || e.type === 'poop') ? locationLabel(e.coords) : null);
-    if (calLoc) extras += ` <span class="day-tags">📍${escapeHtml(calLoc)}</span>`;
-    if (e.note) extras += ` <span class="day-tags">"${escapeHtml(e.note)}"</span>`;
-    if (e.description) extras += ` <span class="day-tags">${escapeHtml(e.description)}</span>`;
-
-    row.innerHTML = `
-      <span class="day-list-time">${timeLabel}</span>
-      <span class="day-list-icon">${icon}</span>
-      <span class="day-list-text">${escapeHtml(label)}${extras}</span>
-    `;
-    row.addEventListener('click', () => openEditModal(e));
-    list.appendChild(row);
-  });
-}
-
-function avgPerDayOverPast(days, type, beforeTs) {
-  const cutoff = beforeTs - days * 86400000;
-  const counts = {};
-  state.events.forEach(e => {
-    if (e.type !== type) return;
-    if (e.time < cutoff || e.time >= beforeTs) return;
-    const day = startOfDay(e.time);
-    counts[day] = (counts[day] || 0) + 1;
-  });
-  const dayCount = Object.keys(counts).length;
-  if (dayCount === 0) return 0;
-  return Object.values(counts).reduce((a, b) => a + b, 0) / dayCount;
-}
-
-// ============================================================
-// GROWTH tab
-// ============================================================
-function renderGrowth() {
-  const ageNow = ageAt(Date.now());
-  document.getElementById('growth-age').textContent = ageNow.label + ' old';
-  const days = new Set(state.events.map(e => startOfDay(e.time))).size;
-  document.getElementById('growth-days').textContent = days + ' days of data';
-  const progressPct = Math.min(100, Math.round((ageNow.months / 18) * 100));
-  document.getElementById('growth-progress-bar').style.width = progressPct + '%';
-
-  const buckets = bucketByMonthOfLife();
-  renderStatCard('stat-pees',     buckets, 'pees per day',     'count', d => d.pees);
-  renderStatCard('stat-accidents',buckets, 'accidents per week','count', d => d.accidents * 7);
-  renderStatCard('stat-hold',     buckets, 'longest pee gap',  'hours', d => d.longestPeeGapHrs);
-  renderStatCard('stat-sleep',    buckets, 'sleep per day',    'hours', d => d.sleepHrs);
-  renderStatCard('stat-active',   buckets, 'active hours',     'hours', d => d.activeHrs);
-  renderStatCard('stat-bedtime',  buckets, 'avg bedtime',      'clock', d => d.bedtimeHr, true);
-  renderMilestones();
-}
-
-function bucketByMonthOfLife() {
-  const bucketsByMonth = new Map();
-  const eventsByDay = new Map();
-  state.events.forEach(e => {
-    const day = startOfDay(e.time);
-    if (!eventsByDay.has(day)) eventsByDay.set(day, []);
-    eventsByDay.get(day).push(e);
-  });
-
-  for (const [day, events] of eventsByDay) {
-    const ageOnDay = ageAt(day);
-    const monthOfLife = Math.floor(ageOnDay.months);
-    if (monthOfLife < 0) continue;
-    if (!bucketsByMonth.has(monthOfLife)) {
-      bucketsByMonth.set(monthOfLife, { pees: [], poops: [], accidents: [], napHrs: [], slumberHrs: [], activeHrs: [], longestPeeGapHrs: [], bedtimeHr: [] });
-    }
-    const b = bucketsByMonth.get(monthOfLife);
-    const pees = events.filter(e => e.type === 'pee').sort((x, y) => x.time - y.time);
-    const poops = events.filter(e => e.type === 'poop');
-    const accidents = events.filter(e => (e.tags || []).includes('accident'));
-    b.pees.push(pees.length);
-    b.poops.push(poops.length);
-    b.accidents.push(accidents.length);
-    const napMs = events.filter(e => e.type === 'nap' && e.end_time).reduce((s, e) => s + (e.end_time - e.time), 0);
-    const slumberMs = events.filter(e => e.type === 'slumber' && e.end_time).reduce((s, e) => s + (e.end_time - e.time), 0);
-    b.napHrs.push(napMs / 3600000);
-    b.slumberHrs.push(slumberMs / 3600000);
-
-    // Active hours: between slumber.end and slumber.start, fall back to first→last event
-    const slumberOn = events.find(e => e.type === 'slumber');
-    if (slumberOn && slumberOn.end_time) {
-      const startTs = slumberOn.end_time;
-      const endTs = events.filter(e => e.type === 'slumber').slice(-1)[0]?.time || slumberOn.end_time;
-      if (endTs > startTs) {
-        b.activeHrs.push((endTs - startTs) / 3600000);
-        const ld = new Date(endTs);
-        b.bedtimeHr.push(ld.getHours() + ld.getMinutes() / 60);
-      }
-    } else if (events.length >= 2) {
-      const firstT = Math.min(...events.map(e => e.time));
-      const lastT = Math.max(...events.map(e => e.time));
-      b.activeHrs.push((lastT - firstT) / 3600000);
-      const lastDate = new Date(lastT);
-      b.bedtimeHr.push(lastDate.getHours() + lastDate.getMinutes() / 60);
-    }
-    if (pees.length >= 2) {
-      let maxGap = 0;
-      for (let i = 1; i < pees.length; i++) {
-        const gap = pees[i].time - pees[i-1].time;
-        if (gap < 8 * 3600 * 1000) maxGap = Math.max(maxGap, gap);
-      }
-      if (maxGap > 0) b.longestPeeGapHrs.push(maxGap / 3600000);
-    }
-  }
-
-  const arr = [];
-  const months = [...bucketsByMonth.keys()].sort((a, b) => a - b);
-  for (const m of months) {
-    const b = bucketsByMonth.get(m);
-    arr.push({
-      month: m,
-      pees: avg(b.pees),
-      poops: avg(b.poops),
-      accidents: avg(b.accidents),
-      napHrs: avg(b.napHrs),
-      slumberHrs: avg(b.slumberHrs),
-      sleepHrs: avg(b.napHrs) + avg(b.slumberHrs),
-      activeHrs: avg(b.activeHrs),
-      longestPeeGapHrs: b.longestPeeGapHrs.length ? Math.max(...b.longestPeeGapHrs) : 0,
-      bedtimeHr: avg(b.bedtimeHr),
-      days: b.pees.length
-    });
-  }
-  return arr;
-}
-
-function avg(arr) {
-  if (!arr.length) return 0;
-  return arr.reduce((a, b) => a + b, 0) / arr.length;
-}
-
-function renderStatCard(id, buckets, title, unit, accessor, isClock) {
-  const card = document.getElementById(id);
-  if (!card) return;
-  const points = buckets.map(b => ({ x: b.month, y: accessor(b), days: b.days })).filter(p => p.y > 0);
-  card.querySelector('.stat-card-title').textContent = title;
-  const currentEl = card.querySelector('.stat-card-current');
-  const trendEl = card.querySelector('.stat-card-trend');
-  const chartEl = card.querySelector('.stat-chart');
-
-  if (points.length === 0) {
-    currentEl.textContent = '—';
-    trendEl.textContent = 'need more data';
-    chartEl.innerHTML = '';
+  if (filter === "care") {
+    $("story-items").innerHTML = events
+      .slice(0, limit)
+      .map(
+        (e, i, a) =>
+          `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? `<p class="eyebrow" style="margin:23px 0 10px">${dateLabel(e.time)}</p>` : ""}${entry(e)}`,
+      )
+      .join("");
     return;
   }
-  const last = points[points.length - 1];
-  if (isClock) {
-    const h = Math.floor(last.y);
-    const m = Math.round((last.y - h) * 60);
-    currentEl.textContent = `${h % 12 === 0 ? 12 : h % 12}:${m.toString().padStart(2,'0')}${h < 12 ? 'am' : 'pm'}`;
-  } else {
-    currentEl.innerHTML = `${last.y.toFixed(1)}<span class="unit"> ${unit === 'count' ? '' : unit}</span>`;
-  }
-  if (points.length >= 2) {
-    const first = points[0];
-    const delta = last.y - first.y;
-    if (Math.abs(delta) < 0.1) {
-      trendEl.textContent = 'stable';
-      trendEl.classList.remove('up', 'down');
-    } else {
-      const sign = delta > 0 ? '+' : '';
-      trendEl.textContent = `${sign}${delta.toFixed(1)} since ${first.x}mo`;
-      trendEl.classList.toggle('up', delta > 0);
-      trendEl.classList.toggle('down', delta < 0);
+  $("story-items").innerHTML = `<div class="photo-grid">${events
+    .slice(0, limit)
+    .flatMap((e) =>
+      (filter === "poop" ? e.photos || [] : [e.photos?.[0] || null]).map(
+        (photo) =>
+          `<button class="memory-card" data-open="${esc(e.id)}">${photo ? `<img data-photo="${esc(photo.id)}" alt="${esc(filter === "poop" ? "Winnie’s poop photo" : e.note || "A moment with Winnie")}" loading="lazy">` : '<div class="empty big">♡</div>'}<div><strong>${esc(e.note || (e.type === "poop" ? "His finest work." : "A little moment with Winnie."))}</strong><small>${dateLabel(e.time)}${e.pending ? " · Pending" : ""}</small></div></button>`,
+      ),
+    )
+    .join("")}</div>`;
+  hydratePhotos();
+}
+async function hydratePhotos() {
+  for (const img of document.querySelectorAll("img[data-photo]")) {
+    const id = img.dataset.photo;
+    if (photoURLs.has(id)) {
+      img.src = photoURLs.get(id);
+      continue;
     }
-  } else {
-    trendEl.textContent = `at ${last.x} months old`;
-  }
-
-  const w = 240, h = 40;
-  const xs = points.map(p => p.x), ys = points.map(p => p.y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const xRange = maxX - minX || 1;
-  const yRange = maxY - minY || 1;
-  const px = points.map(p => ({
-    x: ((p.x - minX) / xRange) * (w - 8) + 4,
-    y: h - 4 - ((p.y - minY) / yRange) * (h - 12)
-  }));
-  let path = '';
-  px.forEach((p, i) => path += (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ' ');
-  const dots = px.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="var(--info-strong)"/>`).join('');
-  chartEl.innerHTML = `
-    <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="none">
-      <path d="${path}" stroke="var(--info-strong)" stroke-width="1.5" fill="none" />
-      ${dots}
-    </svg>
-  `;
-}
-
-function renderMilestones() {
-  const list = document.getElementById('milestone-list');
-  const milestones = [];
-
-  // First clean day
-  const dayMap = new Map();
-  state.events.forEach(e => {
-    const d = startOfDay(e.time);
-    if (!dayMap.has(d)) dayMap.set(d, { pees: 0, accidents: 0 });
-    const day = dayMap.get(d);
-    if (e.type === 'pee' || e.type === 'poop') day.pees++;
-    if ((e.tags || []).includes('accident')) day.accidents++;
-  });
-  const days = [...dayMap.entries()].sort((a, b) => a[0] - b[0]);
-  const firstAccidentDay = days.find(([, v]) => v.accidents > 0);
-  if (firstAccidentDay) {
-    const cleanDay = days.find(([d, v]) => d > firstAccidentDay[0] && v.pees > 0 && v.accidents === 0);
-    if (cleanDay) {
-      milestones.push({ title: 'First clean day', when: new Date(cleanDay[0]).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) });
-    }
-  }
-  // Longest pee gap
-  const peeEvents = state.events.filter(e => e.type === 'pee').sort((a, b) => a.time - b.time);
-  let bestGap = 0, bestGapAt = null;
-  for (let i = 1; i < peeEvents.length; i++) {
-    const gap = peeEvents[i].time - peeEvents[i-1].time;
-    if (gap < 12 * 3600 * 1000 && gap > bestGap) {
-      bestGap = gap;
-      bestGapAt = peeEvents[i].time;
-    }
-  }
-  if (bestGap > 0) {
-    milestones.push({ title: `Longest pee hold (${formatDuration(bestGap)})`, when: new Date(bestGapAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) });
-  }
-  // Longest slumber
-  const slumbers = state.events.filter(e => e.type === 'slumber' && e.end_time);
-  if (slumbers.length > 0) {
-    const longest = slumbers.reduce((a, b) => (a.end_time - a.time > b.end_time - b.time) ? a : b);
-    milestones.push({ title: `Longest slumber (${formatDuration(longest.end_time - longest.time)})`, when: new Date(longest.time).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) });
-  }
-  // First event
-  if (state.events.length > 0) {
-    const first = state.events[state.events.length - 1];
-    milestones.push({ title: 'Tracking started', when: new Date(first.time).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) });
-  }
-
-  if (milestones.length === 0) {
-    list.innerHTML = '<div class="empty-state">Milestones will appear as data builds up.</div>';
-  } else {
-    list.innerHTML = milestones.map(m => `
-      <div class="milestone-row">
-        <span>${escapeHtml(m.title)}</span>
-        <span class="when">${escapeHtml(m.when)}</span>
-      </div>
-    `).join('');
-  }
-}
-
-// ============================================================
-// Modal: Add/Edit (manual add now covers everything)
-// ============================================================
-function resetModal() {
-  state.modalState = blankModalState();
-  state.editingId = null;
-  document.querySelectorAll('#type-grid-v3 .type-btn-v3').forEach(b => b.classList.remove('selected'));
-  document.querySelectorAll('#preset-row .preset-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelectorAll('#tag-row .tag-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelectorAll('#who-row .who-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelector('#who-row .who-btn[data-who="us"]').classList.add('selected');
-  document.querySelectorAll('#precision-row .precision-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelector('#precision-row .precision-btn[data-prec="exact"]').classList.add('selected');
-  document.getElementById('custom-time-row').classList.add('hidden');
-  document.getElementById('end-time-row').classList.add('hidden');
-  document.getElementById('subkind-row').classList.add('hidden');
-  document.getElementById('location-row').classList.add('hidden');
-  document.getElementById('event-note').value = '';
-  document.getElementById('event-subkind').value = '';
-  document.getElementById('event-location').value = '';
-  document.getElementById('modal-delete').classList.add('hidden');
-}
-
-function openTagSheet(forType) {
-  resetModal();
-  document.getElementById('modal-title').textContent = `Log ${TYPE_DEFS[forType].label} with tags`;
-  state.modalState.type = forType;
-  document.querySelector(`#type-grid-v3 .type-btn-v3[data-type="${forType}"]`).classList.add('selected');
-  refreshTagAvailability();
-  toggleTypeSpecificFields();
-  document.getElementById('modal-backdrop').classList.add('visible');
-}
-
-function openManualAdd() {
-  resetModal();
-  document.getElementById('modal-title').textContent = 'Manual add';
-  refreshTagAvailability();
-  document.getElementById('modal-backdrop').classList.add('visible');
-}
-
-function openEditModal(evt) {
-  resetModal();
-  state.editingId = evt.id;
-  document.getElementById('modal-title').textContent = 'Edit event';
-  document.getElementById('modal-delete').classList.remove('hidden');
-  state.modalState.type = evt.type;
-  state.modalState.tags = [...(evt.tags || [])];
-  state.modalState.who = evt.who || 'us';
-  state.modalState.precision = evt.time_precision || 'exact';
-  document.querySelector(`#type-grid-v3 .type-btn-v3[data-type="${evt.type}"]`)?.classList.add('selected');
-  state.modalState.tags.forEach(t => {
-    document.querySelector(`#tag-row .tag-btn[data-tag="${t}"]`)?.classList.add('selected');
-  });
-  document.querySelectorAll('#who-row .who-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelector(`#who-row .who-btn[data-who="${state.modalState.who}"]`)?.classList.add('selected');
-  document.querySelectorAll('#precision-row .precision-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelector(`#precision-row .precision-btn[data-prec="${state.modalState.precision}"]`)?.classList.add('selected');
-  document.querySelector('#preset-row .preset-btn[data-mins="custom"]').classList.add('selected');
-  state.modalState.mins = 'custom';
-  document.getElementById('custom-time').value = toLocalISO(evt.time);
-  document.getElementById('custom-time-row').classList.remove('hidden');
-  if (RANGE_TYPES.includes(evt.type)) {
-    document.getElementById('end-time-row').classList.remove('hidden');
-    document.getElementById('end-time').value = evt.end_time ? toLocalISO(evt.end_time) : '';
-  }
-  document.getElementById('event-note').value = evt.note || '';
-  // Show the effective location: manual override if set, else GPS-resolved zone/city.
-  document.getElementById('event-location').value = evt.location || locationLabel(evt.coords) || '';
-  const subkind = evt.enrichment_kind || evt.medication_name || evt.episode_kind || evt.appointment_kind || evt.outing_kind || evt.meal_type;
-  document.getElementById('event-subkind').value = subkind || '';
-  refreshTagAvailability();
-  toggleTypeSpecificFields();
-  document.getElementById('modal-backdrop').classList.add('visible');
-}
-
-function toLocalISO(ts) {
-  const d = new Date(ts);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
-function closeModal() { document.getElementById('modal-backdrop').classList.remove('visible'); }
-
-function refreshTagAvailability() {
-  const type = state.modalState.type;
-  document.querySelectorAll('#tag-row .tag-btn').forEach(btn => {
-    const tag = btn.dataset.tag;
-    const def = TAG_DEFS.find(t => t.id === tag);
-    if (!type || !def) {
-      btn.classList.remove('dim'); btn.disabled = false;
-    } else if (def.appliesTo.includes(type)) {
-      btn.classList.remove('dim'); btn.disabled = false;
-    } else {
-      btn.classList.add('dim'); btn.disabled = true;
-      btn.classList.remove('selected');
-      state.modalState.tags = state.modalState.tags.filter(t => t !== tag);
-    }
-  });
-}
-
-function toggleTypeSpecificFields() {
-  const type = state.modalState.type;
-  const endTimeRow = document.getElementById('end-time-row');
-  const subkindRow = document.getElementById('subkind-row');
-  const subkindLabel = document.getElementById('subkind-label');
-  const subkindInput = document.getElementById('event-subkind');
-  const locationRow = document.getElementById('location-row');
-
-  if (type && RANGE_TYPES.includes(type)) {
-    endTimeRow.classList.remove('hidden');
-  } else {
-    endTimeRow.classList.add('hidden');
-  }
-
-  if (type === 'enrichment') {
-    subkindRow.classList.remove('hidden');
-    subkindLabel.textContent = 'Enrichment kind';
-    subkindInput.placeholder = 'e.g. kong, lick mat, snuffle ball';
-  } else if (type === 'medication') {
-    subkindRow.classList.remove('hidden');
-    subkindLabel.textContent = 'Medication name';
-    subkindInput.placeholder = 'e.g. trazodone, CBD';
-  } else if (type === 'episode') {
-    subkindRow.classList.remove('hidden');
-    subkindLabel.textContent = 'Episode kind';
-    subkindInput.placeholder = 'e.g. barking, distress, tweak';
-  } else if (type === 'appointment') {
-    subkindRow.classList.remove('hidden');
-    subkindLabel.textContent = 'Appointment kind';
-    subkindInput.placeholder = 'e.g. vet, grooming, training class';
-  } else if (type === 'outing') {
-    subkindRow.classList.remove('hidden');
-    subkindLabel.textContent = 'Outing kind';
-    subkindInput.placeholder = 'e.g. puppy class, park, shopping';
-  } else if (type === 'meal') {
-    subkindRow.classList.remove('hidden');
-    subkindLabel.textContent = 'Meal kind (optional)';
-    subkindInput.placeholder = 'breakfast, dinner, snack';
-  } else {
-    subkindRow.classList.add('hidden');
-  }
-
-  // Location row: applies to anything physical
-  if (type && ['pee', 'poop', 'walk', 'outing', 'appointment', 'meal'].includes(type)) {
-    locationRow.classList.remove('hidden');
-  } else {
-    locationRow.classList.add('hidden');
-  }
-}
-
-// ============================================================
-// Undo / Setup / Diagnostics
-// ============================================================
-function showUndo(evt) {
-  state.lastUndo = evt;
-  const bar = document.getElementById('undo-bar');
-  const text = document.getElementById('undo-text');
-  text.textContent = `Logged ${TYPE_DEFS[evt.type].icon} ${TYPE_DEFS[evt.type].label}`;
-  bar.classList.add('visible');
-  if (state.undoTimer) clearTimeout(state.undoTimer);
-  state.undoTimer = setTimeout(() => {
-    bar.classList.remove('visible');
-    state.lastUndo = null;
-  }, 6000);
-}
-
-function showSetup() {
-  document.getElementById('setup').classList.remove('hidden');
-  document.getElementById('main').classList.add('hidden');
-}
-async function showApp() {
-  document.getElementById('setup').classList.add('hidden');
-  document.getElementById('main').classList.remove('hidden');
-  loadFromCache();
-  setTab(state.tab);
-  if (state.mode === 'shared') {
-    syncFromRemote({ retries: 2 }).catch(e => console.error('initial sync:', e));
-  }
-}
-
-async function runDiagnostics() {
-  const out = document.getElementById('diag-output');
-  out.classList.remove('hidden');
-  out.textContent = 'Running tests...\n';
-  const log = (m) => { out.textContent += m + '\n'; };
-  const ok = (m) => log('✅ ' + m);
-  const bad = (m) => log('❌ ' + m);
-  const info = (m) => log('ℹ️  ' + m);
-
-  log('--- Setup ---');
-  info('Mode: ' + (state.mode || 'not set'));
-  info('Bin ID: ' + (state.binId ? state.binId.slice(0,8) + '...' + state.binId.slice(-4) : 'none'));
-  info('Online: ' + (navigator.onLine ? 'yes' : 'no'));
-  info('Schema version: v' + SCHEMA_VERSION);
-  info('Local cached events: ' + (JSON.parse(localStorage.getItem(LS.local) || '[]')).length);
-  log('');
-  if (state.mode === 'local') { info("Device-only mode — backend tests skipped."); return; }
-  if (!state.binId) { bad('No bin ID set.'); return; }
-  if (!navigator.onLine) { bad('Phone is offline.'); return; }
-
-  log('--- Read test ---');
-  let remoteEvents = null;
-  try {
-    const t0 = Date.now();
-    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`);
-    info('Response: ' + res.status + ' (' + (Date.now() - t0) + 'ms)');
-    if (!res.ok) { bad('Read failed.'); return; }
-    const data = await res.json();
-    remoteEvents = data.events || [];
-    ok('Read OK. Remote has ' + remoteEvents.length + ' events.');
-  } catch (e) { bad('Read threw: ' + e.message); return; }
-  log('');
-  log('--- Write test ---');
-  const probeId = 'diag-' + Date.now().toString(36);
-  const probeEvents = [...remoteEvents, { id: probeId, type: 'meal', time: Date.now(), tags: ['_diagnostic'], who: 'us', note: '__diagnostic_probe__', retroactive: false, created: Date.now() }];
-  try {
-    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ events: probeEvents, schemaVersion: SCHEMA_VERSION })
-    });
-    if (!res.ok) { bad('Write failed.'); return; }
-    ok('Write OK.');
-  } catch (e) { bad('Write threw: ' + e.message); return; }
-  log('--- Read-back ---');
-  try {
-    const res = await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`);
-    const data = await res.json();
-    if ((data.events || []).find(e => e.id === probeId)) ok('Round-trip works!');
-    else { bad('Probe NOT found.'); return; }
-  } catch (e) { bad('Read-back threw: ' + e.message); return; }
-  log('--- Cleanup ---');
-  try {
-    await fetch(`/.netlify/functions/data?key=${encodeURIComponent(state.binId)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ events: remoteEvents, schemaVersion: SCHEMA_VERSION })
-    });
-    ok('Probe removed.');
-  } catch (e) { bad('Cleanup failed: ' + e.message); }
-  log('--- All tests passed. ---');
-}
-
-// ============================================================
-// Init: wire up all handlers
-// ============================================================
-function init() {
-  // Tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => setTab(btn.dataset.tab));
-  });
-
-  // Log-tile clicks (point events — pee/poop/meal). Sleep is handled by the
-  // range-type handler below.
-  document.querySelectorAll('.log-tile[data-type]').forEach(tile => {
-    tile.addEventListener('click', (e) => {
-      if (e.target.closest('.tag-pill')) return;
-      const type = tile.dataset.type;
-      const evt = logPoint(type);
-      showUndo(evt);
-      renderToday();
-    });
-  });
-  document.querySelectorAll('.tag-pill').forEach(pill => {
-    pill.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openTagSheet(pill.dataset.type);
-    });
-  });
-
-  // Range tiles
-  document.querySelectorAll('[data-range-type]').forEach(tile => {
-    tile.addEventListener('click', () => {
-      const tileKey = tile.dataset.rangeType;
-      const activeId = tile.dataset.activeId;
-      if (activeId) {
-        endRange(activeId);
-      } else {
-        // 'sleep' is a virtual tile — pick nap or slumber based on clock at start.
-        const type = tileKey === 'sleep' ? classifySleepStart() : tileKey;
-        startRange(type);
-      }
-      renderRangeTiles();
-      renderToday();
-    });
-  });
-
-  // Live ticker
-  if (!state.rangeTickInterval) {
-    state.rangeTickInterval = setInterval(() => {
-      if (state.tab === 'today') {
-        renderRangeTiles();
-      }
-    }, 30000);
-  }
-
-  // Undo
-  document.getElementById('undo-btn').addEventListener('click', () => {
-    if (state.lastUndo) {
-      deleteEvent(state.lastUndo.id);
-      document.getElementById('undo-bar').classList.remove('visible');
-      state.lastUndo = null;
-      if (state.undoTimer) clearTimeout(state.undoTimer);
-      renderToday();
-    }
-  });
-
-  // Manual add (single button now, no separate covered-gap)
-  document.getElementById('manual-add-btn').addEventListener('click', openManualAdd);
-
-  // Modal: type buttons
-  document.querySelectorAll('#type-grid-v3 .type-btn-v3').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#type-grid-v3 .type-btn-v3').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      state.modalState.type = btn.dataset.type;
-      refreshTagAvailability();
-      toggleTypeSpecificFields();
-    });
-  });
-
-  // Modal: time presets
-  document.querySelectorAll('#preset-row .preset-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#preset-row .preset-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      state.modalState.mins = btn.dataset.mins;
-      const customRow = document.getElementById('custom-time-row');
-      const customInput = document.getElementById('custom-time');
-      if (btn.dataset.mins === 'custom') {
-        customRow.classList.remove('hidden');
-        if (!customInput.value) customInput.value = toLocalISO(Date.now());
-      } else {
-        customRow.classList.add('hidden');
-      }
-    });
-  });
-
-  // Precision buttons
-  document.querySelectorAll('#precision-row .precision-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#precision-row .precision-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      state.modalState.precision = btn.dataset.prec;
-    });
-  });
-
-  // Tags
-  document.querySelectorAll('#tag-row .tag-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.disabled) return;
-      const tag = btn.dataset.tag;
-      const def = TAG_DEFS.find(t => t.id === tag);
-      // Single-select within group (where group)
-      if (def && def.single) {
-        const groupTags = TAG_DEFS.filter(t => t.group === def.group).map(t => t.id);
-        const wasSelected = state.modalState.tags.includes(tag);
-        state.modalState.tags = state.modalState.tags.filter(t => !groupTags.includes(t));
-        document.querySelectorAll('#tag-row .tag-btn').forEach(b => {
-          if (groupTags.includes(b.dataset.tag)) b.classList.remove('selected');
+    if (photoLoading.has(id)) continue;
+    photoLoading.add(id);
+    sync
+      .photo(id)
+      .then((blob) => {
+        photoURLs.set(id, URL.createObjectURL(blob));
+        document.querySelectorAll("img[data-photo]").forEach((el) => {
+          if (el.dataset.photo === id) el.src = photoURLs.get(id);
         });
-        if (!wasSelected) {
-          state.modalState.tags.push(tag);
-          btn.classList.add('selected');
-        }
-      } else {
-        if (state.modalState.tags.includes(tag)) {
-          state.modalState.tags = state.modalState.tags.filter(t => t !== tag);
-          btn.classList.remove('selected');
-        } else {
-          state.modalState.tags.push(tag);
-          btn.classList.add('selected');
-        }
-      }
-    });
-  });
-
-  // Who
-  document.querySelectorAll('#who-row .who-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#who-row .who-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      state.modalState.who = btn.dataset.who;
-    });
-  });
-
-  // Modal save / cancel / delete
-  document.getElementById('modal-cancel').addEventListener('click', closeModal);
-  document.getElementById('modal-backdrop').addEventListener('click', (e) => {
-    if (e.target.id === 'modal-backdrop') closeModal();
-  });
-  document.getElementById('modal-delete').addEventListener('click', () => {
-    if (state.editingId && confirm('Delete this event?')) {
-      deleteEvent(state.editingId);
-      closeModal();
-      renderToday();
-      if (state.tab === 'calendar') renderCalendar();
-    }
-  });
-  document.getElementById('modal-save').addEventListener('click', () => {
-    if (!state.modalState.type) { alert('Pick an event type'); return; }
-    let time;
-    if (state.modalState.mins === 'custom') {
-      const v = document.getElementById('custom-time').value;
-      if (!v) { alert('Pick a time'); return; }
-      time = new Date(v).getTime();
-    } else if (state.modalState.mins) {
-      time = Date.now() - parseInt(state.modalState.mins) * 60000;
-    } else if (state.editingId) {
-      time = state.events.find(e => e.id === state.editingId).time;
-    } else {
-      time = Date.now();
-    }
-    let endTime = null;
-    if (RANGE_TYPES.includes(state.modalState.type)) {
-      const v = document.getElementById('end-time').value;
-      if (v) endTime = new Date(v).getTime();
-    }
-    const note = document.getElementById('event-note').value.trim();
-    const subkind = document.getElementById('event-subkind').value.trim();
-    const typedLoc = document.getElementById('event-location').value.trim();
-    // If the typed value matches what GPS would auto-resolve to, treat as no override
-    // (so future zone renames keep flowing through). Otherwise store the manual override.
-    const editingEvt = state.editingId ? state.events.find(e => e.id === state.editingId) : null;
-    const autoLoc = editingEvt ? (locationLabel(editingEvt.coords) || '') : '';
-    const location = (typedLoc && typedLoc !== autoLoc) ? typedLoc : '';
-    const isRetro = state.modalState.mins === 'custom' || (state.modalState.mins && state.modalState.mins !== 'now');
-
-    if (state.editingId) {
-      const updates = {
-        type: state.modalState.type, time,
-        time_precision: state.modalState.precision,
-        tags: state.modalState.tags, who: state.modalState.who, note
-      };
-      if (location) updates.location = location;
-      else updates.location = null;
-      if (subkind) {
-        if (state.modalState.type === 'enrichment') updates.enrichment_kind = subkind;
-        if (state.modalState.type === 'medication') updates.medication_name = subkind;
-        if (state.modalState.type === 'episode') updates.episode_kind = subkind;
-        if (state.modalState.type === 'appointment') updates.appointment_kind = subkind;
-        if (state.modalState.type === 'outing') updates.outing_kind = subkind;
-        if (state.modalState.type === 'meal') updates.meal_type = subkind;
-      }
-      if (RANGE_TYPES.includes(state.modalState.type)) {
-        updates.end_time = endTime;
-      }
-      updateEvent(state.editingId, updates);
-    } else {
-      const evt = {
-        id: newId(),
-        type: state.modalState.type,
-        time,
-        time_precision: state.modalState.precision,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles',
-        tags: state.modalState.tags,
-        who: state.modalState.who,
-        note,
-        retroactive: isRetro,
-        source: 'manual',
-        created: Date.now()
-      };
-      if (location) evt.location = location;
-      if (subkind) {
-        if (state.modalState.type === 'enrichment') evt.enrichment_kind = subkind;
-        if (state.modalState.type === 'medication') evt.medication_name = subkind;
-        if (state.modalState.type === 'episode') evt.episode_kind = subkind;
-        if (state.modalState.type === 'appointment') evt.appointment_kind = subkind;
-        if (state.modalState.type === 'outing') evt.outing_kind = subkind;
-        if (state.modalState.type === 'meal') evt.meal_type = subkind;
-      }
-      if (RANGE_TYPES.includes(state.modalState.type) && endTime) evt.end_time = endTime;
-      state.events.push(evt);
-      state.events.sort((a, b) => b.time - a.time);
-      saveDebounced();
-    }
-    closeModal();
-    renderToday();
-    if (state.tab === 'calendar') renderCalendar();
-    if (state.tab === 'growth') renderGrowth();
-  });
-
-  // Calendar nav
-  document.getElementById('cal-prev').addEventListener('click', () => {
-    state.calCursor = addMonths(state.calCursor, -1);
-    state.calSelected = null;
-    renderCalendar();
-  });
-  document.getElementById('cal-next').addEventListener('click', () => {
-    state.calCursor = addMonths(state.calCursor, 1);
-    state.calSelected = null;
-    renderCalendar();
-  });
-
-  // Settings
-  document.getElementById('settings-btn').addEventListener('click', () => {
-    document.getElementById('settings-bin').value = state.binId;
-    document.getElementById('zone-form').classList.add('hidden');
-    document.getElementById('add-zone-btn').classList.remove('hidden');
-    renderZonesList();
-    document.getElementById('settings-modal').classList.add('visible');
-  });
-  document.getElementById('add-zone-btn').addEventListener('click', openAddZoneForm);
-  document.getElementById('zone-form-cancel').addEventListener('click', closeAddZoneForm);
-  document.getElementById('zone-form-save').addEventListener('click', saveNewZone);
-  document.getElementById('settings-cancel').addEventListener('click', () => {
-    document.getElementById('settings-modal').classList.remove('visible');
-  });
-  document.getElementById('settings-modal').addEventListener('click', (e) => {
-    if (e.target.id === 'settings-modal') document.getElementById('settings-modal').classList.remove('visible');
-  });
-  document.getElementById('settings-save').addEventListener('click', async () => {
-    const newBin = document.getElementById('settings-bin').value.trim();
-    if (newBin) {
-      state.binId = newBin;
-      state.mode = 'shared';
-      localStorage.setItem(LS.bin, state.binId);
-      localStorage.setItem(LS.mode, state.mode);
-    } else {
-      state.mode = 'local';
-      localStorage.setItem(LS.mode, state.mode);
-    }
-    document.getElementById('settings-modal').classList.remove('visible');
-    loadFromCache();
-    setTab(state.tab);
-    if (state.mode === 'shared') await syncFromRemote({ retries: 1 });
-  });
-  document.getElementById('export-btn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({ events: state.events, schemaVersion: SCHEMA_VERSION, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'winnie-export-' + new Date().toISOString().slice(0,10) + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-  document.getElementById('clear-btn').addEventListener('click', async () => {
-    if (confirm('Delete ALL events? This cannot be undone.')) {
-      state.events = [];
-      saveDebounced();
-      setTab(state.tab);
-      document.getElementById('settings-modal').classList.remove('visible');
-    }
-  });
-  document.getElementById('diag-btn').addEventListener('click', runDiagnostics);
-
-  // Setup
-  document.getElementById('setup-help-btn').addEventListener('click', () => {
-    const h = document.getElementById('setup-help');
-    h.style.display = h.style.display === 'block' ? 'none' : 'block';
-  });
-  document.getElementById('setup-skip-btn').addEventListener('click', () => {
-    state.mode = 'local';
-    localStorage.setItem(LS.mode, 'local');
-    showApp();
-  });
-  document.getElementById('setup-save').addEventListener('click', () => {
-    const v = document.getElementById('setup-bin').value.trim();
-    if (!v) { alert('Paste a bin ID or tap "Just use this device only"'); return; }
-    state.binId = v;
-    state.mode = 'shared';
-    localStorage.setItem(LS.bin, state.binId);
-    localStorage.setItem(LS.mode, 'shared');
-    showApp();
-  });
-
-  // Manual sync retry — tap the sync indicator
-  const syncBtn = document.getElementById('sync-btn');
-  if (syncBtn) syncBtn.addEventListener('click', manualSync);
-
-  // Online/offline
-  window.addEventListener('online', () => { if (state.mode === 'shared') syncFromRemote({ retries: 1 }); });
-  window.addEventListener('offline', () => setSyncState('offline'));
-
-  // Visibility refresh
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && state.mode === 'shared') {
-      syncFromRemote();
-    }
-  });
-
-  // Periodic timestamp re-render
-  setInterval(() => { if (state.tab === 'today') renderToday(); }, 30000);
-
-  // Periodic remote sync — gentle cadence is fine on Netlify Blobs, but no reason to be chatty.
-  // Visibility-change covers the common case of returning to the app.
-  setInterval(() => {
-    if (!document.hidden && state.mode === 'shared') syncFromRemote();
-  }, 5 * 60 * 1000);
-
-  if (!state.mode) showSetup();
-  else showApp();
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+      })
+      .catch(() => {
+        img.alt = "Photo unavailable offline · reconnect to load";
+      })
+      .finally(() => photoLoading.delete(id));
   }
 }
-
-document.addEventListener('DOMContentLoaded', init);
+for (const [type, [, label]] of Object.entries(TYPES))
+  $("history-type").insertAdjacentHTML(
+    "beforeend",
+    `<option value="${type}">${label}</option>`,
+  );
+for (const id of ["story-search", "history-type", "history-from", "history-to"])
+  $(id).addEventListener(id === "story-search" ? "input" : "change", () => {
+    limit = 60;
+    renderStory();
+  });
+$("load-more").onclick = () => {
+  limit += 60;
+  renderStory();
+};
+document.querySelectorAll("[data-filter]").forEach(
+  (button) =>
+    (button.onclick = () => {
+      filter = button.dataset.filter;
+      limit = 60;
+      $("history-type").value = "";
+      document
+        .querySelectorAll("[data-filter]")
+        .forEach((b) => b.classList.toggle("selected", b === button));
+      renderStory();
+    }),
+);
+async function log(type) {
+  if (Date.now() - actionLock < 600) return;
+  actionLock = Date.now();
+  if (type === "sleep" || type === "nap") {
+    const sleeping = facts().find(
+      (e) => ["nap", "slumber"].includes(e.type) && active(e),
+    );
+    if (sleeping) {
+      openDialog(
+        `<h2 id="dialog-title">Finished sleeping?</h2><p class="fine">Started ${dateLabel(sleeping.time)} at ${clock(sleeping.time)}.</p><div class="button-row"><button class="primary" data-end="${esc(sleeping.id)}">End sleep now</button><button class="secondary" data-act="close">Keep sleeping</button></div><p id="form-error" class="error" role="alert"></p>`,
+      );
+      return;
+    }
+    if (type === "sleep") type = "slumber";
+  }
+  const eventId = uid();
+  await sync.enqueue("create", eventId, {
+    type,
+    time: Date.now(),
+    end_time: null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    who: "us",
+    tags: [],
+    note: "",
+    time_precision: "exact",
+  });
+  document.body.classList.remove("reaction");
+  requestAnimationFrame(() => document.body.classList.add("reaction"));
+  toast(`${TYPES[type][1]} saved on this device.`, () =>
+    sync.enqueue("delete", eventId),
+  );
+  if (type === "poop") {
+    poopId = eventId;
+    $("photo-prompt").hidden = false;
+    render();
+  }
+}
+function detail(id) {
+  const e = sync.view().events.find((e) => e.id === id);
+  if (!e) {
+    toast("This entry isn’t available yet. Refresh to try again.");
+    return;
+  }
+  if (e.deletedAt) {
+    openDialog(
+      `<h2 id="dialog-title">Entry removed</h2><p class="fine">${esc(eventLabel(e))} · ${dateLabel(e.time)} · ${clock(e.time)}</p><div class="button-row"><button class="secondary" data-restore="${esc(id)}">Restore entry</button></div><p id="form-error" class="error"></p>`,
+    );
+    return;
+  }
+  openDialog(
+    `<h2 id="dialog-title">${TYPES[e.type]?.[0] || "•"} ${esc(eventLabel(e))}</h2><p class="fine">${dateLabel(e.time)} · ${clock(e.time)}${e.end_time != null ? ` → ${dateLabel(e.end_time)} ${clock(e.end_time)}` : ""}</p><p class="fine">${e.loggedBy ? `Logged by ${esc(person(e.loggedBy))}` : "Original shared history · person not recorded"}${e.pending ? " · Waiting to share" : ""}</p>${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}<div class="detail-meta">${(e.tags || []).map((t) => `<span class="pill">${esc(t)}</span>`).join("")}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${e.location ? `<p class="fine">${esc(e.location)}</p>` : ""}<div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${["pee", "poop"].includes(e.type) ? `<h3>Who initiated the trip?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
+  );
+  detailId = id;
+  hydratePhotos();
+}
+function editForm(type = "note", id = null) {
+  const e = id
+    ? sync.view().events.find((e) => e.id === id)
+    : { type, time: Date.now(), end_time: null, note: "", who: "us", tags: [] };
+  if (!e) return;
+  const eventId = id || uid();
+  let savedRevision = id ? e.revision : undefined;
+  let entrySaved = false;
+  formPhotos = [];
+  formType = e.type;
+  openDialog(
+    `<h2 id="dialog-title">${id ? "Edit entry" : e.type === "moment" ? "Keep a little moment" : "Log an earlier entry"}</h2><form id="event-form"><label>What happened?<select name="type">${Object.entries(
+      TYPES,
+    )
+      .map(
+        ([t, [, l]]) =>
+          `<option value="${t}" ${e.type === t ? "selected" : ""}>${l}</option>`,
+      )
+      .join(
+        "",
+      )}</select></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>End time <span class="fine">(leave empty if in progress)</span><input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="A little detail to remember…">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags <span class="fine">(separate with commas)</span><input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(e.location || "")}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+  );
+  const f = $("event-form");
+  f.elements.type.onchange = () => {
+    $("end-label").hidden = ![
+      "nap",
+      "slumber",
+      "walk",
+      "outing",
+      "episode",
+      "appointment",
+      "travel",
+      "covered_gap",
+    ].includes(f.elements.type.value);
+  };
+  f.onsubmit = safe(async (ev) => {
+    ev.preventDefault();
+    const submit = f.querySelector("[type=submit]");
+    submit.disabled = true;
+    try {
+      const input = new FormData(f),
+        payload = {
+          type: input.get("type"),
+          time: new Date(input.get("time")).getTime(),
+          end_time:
+            input.get("end_time") && !$("end-label").hidden
+              ? new Date(input.get("end_time")).getTime()
+              : null,
+          note: input.get("note").trim(),
+          who: input.get("who"),
+          tags: input
+            .get("tags")
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean),
+          location: input.get("location"),
+          time_precision: input.get("time_precision"),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          retroactive: true,
+        };
+      if (payload.end_time != null && payload.end_time < payload.time)
+        throw new Error("The end time must be after the start.");
+      if (
+        payload.type === "moment" &&
+        !payload.note &&
+        !formPhotos.length &&
+        !e.photos?.length
+      )
+        throw new Error("Choose a photo or add a few words for this moment.");
+      await sync.enqueue(
+        id || entrySaved ? "edit" : "create",
+        eventId,
+        payload,
+        savedRevision,
+      );
+      entrySaved = true;
+      savedRevision = sync
+        .view()
+        .events.find((e) => e.id === eventId)?.revision;
+      while (formPhotos.length) {
+        await sync.addPhoto(eventId, formPhotos[0]);
+        formPhotos.shift();
+        savedRevision = sync
+          .view()
+          .events.find((e) => e.id === eventId)?.revision;
+      }
+      closeDialog();
+      toast(
+        "Entry saved on this device.",
+        id ? null : () => sync.enqueue("delete", eventId),
+      );
+      if (payload.type === "poop") {
+        poopId = eventId;
+        render();
+      }
+    } finally {
+      submit.disabled = false;
+    }
+  });
+}
+function moreCare() {
+  openDialog(
+    `<h2 id="dialog-title">A little more care</h2><div class="type-grid"><button data-act="trainer">Trainer · log finished hour</button><button data-log="nap">☾ Start nap</button>${Object.entries(
+      TYPES,
+    )
+      .filter(
+        ([t]) =>
+          !["pee", "poop", "meal", "nap", "slumber", "moment"].includes(t),
+      )
+      .map(([t, [i, l]]) => `<button data-new-type="${t}">${i} ${l}</button>`)
+      .join("")}</div>`,
+  );
+}
+function plan() {
+  const p = sync.view().profile;
+  openDialog(
+    `<h2 id="dialog-title">What works for him</h2><form id="plan-form"><label>Our current routine<textarea name="routine" maxlength="2000" placeholder="The useful things we both want to remember…">${esc(p.routine)}</textarea></label><label>One thing we’re practicing<textarea name="goal" maxlength="2000" placeholder="For example: ring the bell before putting on his harness.">${esc(p.goal)}</textarea></label><label>Who is with Winnie?<select name="withPerson"><option value="">Not set</option>${["brandon", "kim"].map((t) => `<option value="${t}" ${p.withPerson === t ? "selected" : ""}>${person(t)}</option>`).join("")}</select></label><p class="fine">Keep this current together. Clear a temporary instruction when it no longer applies.</p><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary">Save our plan</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+  );
+  $("plan-form").onsubmit = safe(async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await sync.enqueue(
+      "profile",
+      "profile",
+      {
+        routine: f.get("routine"),
+        goal: f.get("goal"),
+        withPerson: f.get("withPerson"),
+      },
+      p.revision,
+    );
+    closeDialog();
+    toast("Shared plan saved on this device.");
+  });
+}
+function settings() {
+  if (!sync.session) {
+    $("shared-code").focus();
+    return;
+  }
+  const devices = sync.data.snapshot.devices || [],
+    me = sync.session.token.split(".")[0];
+  openDialog(
+    `<h2 id="dialog-title">Our little family</h2><div class="setting-block"><p>Using this device as <strong>${person(sync.session.person)}</strong></p><button class="secondary small" data-act="push">Enable partner notifications</button><p id="push-status">Get an update when the other person logs care. On iPhone, open Winnie from your Home Screen.</p></div><div class="setting-block"><button class="secondary small" data-act="plan">Edit our routine & learning goal</button><label class="switch-row">Show optional walk mode<input id="walk-setting" type="checkbox" ${localStorage.getItem("winnie:walks") === "true" ? "checked" : ""}></label><label class="switch-row">Quiet presentation<input id="quiet-setting" type="checkbox" ${document.body.classList.contains("quiet") ? "checked" : ""}></label></div><div class="setting-block"><h3>Our history</h3><p>${sync.data.snapshot.events.filter((e) => !e.deletedAt).length.toLocaleString()} shared entries. Original records keep their original attribution.</p><p>New entries: Brandon ${sync.data.snapshot.usage?.brandon || 0} · Kim ${sync.data.snapshot.usage?.kim || 0}</p><div class="button-row"><button class="secondary small" data-act="export">Export history & pending actions</button><button class="text-button" data-act="review">Review saved phone history</button></div><p>Photos can be saved from each entry. History exports include photo references.</p></div><div class="setting-block"><h3>Connected devices</h3>${devices
+      .filter((d) => !d.revoked)
+      .map(
+        (d) =>
+          `<div class="device"><span>${esc(d.name)} · ${person(d.person)}${d.id === me ? " · this device" : ""}</span>${d.id !== me ? `<button class="text-button danger" data-revoke="${esc(d.id)}">Remove</button>` : ""}</div>`,
+      )
+      .join(
+        "",
+      )}<button class="text-button" data-act="invite">Show shared code for another device</button></div><div class="setting-block"><button class="text-button" data-act="reconnect">Reconnect as another person</button><p>Pending actions stay with their original shared log.</p></div><p id="form-error" class="error" role="alert"></p>`,
+  );
+  $("walk-setting").onchange = (e) => {
+    localStorage.setItem("winnie:walks", e.target.checked);
+    render();
+  };
+  $("quiet-setting").onchange = (e) => {
+    localStorage.setItem("winnie:quiet", e.target.checked);
+    document.body.classList.toggle("quiet", e.target.checked);
+  };
+}
+function canonical(v) {
+  if (Array.isArray(v)) return v.map(canonical);
+  if (v && typeof v === "object")
+    return Object.fromEntries(
+      Object.keys(v)
+        .sort()
+        .map((k) => [k, canonical(v[k])]),
+    );
+  return v;
+}
+function legacyDiff() {
+  const d = sync.data;
+  if (!d.legacy) return [];
+  const reviewed = new Set(d.reviewed),
+    byId = new Map(d.snapshot.events.map((e) => [e.id, e]));
+  return d.legacy.events.filter((e) => {
+    if (reviewed.has(e.id)) return false;
+    const shared = byId.get(e.id);
+    return (
+      !shared ||
+      shared.deletedAt ||
+      Object.keys(e).some(
+        (k) =>
+          JSON.stringify(canonical(e[k])) !==
+          JSON.stringify(canonical(shared[k])),
+      )
+    );
+  });
+}
+function compareEntry(e) {
+  if (!e) return "No shared entry";
+  return [
+    e.type ? eventLabel(e) : "Saved changes",
+    e.time ? dateLabel(e.time) + " at " + clock(e.time) : "",
+    e.end_time
+      ? "Ended " + dateLabel(e.end_time) + " at " + clock(e.end_time)
+      : "",
+    e.note ? "Note: " + e.note : "",
+    e.location ? "Place: " + e.location : "",
+    e.tags?.length ? "Tags: " + e.tags.join(", ") : "",
+    e.signal ? "Signal: " + e.signal : "",
+    e.deletedAt ? "This entry was removed." : "",
+    e.routine ? "Routine: " + e.routine : "",
+    e.goal ? "Practicing: " + e.goal : "",
+    e.photos?.length ? e.photos.length + " photos" : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+function review() {
+  const conflicts = sync.data.queue.filter((q) => q.error),
+    older = legacyDiff();
+  openDialog(
+    `<h2 id="dialog-title">Keep every change</h2><p class="fine">Your older phone history is preserved. Choose which differences belong in the shared log.</p>${conflicts.map((q) => `<div class="recovery"><h3>${esc(q.error)}</h3><p class="fine">${esc(q.command.kind)} · ${esc(q.command.payload.note || q.command.payload.type || q.command.eventId)}</p><details><summary>Compare saved changes</summary><p class="fine">Your pending change</p><pre>${esc(compareEntry(q.command.payload))}</pre><p class="fine">Latest shared entry</p><pre>${esc(compareEntry(q.current))}</pre></details><div class="button-row">${!["create", "recover"].includes(q.command.kind) && q.current && !q.current.deletedAt ? `<button class="secondary small" data-resolve="${q.command.operationId}" data-mine="yes">Use my changes</button>` : ""}<button class="text-button" data-resolve="${q.command.operationId}">Keep shared version</button></div></div>`).join("")}${older
+      .slice(0, 25)
+      .map((e) => {
+        const shared = sync.data.snapshot.events.find((x) => x.id === e.id);
+        return `<div class="recovery"><h3>${esc(eventLabel(e))} · ${dateLabel(e.time)}</h3><p class="fine">${shared ? "Different from the shared entry" : "Only in this phone’s older copy"} · ${clock(e.time)}</p><details><summary>Compare both versions</summary><p class="fine">Phone copy</p><pre>${esc(compareEntry(e))}</pre><p class="fine">Shared copy</p><pre>${esc(compareEntry(shared))}</pre></details><div class="button-row">${!shared ? `<button class="secondary small" data-recover="${esc(e.id)}">Keep this entry</button>` : !shared.deletedAt ? `<button class="secondary small" data-edit="${esc(e.id)}">Edit shared entry</button>` : `<button class="secondary small" data-restore="${esc(e.id)}">Restore shared entry</button>`}<button class="text-button" data-reviewed="${esc(e.id)}">Keep shared history</button></div></div>`;
+      })
+      .join(
+        "",
+      )}${!conflicts.length && !older.length ? '<div class="empty"><h3>All accounted for.</h3><p>No differences need your attention.</p></div>' : ""}${older.length > 25 ? '<p class="fine">More entries will appear as these are reviewed.</p>' : ""}<p id="form-error" class="error" role="alert"></p>`,
+  );
+}
+async function photoFile(file) {
+  if (file.size > 40000000)
+    throw new Error("Please choose a photo smaller than 40 MB.");
+  const url = URL.createObjectURL(file),
+    img = new Image();
+  try {
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () =>
+        reject(
+          new Error(
+            "This photo format could not be opened. Choose a JPEG or a photo from your camera.",
+          ),
+        );
+      img.src = url;
+    });
+    const scale = Math.min(
+        1,
+        1800 / Math.max(img.naturalWidth, img.naturalHeight),
+      ),
+      canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    let blob = await new Promise((r) => canvas.toBlob(r, "image/jpeg", 0.86));
+    if (!blob)
+      throw new Error("Could not prepare this photo. Please try another.");
+    if (blob.size > 2400000)
+      blob = await new Promise((r) => canvas.toBlob(r, "image/jpeg", 0.65));
+    if (!blob || blob.size > 2500000)
+      throw new Error("This photo is too large. Please choose a smaller copy.");
+    return blob;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+function choosePhoto(target, camera = false) {
+  photoTarget = target;
+  const input = $(camera ? "camera-input" : "library-input");
+  input.value = "";
+  input.click();
+}
+for (const id of ["camera-input", "library-input"])
+  $(id).onchange = safe(async (e) => {
+    const files = Array.from(e.target.files || []).slice(0, 20),
+      target = photoTarget;
+    if (!files.length) return;
+    toast("Preparing your photo…");
+    for (const file of files) {
+      const blob = await photoFile(file);
+      if (target === "form") {
+        if (!$("event-form")) return;
+        formPhotos.push(blob);
+        $("form-photo-status").textContent =
+          `${formPhotos.length} ${formPhotos.length === 1 ? "photo" : "photos"} ready to keep.`;
+      } else await sync.addPhoto(target, blob);
+    }
+    if (target !== "form") {
+      toast(`${files.length === 1 ? "Photo" : "Photos"} saved on this device.`);
+      if ($("dialog").open && detailId === target) detail(target);
+      render();
+    } else toast("Photo ready. Save the entry to keep it.");
+  });
+function download(value, name, type = "application/json") {
+  const blob =
+      value instanceof Blob
+        ? value
+        : new Blob([JSON.stringify(value, null, 2)], { type }),
+    url = URL.createObjectURL(blob),
+    a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+$("poop-camera").onclick = () => choosePhoto(poopId, true);
+$("poop-library").onclick = () => choosePhoto(poopId);
+$("poop-dismiss").onclick = () => {
+  poopId = null;
+  $("photo-prompt").hidden = true;
+};
+$("earlier").onclick = () => editForm("pee");
+$("more").onclick = moreCare;
+$("add-moment").onclick = () => editForm("moment");
+$("story-add").onclick = () => editForm("moment");
+$("settings").onclick = settings;
+$("connect-form").onsubmit = safe(async (e) => {
+  e.preventDefault();
+  $("connect-error").textContent = "";
+  const button = e.target.querySelector("[type=submit]");
+  button.disabled = true;
+  try {
+    await sync.pair(
+      $("shared-code").value.trim(),
+      new FormData(e.target).get("person"),
+      $("device-name").value.trim(),
+    );
+    render();
+  } catch (err) {
+    $("connect-error").textContent = err.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+$("shared-code").value = localStorage.getItem("winnie:bin") || "";
+document.addEventListener(
+  "click",
+  safe(async (ev) => {
+    const b = ev.target.closest("button");
+    if (!b) return;
+    if (b.dataset.log) {
+      if ($("dialog").open) closeDialog();
+      return log(b.dataset.log);
+    }
+    if (b.dataset.open) return detail(b.dataset.open);
+    if (b.dataset.patternDay) {
+      filter = "care";
+      $("history-from").value = b.dataset.patternDay;
+      $("history-to").value = b.dataset.patternDay;
+      document
+        .querySelectorAll("[data-filter]")
+        .forEach((x) =>
+          x.classList.toggle("selected", x.dataset.filter === filter),
+        );
+      renderStory();
+      return;
+    }
+    if (b.dataset.edit) return editForm(null, b.dataset.edit);
+    if (b.dataset.newType) return editForm(b.dataset.newType);
+    if (b.dataset.end) {
+      b.disabled = true;
+      try {
+        await sync.enqueue("edit", b.dataset.end, { end_time: Date.now() });
+        closeDialog();
+        toast("Sleep end saved on this device.");
+      } finally {
+        b.disabled = false;
+      }
+      return;
+    }
+    if (b.hasAttribute("data-form-camera")) return choosePhoto("form", true);
+    if (b.hasAttribute("data-form-library")) return choosePhoto("form");
+    if (b.dataset.photoCamera) return choosePhoto(b.dataset.photoCamera, true);
+    if (b.dataset.photoLibrary) return choosePhoto(b.dataset.photoLibrary);
+    if (b.dataset.signal) {
+      await sync.enqueue("edit", b.dataset.id, { signal: b.dataset.signal });
+      detail(b.dataset.id);
+      return;
+    }
+    if (b.dataset.downloadPhoto) {
+      download(
+        await sync.photo(b.dataset.downloadPhoto),
+        `winnie-${b.dataset.downloadPhoto}.jpg`,
+      );
+      return;
+    }
+    if (b.dataset.removePhoto) {
+      await sync.enqueue("removePhoto", b.dataset.id, {
+        photoId: b.dataset.removePhoto,
+      });
+      detail(b.dataset.id);
+      toast("Photo removed from this entry.", () =>
+        sync.enqueue("attach", b.dataset.id, {
+          photoId: b.dataset.removePhoto,
+        }),
+      );
+      return;
+    }
+    if (b.dataset.delete) {
+      const id = b.dataset.delete;
+      openDialog(
+        `<h2 id="dialog-title">Remove this entry?</h2><p class="fine">You can undo this after removing it.</p><div class="button-row"><button class="primary" data-confirm-delete="${esc(id)}">Remove entry</button><button class="secondary" data-open="${esc(id)}">Keep it</button></div><p id="form-error" class="error"></p>`,
+      );
+      return;
+    }
+    if (b.dataset.confirmDelete) {
+      const id = b.dataset.confirmDelete;
+      await sync.enqueue("delete", id);
+      closeDialog();
+      toast("Entry removal saved on this device.", () =>
+        sync.enqueue("restore", id),
+      );
+      return;
+    }
+    if (b.dataset.restore) {
+      await sync.enqueue("restore", b.dataset.restore);
+      detail(b.dataset.restore);
+      return;
+    }
+    if (b.dataset.resolve) {
+      await sync.resolve(b.dataset.resolve, b.dataset.mine === "yes");
+      review();
+      return;
+    }
+    if (b.dataset.reviewed) {
+      await sync.markReviewed(b.dataset.reviewed);
+      review();
+      return;
+    }
+    if (b.dataset.recover) {
+      const e = sync.data.legacy.events.find((e) => e.id === b.dataset.recover);
+      await sync.enqueue("recover", e.id, e);
+      await sync.markReviewed(e.id);
+      review();
+      return;
+    }
+    if (b.dataset.revoke) {
+      await sync.request("revoke", {
+        method: "POST",
+        value: { deviceId: b.dataset.revoke },
+      });
+      await sync.refresh();
+      settings();
+      return;
+    }
+    switch (b.dataset.act) {
+      case "close":
+        closeDialog();
+        break;
+      case "review":
+        review();
+        break;
+      case "plan":
+        plan();
+        break;
+      case "moment":
+        editForm("moment");
+        break;
+      case "all-history":
+        filter = "care";
+        $("history-from").value = "";
+        $("history-to").value = "";
+        $("history-type").value = "";
+        document
+          .querySelectorAll("[data-filter]")
+          .forEach((x) =>
+            x.classList.toggle("selected", x.dataset.filter === filter),
+          );
+        renderStory();
+        break;
+      case "find-poop":
+        filter = "care";
+        document
+          .querySelectorAll("[data-filter]")
+          .forEach((x) =>
+            x.classList.toggle("selected", x.dataset.filter === filter),
+          );
+        $("history-type").value = "poop";
+        renderStory();
+        break;
+      case "trainer":
+        await logTrainer();
+        break;
+      case "start-walk":
+        await log("walk");
+        break;
+      case "finish-walk": {
+        const e = facts().find((e) => e.type === "walk" && active(e));
+        if (e) {
+          await sync.enqueue("edit", e.id, { end_time: Date.now() });
+          toast("Walk finish saved on this device.");
+        }
+        break;
+      }
+      case "push":
+        b.disabled = true;
+        try {
+          await sync.enablePush();
+          $("push-status").textContent =
+            "Partner notifications are enabled on this device.";
+        } finally {
+          b.disabled = false;
+        }
+        break;
+      case "export": {
+        const { home, token, person: identity, ...shared } = sync.data.snapshot;
+        download(
+          {
+            exportedAt: new Date().toISOString(),
+            shared,
+            pending: sync.data.queue.map(({ command, error, queuedAt }) => ({
+              command,
+              error,
+              queuedAt,
+            })),
+            olderPhoneCopy: sync.data.legacy,
+          },
+          `winnie-history-${dayKey(Date.now())}.json`,
+        );
+        break;
+      }
+      case "invite":
+        openDialog(
+          `<h2 id="dialog-title">Connect another device</h2><p class="fine">Open Winnie on the other device and enter this shared code. Choose the person using that device.</p><input readonly aria-label="Shared code" value="${esc(sync.session.code)}"><p class="fine">Keep this code within your family.</p>`,
+        );
+        break;
+      case "reconnect":
+        if (sync.data.queue.length)
+          throw new Error(
+            "Finish syncing or reviewing this device’s pending changes before reconnecting.",
+          );
+        localStorage.removeItem("winnie:v4:session");
+        sync.session = null;
+        for (const url of photoURLs.values()) URL.revokeObjectURL(url);
+        photoURLs.clear();
+        closeDialog();
+        render();
+        break;
+    }
+  }),
+);
+sync.addEventListener("change", render);
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/sw.js", { updateViaCache: "none" })
+    .then((r) => r.update())
+    .catch(() => {});
+  navigator.serviceWorker.addEventListener("message", (e) => {
+    if (e.data?.type === "OPEN_EVENT") {
+      setTab("today");
+      sync
+        .refresh()
+        .then(() => detail(e.data.id))
+        .catch(error);
+    }
+  });
+}
+await sync.init().catch((err) => {
+  $("connect").hidden = false;
+  $("connect-error").textContent =
+    "Winnie couldn’t open safe storage on this device. Please allow browser storage, then reload. " +
+    err.message;
+  $("connect-form").querySelector("[type=submit]").disabled = true;
+});
+const linkedEvent = new URL(location.href).searchParams.get("event");
+if (linkedEvent && sync.session) {
+  await sync.refresh().catch(() => {});
+  detail(linkedEvent);
+}
+function eventLabel(e) {
+  return e.type === "covered_gap" &&
+    (e.kind === "trainer" || e.who === "trainer")
+    ? "Trainer visit"
+    : TYPES[e.type]?.[1] || e.type;
+}
+function renderTrainer(events) {
+  const visits = events.filter(
+      (e) =>
+        e.type === "covered_gap" &&
+        (e.kind === "trainer" || e.who === "trainer") &&
+        dayKey(e.time) === dayKey(Date.now()),
+    ),
+    scheduled = [2, 3, 4].includes(new Date().getDay());
+  $("trainer-card").hidden = !scheduled && !visits.length;
+  if (!$("trainer-card").hidden)
+    html(
+      "trainer-card",
+      `<div class="section-heading"><h2>Trainer visit</h2><span class="fine">Tue · Wed · Thu</span></div>${visits.length ? `<p class="fine">Logged ${clock(visits[0].time)}–${clock(visits[0].end_time)} · ${esc(person(visits[0].loggedBy))}</p><button class="text-button" data-edit="${esc(visits[0].id)}">Adjust visit</button>` : '<p class="fine">1 hour · ending now</p><div class="button-row"><button class="primary small" data-act="trainer">Log finished visit</button></div>'}`,
+    );
+}
+async function logTrainer() {
+  if (Date.now() - actionLock < 600) return;
+  actionLock = Date.now();
+  const now = Date.now(),
+    id = uid();
+  await sync.enqueue("create", id, {
+    type: "covered_gap",
+    kind: "trainer",
+    time: now - 3600000,
+    end_time: now,
+    who: "trainer",
+    note: "Trainer visit",
+    tags: [],
+    time_precision: "approx",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  });
+  if ($("dialog").open) closeDialog();
+  toast("Trainer hour saved. Tap the entry to adjust its time.", () =>
+    sync.enqueue("delete", id),
+  );
+}
+function renderPatterns() {
+  const p = recordedPatterns(facts(), patternDays),
+    max = Math.max(1, ...p.series.map((d) => d.pee + d.poop + d.meal));
+  $("story-count").textContent =
+    `${p.allCount.toLocaleString()} recorded entries${p.first ? " · since " + dateLabel(p.first) : ""}`;
+  $("load-more").hidden = true;
+  $("story-items").innerHTML =
+    `<section class="card patterns"><div class="section-heading"><h2>What we’ve recorded</h2><label><span class="sr-only">Pattern time window</span><select id="pattern-window"><option value="7" ${patternDays === 7 ? "selected" : ""}>7 days</option><option value="28" ${patternDays === 28 ? "selected" : ""}>28 days</option><option value="90" ${patternDays === 90 ? "selected" : ""}>90 days</option></select></label></div><p class="fine">${p.start} — ${p.end}</p><div class="pattern-stats"><div><strong>${p.activeDays}<small> / ${p.days}</small></strong><span>days with entries</span></div><div><strong>${p.total}</strong><span>entries recorded</span></div></div><h3>Daily care entries</h3><div class="chart-legend"><span>● Pee</span><span>● Poop</span><span>● Meals</span></div><div class="daily-chart" style="--days:${p.days}" aria-label="Daily recorded care. Select a day to see its entries.">${p.series.map((d) => `<button data-pattern-day="${d.date}" title="${d.date}: ${d.pee} pee, ${d.poop} poop, ${d.meal} meal entries" aria-label="${d.date}: ${d.pee} pee, ${d.poop} poop, ${d.meal} meal entries" class="chart-column"><span style="height:${(d.meal / max) * 100}%" class="bar-meal"></span><span style="height:${(d.poop / max) * 100}%" class="bar-poop"></span><span style="height:${(d.pee / max) * 100}%" class="bar-pee"></span></button>`).join("")}</div><div class="chart-labels"><span>${p.start}</span><span>${p.end}</span></div><p class="fine">Blank days mean no entries were recorded. They don’t tell us whether care happened.</p><h3>This period and the previous ${p.days} days</h3><div class="comparison-table"><div class="table-row table-head"><span>Recorded entries</span><span>Previous</span><span>Current</span></div>${Object.entries(
+      p.counts,
+    )
+      .map(
+        ([type, count]) =>
+          `<div class="table-row"><span>${type === "slumber" ? "Night sleep" : TYPES[type][1]}</span><span>${count.previous}</span><span>${count.current}</span></div>`,
+      )
+      .join(
+        "",
+      )}</div><p class="fine">Previous period starts ${p.previousStart}, with entries on ${p.previousActiveDays} of ${p.days} days. Changes in logging habits can change these counts.</p>${p.tagged ? `<h3>Asking to go out</h3><p><strong>${p.selfAsked} of ${p.tagged}</strong> tagged entries record that he asked.</p><p class="fine">Entries without a signal label are excluded.</p>` : ""}${p.invalidSleep ? `<div class="notice" style="margin-top:16px">${p.invalidSleep} historical sleep ${p.invalidSleep === 1 ? "entry has" : "entries have"} an end time that needs review. Original values are preserved; no sleep duration score is inferred.</div>` : ""}<div class="button-row"><button class="text-button" data-act="all-history">Browse the full history →</button></div></section>`;
+  $("pattern-window").onchange = (e) => {
+    patternDays = Number(e.target.value);
+    renderPatterns();
+  };
+}

@@ -1,6 +1,6 @@
 [build]
   publish = "public"
-  command = ""
+  command = "npm run check && npm test"
 
 [functions]
   directory = "netlify/functions"
@@ -31,7 +31,19 @@
 [[headers]]
   for = "/*.js"
   [headers.values]
-    Cache-Control = "public, max-age=3600"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "same-origin"
+    X-Frame-Options = "DENY"
 
 [[headers]]
   for = "/*.png"
