@@ -992,15 +992,21 @@ dialog h3 {
 #story-count {
   margin: 15px 0;
 }
-body {
+body,
+body * {
   -webkit-user-select: none;
   user-select: none;
 }
 input,
 textarea,
-[contenteditable],
+[contenteditable="true"],
+[contenteditable="true"] *,
+[contenteditable=""],
+[contenteditable=""] *,
 .detail-notes,
-pre {
+.detail-notes *,
+pre,
+pre * {
   -webkit-user-select: text;
   user-select: text;
 }
@@ -1193,50 +1199,48 @@ a {
     scroll-behavior: auto !important;
   }
 }
-/* Winnie explores reserved space; the care controls keep their own hit targets. */
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  row-gap: 0;
-}
-.hero > div:first-child {
+/* Winnie belongs to the masthead, without extra rows in the day or story. */
+.brand-home {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   min-width: 0;
 }
-.winnie-lane {
-  height: 64px;
-  pointer-events: none;
-}
-.winnie-home {
-  grid-column: 1 / -1;
-  margin-top: 14px;
-}
-.winnie-feed-lane {
-  margin-top: 12px;
-}
-.winnie-story-lane {
-  margin-top: 20px;
+@media (max-width: 360px) {
+  .brand-home .wordmark {
+    font-size: 30px;
+  }
 }
 .pixel-winnie {
   display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 4;
-  width: 64px;
-  height: 64px;
+  position: relative;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 48px;
   margin: 0;
   padding: 0;
   background: transparent;
-  border-radius: 16px;
+  border-radius: 12px;
   touch-action: manipulation;
-  will-change: transform;
+}
+.pixel-winnie.walking {
+  animation: winnie-shuffle 1200ms ease-in-out 1;
+}
+@keyframes winnie-shuffle {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(5px);
+  }
 }
 .pixel-sprite {
   display: block;
   position: absolute;
   inset: 0;
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   background: url("/photos/winnie-pixel-v2.png") 0 0 / 300% 200% no-repeat;
   image-rendering: pixelated;
   transform-origin: 50% 85%;
@@ -1598,6 +1602,7 @@ a {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .pixel-winnie,
   .pixel-winnie .pixel-sprite,
   .pixel-winnie .pixel-heart {
     animation: none !important;

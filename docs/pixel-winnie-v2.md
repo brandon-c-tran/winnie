@@ -9,7 +9,7 @@ Generated with the built-in image-generation tool. Existing photographs and the 
 - `assets/winnie-sprite-v2.png`: generated sprite master. The delivered sheet is a 384×256 nearest-neighbor export (128×128 per frame) to keep the animation light on phones.
 - `public/icons/winnie-v2-{32,180,192,512}.png`: standard-size PNG exports, using nearest-neighbor sampling to keep the pixel edges crisp.
 
-Winnie wanders within reserved whitespace in Today, the shared feed, and His story. Crossing to another lane requires a clear route past content and controls. He blinks briefly at varied intervals, uses alternating walk poses while moving, pauses for form focus and dialogs, and curls up during a logged sleep. Reduced-motion and hidden-page states stop automatic movement. None of these interactions creates or changes care records.
+Winnie sits beside the wordmark in the existing masthead. There are no reserved walking rows and no overlay over care controls or photographs. He blinks at varied intervals, does a small five-pixel shuffle, pauses for form focus and dialogs, and curls up during a logged sleep. Reduced-motion and hidden-page states stop automatic movement. None of these interactions creates or changes care records.
 
 The manifest keeps its existing start URL. Versioned icon paths are supplied for browser tabs, home screens, and notifications. The icon's face and ears are inset for the [maskable icon safe zone](https://web.dev/articles/maskable-icon).
 
