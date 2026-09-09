@@ -1,18 +1,19 @@
+import { createWinnieCompanion } from "./companion.js?v=3.3";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "./insights.js?v=3.2";
-import { insightsView } from "./insight-view.js?v=3.2";
+} from "./insights.js?v=3.3";
+import { insightsView } from "./insight-view.js?v=3.3";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
   photoCaption,
   validateTrainerImport,
-} from "./everyday.js?v=3.2";
-import { WinnieSync } from "./sync.js?v=3.2";
+} from "./everyday.js?v=3.3";
+import { WinnieSync } from "./sync.js?v=3.3";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");
@@ -79,7 +80,7 @@ let patternDays = 28,
   insightData = null,
   evidenceKey = null,
   evidenceLimit = 30;
-let pixelTimer;
+const companion = createWinnieCompanion($("pixel-winnie"));
 let tab = "today",
   filter = "moments",
   limit = 60,
@@ -198,7 +199,10 @@ function render() {
   const paired = !!sync.session;
   $("connect").hidden = paired;
   $("experience").hidden = !paired;
-  if (!paired) return;
+  if (!paired) {
+    companion.refresh();
+    return;
+  }
   const view = sync.view(),
     events = facts(),
     pending = sync.data.queue.length,
@@ -225,13 +229,7 @@ function render() {
   const sleeping = events.find(
     (e) => ["nap", "slumber"].includes(e.type) && active(e),
   );
-  $("pixel-winnie").dataset.state = sleeping ? "sleeping" : "awake";
-  $("pixel-winnie").setAttribute(
-    "aria-label",
-    sleeping
-      ? "Pixel Winnie is sleeping. Give him a gentle pat."
-      : "Give pixel Winnie a pat",
-  );
+  companion.setSleeping(!!sleeping);
   $("hero-caption").textContent = sleeping
     ? `Sleep started at ${clock(sleeping.time)}.`
     : "Latest care, in one place.";
@@ -313,6 +311,7 @@ function entry(e) {
   return `<div class="feed-entry"><button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>${e.photos?.length ? `<div class="feed-photos">${e.photos.map((p) => `<button data-open="${esc(e.id)}" aria-label="Open photo from ${esc(eventLabel(e))}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"></button>`).join("")}</div>` : ""}</div>`;
 }
 function renderStory() {
+  companion.refresh();
   $("story-view").classList.toggle("showing-insights", filter === "patterns");
   $("story-heading").textContent =
     filter === "patterns"
@@ -1308,15 +1307,8 @@ $("trainer-import").onchange = safe(async (ev) => {
 });
 
 function reactWinnie() {
-  const pixel = $("pixel-winnie");
-  clearTimeout(pixelTimer);
-  pixel.classList.remove("delighted");
-  // Restart a short acknowledgement; no looping animation while using the app.
-  void pixel.offsetWidth;
-  pixel.classList.add("delighted");
-  pixelTimer = setTimeout(() => pixel.classList.remove("delighted"), 1600);
+  companion.celebrate();
 }
-$("pixel-winnie").onclick = reactWinnie;
 function renderPatterns() {
   insightData = rhythmInsights(facts(), patternDays);
   $("story-count").textContent = "";

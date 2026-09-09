@@ -1193,45 +1193,92 @@ a {
     scroll-behavior: auto !important;
   }
 }
-/* A small companion; real photography remains the visual anchor. */
+/* Winnie explores reserved space; the care controls keep their own hit targets. */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  row-gap: 0;
+}
+.hero > div:first-child {
+  min-width: 0;
+}
+.winnie-lane {
+  height: 64px;
+  pointer-events: none;
+}
+.winnie-home {
+  grid-column: 1 / -1;
+  margin-top: 14px;
+}
+.winnie-feed-lane {
+  margin-top: 12px;
+}
+.winnie-story-lane {
+  margin-top: 20px;
+}
 .pixel-winnie {
   display: block;
-  position: relative;
-  width: 76px;
-  height: 68px;
-  margin: 4px 0 -4px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  width: 64px;
+  height: 64px;
+  margin: 0;
   padding: 0;
   background: transparent;
-  border-radius: 18px;
+  border-radius: 16px;
+  touch-action: manipulation;
+  will-change: transform;
 }
 .pixel-sprite {
   display: block;
   position: absolute;
-  width: 76px;
-  height: 76px;
-  bottom: -4px;
-  background: url("/photos/winnie-pixel-v1.png") 0 0 / 300% 100% no-repeat;
+  inset: 0;
+  width: 64px;
+  height: 64px;
+  background: url("/photos/winnie-pixel-v2.png") 0 0 / 300% 200% no-repeat;
   image-rendering: pixelated;
   transform-origin: 50% 85%;
 }
-.pixel-winnie[data-state="sleeping"] .pixel-sprite {
+.pixel-winnie[data-facing="left"] .pixel-sprite {
+  transform: scaleX(-1);
+}
+.pixel-winnie.blinking[data-state="awake"]:not(.walking):not(.delighted)
+  .pixel-sprite {
   background-position: 50% 0;
 }
-.pixel-winnie.delighted[data-state="awake"] .pixel-sprite {
+.pixel-winnie.walking[data-state="awake"] .pixel-sprite {
+  animation: winnie-stride 320ms steps(1, end) infinite;
+}
+.pixel-winnie[data-state="sleeping"] .pixel-sprite {
   background-position: 100% 0;
+  transform: none;
+}
+.pixel-winnie.delighted[data-state="awake"] .pixel-sprite {
+  background-position: 100% 100%;
   animation: pixel-hop 650ms steps(5, end) 1;
 }
 .pixel-heart {
   position: absolute;
   color: #bd7963;
   font-size: 14px;
-  top: 0;
+  top: -5px;
   right: 6px;
   opacity: 0;
   pointer-events: none;
 }
 .delighted .pixel-heart {
   animation: pixel-love 1400ms steps(10, end) 1;
+}
+@keyframes winnie-stride {
+  0%,
+  100% {
+    background-position: 0 100%;
+  }
+  50% {
+    background-position: 50% 100%;
+  }
 }
 @keyframes pixel-hop {
   0%,
