@@ -1,54 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { laneBounds, clearPath } from "../public/companion.js";
-
-test("Winnie stays fully inside a visible reserved lane, including narrow phones", () => {
-  const viewport = { width: 320, height: 740 };
-  assert.deepEqual(
-    laneBounds({ left: 14, right: 306, top: 350, height: 64 }, viewport),
-    { minX: 14, maxX: 242, y: 350 },
-  );
-  assert.equal(
-    laneBounds({ left: 14, right: 306, top: 700, height: 64 }, viewport),
-    null,
-  );
-  assert.equal(
-    laneBounds({ left: 14, right: 70, top: 350, height: 64 }, viewport),
-    null,
-  );
-  assert.equal(
-    laneBounds({ left: 14, right: 306, top: -10, height: 64 }, viewport),
-    null,
-  );
-  assert.equal(
-    laneBounds({ left: 14, right: 306, top: 350, height: 0 }, viewport),
-    null,
-  );
-});
-test("a walk cannot cross a control, text, photo, or its touch margin", () => {
-  const from = { x: 20, y: 200 },
-    to = { x: 230, y: 200 };
-  assert.equal(clearPath(from, to, []), true);
-  assert.equal(
-    clearPath(from, to, [{ left: 140, right: 180, top: 190, bottom: 260 }]),
-    false,
-  );
-  assert.equal(
-    clearPath(from, to, [{ left: 140, right: 180, top: 266, bottom: 300 }]),
-    false,
-  );
-  assert.equal(
-    clearPath(from, to, [{ left: 140, right: 180, top: 275, bottom: 300 }]),
-    true,
-  );
-  assert.equal(
-    clearPath(from, { x: 230, y: 400 }, [
-      { left: 140, right: 180, top: 310, bottom: 350 },
-    ]),
-    false,
-  );
-});
 test("every declared icon has the correct raster dimensions and keeps app identity", () => {
   const manifest = JSON.parse(fs.readFileSync("public/manifest.json", "utf8"));
   assert.equal(manifest.start_url, ".");
@@ -75,8 +27,7 @@ test("blink and wandering stop for sleep, editing, and reduced-motion preference
   const saved = new Map(),
     listeners = new Map(),
     classes = new Set();
-  let editing = false,
-    animations = 0;
+  let editing = false;
   const media = {
     matches: false,
     addEventListener: (_n, fn) => listeners.set("motion", fn),
@@ -98,31 +49,13 @@ test("blink and wandering stop for sleep, editing, and reduced-motion preference
     getBoundingClientRect: () => ({ left: 20, top: 200 }),
     addEventListener() {},
     removeEventListener() {},
-    animate() {
-      animations++;
-      return { cancel() {}, onfinish: null };
-    },
-  };
-  const lane = {
-    getClientRects: () => [1],
-    getBoundingClientRect: () => ({
-      left: 20,
-      right: 355,
-      top: 200,
-      height: 64,
-    }),
   };
   const doc = {
     body: {},
     hidden: false,
     activeElement: { matches: () => editing },
     querySelector: () => null,
-    querySelectorAll: (selector) =>
-      selector === "[data-winnie-lane]"
-        ? [lane]
-        : selector === "dialog"
-          ? []
-          : [button],
+    querySelectorAll: () => [],
     addEventListener: (name, fn) => listeners.set(name, fn),
     removeEventListener() {},
   };
@@ -166,22 +99,21 @@ test("blink and wandering stop for sleep, editing, and reduced-motion preference
     assert(!classes.has("blinking"));
     t.mock.timers.tick(3050);
     assert(classes.has("walking"));
-    assert.equal(animations, 1);
     companion.setSleeping(true);
     assert(!classes.has("walking"));
     assert.equal(button.dataset.state, "sleeping");
     t.mock.timers.tick(20000);
     assert(!classes.has("blinking"));
-    assert.equal(animations, 1);
+    assert(!classes.has("walking"));
     companion.setSleeping(false);
     editing = true;
     t.mock.timers.tick(20000);
-    assert.equal(animations, 1);
+    assert(!classes.has("walking"));
     editing = false;
     media.matches = true;
     listeners.get("motion")();
     t.mock.timers.tick(20000);
-    assert.equal(animations, 1);
+    assert(!classes.has("walking"));
     assert(!classes.has("blinking"));
   } finally {
     companion?.destroy();

@@ -1,19 +1,20 @@
-import { createWinnieCompanion } from "./companion.js?v=3.3";
+import { protectAppSelection } from "./selection.js?v=3.4";
+import { createWinnieCompanion } from "./companion.js?v=3.4";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "./insights.js?v=3.3";
-import { insightsView } from "./insight-view.js?v=3.3";
+} from "./insights.js?v=3.4";
+import { insightsView } from "./insight-view.js?v=3.4";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
   photoCaption,
   validateTrainerImport,
-} from "./everyday.js?v=3.3";
-import { WinnieSync } from "./sync.js?v=3.3";
+} from "./everyday.js?v=3.4";
+import { WinnieSync } from "./sync.js?v=3.4";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");
@@ -98,15 +99,7 @@ const photoURLs = new Map(),
 let toastTimer;
 let mealSubmitting = false;
 $("day-picker").value = dayKey(Date.now());
-// Selection stays available in fields and saved notes, not on tappable app chrome.
-document.addEventListener("pointerdown", (e) => {
-  if (
-    e.target.closest("input, textarea, [contenteditable], .detail-notes, pre")
-  )
-    return;
-  const selection = getSelection();
-  if (selection && !selection.isCollapsed) selection.removeAllRanges();
-});
+protectAppSelection();
 function toast(message, undo = null) {
   $("toast-text").textContent = message;
   $("toast").hidden = false;
