@@ -15,7 +15,7 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
-    <link rel="stylesheet" href="/styles.css?v=3.1" />
+    <link rel="stylesheet" href="/styles.css?v=3.2" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to Winnie's day</a>
@@ -91,7 +91,16 @@
               <div>
                 <p id="today-date" class="eyebrow"></p>
                 <h1>His day,<br /><em>together.</em></h1>
-                <p id="hero-caption">The little things, lovingly kept.</p>
+                <p id="hero-caption">Latest care, in one place.</p>
+                <button
+                  id="pixel-winnie"
+                  class="pixel-winnie"
+                  data-state="awake"
+                  aria-label="Give pixel Winnie a pat"
+                >
+                  <span class="pixel-sprite" aria-hidden="true"></span
+                  ><span class="pixel-heart" aria-hidden="true">♥</span>
+                </button>
               </div>
               <div class="portrait-wrap">
                 <img
@@ -181,7 +190,7 @@
           </section>
         </div>
       </main>
-      <footer class="footer"><span>Winnie · v3.1</span></footer>
+      <footer class="footer"><span>Winnie · v3.2</span></footer>
     </div>
     <div id="toast" class="toast" hidden role="status">
       <span id="toast-text"></span><button id="undo">Undo</button
@@ -207,6 +216,6 @@
       accept="application/json,.json"
       hidden
     />
-    <script type="module" src="/app.js?v=3.1"></script>
+    <script type="module" src="/app.js?v=3.2"></script>
   </body>
 </html>

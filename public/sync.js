@@ -1,4 +1,4 @@
-import { notificationState } from "./everyday.js?v=3.1";
+import { notificationState } from "./everyday.js?v=3.2";
 const API = "/.netlify/functions/api";
 const empty = () => ({
   snapshot: {

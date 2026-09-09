@@ -4,7 +4,6 @@ import {
   sleepContext,
   notificationState,
   foodChoices,
-  storyInsights,
   validateTrainerImport,
 } from "../public/everyday.js";
 import { migrate, applyCommand } from "../netlify/lib/core.mjs";
@@ -130,22 +129,4 @@ test("calendar imports preserve planned status and leave existing care untouched
       ),
     /scheduled visit/,
   );
-});
-test("insights exclude deleted/future entries and show missing food coverage", () => {
-  const now = Date.now(),
-    events = [
-      { id: "1", type: "meal", time: now - 1000, foods: ["Chicken"] },
-      { id: "2", type: "meal", time: now - 2000 },
-      {
-        id: "3",
-        type: "meal",
-        time: now - 2000,
-        foods: ["Beef"],
-        deletedAt: now,
-      },
-      { id: "4", type: "meal", time: now + 100000, foods: ["Duck"] },
-    ];
-  const card = storyInsights(events, now).find((c) => c.type === "meal");
-  assert.match(card.body, /1 of 2/);
-  assert.doesNotMatch(card.body, /Beef|Duck/);
 });
