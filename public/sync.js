@@ -1,3 +1,4 @@
+import { notificationState } from "./everyday.js?v=3.1";
 const API = "/.netlify/functions/api";
 const empty = () => ({
   snapshot: {
@@ -472,5 +473,36 @@ export class WinnieSync extends EventTarget {
       method: "POST",
       value: { subscription: subscription.toJSON() },
     });
+    await this.refresh();
+  }
+  async pushState() {
+    const supported =
+      "serviceWorker" in navigator &&
+      "PushManager" in globalThis &&
+      "Notification" in globalThis;
+    const registration = supported
+      ? await navigator.serviceWorker.getRegistration()
+      : null;
+    const local = !!(await registration?.pushManager.getSubscription());
+    const id = this.session?.token.split(".")[0];
+    const server = !!this.data.snapshot.devices?.find(
+      (d) => d.id === id && !d.revoked,
+    )?.notifications;
+    return notificationState({
+      supported,
+      local,
+      server,
+      permission: globalThis.Notification?.permission,
+    });
+  }
+  async disablePush() {
+    await this.request("subscription", {
+      method: "POST",
+      value: { subscription: null },
+    });
+    const registration = await navigator.serviceWorker.getRegistration();
+    const subscription = await registration?.pushManager.getSubscription();
+    await subscription?.unsubscribe();
+    await this.refresh();
   }
 }

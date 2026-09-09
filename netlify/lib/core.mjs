@@ -1,4 +1,5 @@
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { validateTrainerImport, normalizeFood } from "../../public/everyday.js";
 
 export const hash = (value) =>
   createHash("sha256")
@@ -147,6 +148,8 @@ function eventFields(input, old = {}) {
     "episode_kind",
     "appointment_kind",
     "signal",
+    "foods",
+    "calendarVisitId",
   ];
   const fields = Object.fromEntries(
     allowed.filter((k) => Object.hasOwn(input, k)).map((k) => [k, input[k]]),
@@ -165,10 +168,22 @@ function eventFields(input, old = {}) {
     "episode_kind",
     "appointment_kind",
     "signal",
+    "calendarVisitId",
   ])
     if (Object.hasOwn(fields, key))
       assert(typeof fields[key] === "string", "Invalid event text.");
   assert(TYPES.includes(event.type), "Choose an event type.");
+  if (Object.hasOwn(fields, "foods")) {
+    assert(
+      Array.isArray(fields.foods) &&
+        fields.foods.length <= 12 &&
+        fields.foods.every(
+          (f) => typeof f === "string" && f.trim().length > 0 && f.length <= 40,
+        ),
+      "Choose food names under 40 characters.",
+    );
+    fields.foods = [...new Set(fields.foods.map(normalizeFood))];
+  }
   assert(
     Number.isFinite(event.time) &&
       event.time > 0 &&
@@ -248,10 +263,19 @@ export function applyCommand(doc, command, device, now = Date.now()) {
   if (kind === "profile") {
     assert(
       expectedRevision === doc.profile.revision,
-      "Your shared plan changed. Review the latest version.",
+      "Shared settings changed. Review the latest version.",
       409,
       { current: doc.profile },
     );
+    if (Object.hasOwn(payload, "trainerSchedule")) {
+      try {
+        doc.profile.trainerSchedule = validateTrainerImport(
+          payload.trainerSchedule,
+        );
+      } catch (err) {
+        throw new Fault(400, err.message);
+      }
+    }
     for (const field of ["routine", "goal", "withPerson"])
       if (Object.hasOwn(payload, field)) {
         assert(

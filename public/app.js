@@ -1,5 +1,13 @@
-import { recordedPatterns } from "./insights.js?v=3";
-import { WinnieSync } from "./sync.js?v=3";
+import { recordedPatterns } from "./insights.js?v=3.1";
+import {
+  sleepContext,
+  foodChoices,
+  normalizeFood,
+  photoCaption,
+  storyInsights,
+  validateTrainerImport,
+} from "./everyday.js?v=3.1";
+import { WinnieSync } from "./sync.js?v=3.1";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");
@@ -65,10 +73,11 @@ let patternDays = 28;
 let tab = "today",
   filter = "moments",
   limit = 60,
-  poopId = null,
+  quickPhotoId = null,
   photoTarget = null,
   lastUndo = null,
   actionLock = 0,
+  lastLogType = null,
   formPhotos = [],
   formType = null,
   detailId = null,
@@ -76,11 +85,17 @@ let tab = "today",
 const photoURLs = new Map(),
   photoLoading = new Set();
 let toastTimer;
+let mealSubmitting = false;
 $("day-picker").value = dayKey(Date.now());
-document.body.classList.toggle(
-  "quiet",
-  localStorage.getItem("winnie:quiet") === "true",
-);
+// Selection stays available in fields and saved notes, not on tappable app chrome.
+document.addEventListener("pointerdown", (e) => {
+  if (
+    e.target.closest("input, textarea, [contenteditable], .detail-notes, pre")
+  )
+    return;
+  const selection = getSelection();
+  if (selection && !selection.isCollapsed) selection.removeAllRanges();
+});
 function toast(message, undo = null) {
   $("toast-text").textContent = message;
   $("toast").hidden = false;
@@ -107,7 +122,7 @@ function safe(fn) {
   };
 }
 function openDialog(html) {
-  dialogReturn = document.activeElement;
+  if (!$("dialog").open) dialogReturn = document.activeElement;
   $("dialog-content").innerHTML = html;
   detailId = null;
   if (!$("dialog").open) $("dialog").showModal();
@@ -115,6 +130,7 @@ function openDialog(html) {
 function closeDialog() {
   $("dialog").close();
   detailId = null;
+  quickPhotoId = null;
   formPhotos = [];
   formType = null;
   dialogReturn?.focus?.();
@@ -155,8 +171,12 @@ $("today-tab").onclick = () => setTab("today");
 $("story-tab").onclick = () => setTab("story");
 $("day-picker").onchange = render;
 $("retry").onclick = () => sync.flush();
+const renderedHTML = new Map();
 function html(id, value) {
-  if ($(id).innerHTML !== value) $(id).innerHTML = value;
+  if (renderedHTML.get(id) !== value) {
+    $(id).innerHTML = value;
+    renderedHTML.set(id, value);
+  }
 }
 function facts() {
   return sync
@@ -197,9 +217,7 @@ function render() {
   );
   $("hero-caption").textContent = sleeping
     ? `Sleep started at ${clock(sleeping.time)}.`
-    : view.profile.withPerson
-      ? `${person(view.profile.withPerson)} is with Winnie.`
-      : "Latest care, in one place.";
+    : "Latest care, in one place.";
   const icons = {
     pee: '<svg viewBox="0 0 24 24"><path d="M12 3C10 7 5 11 5 15a7 7 0 0 0 14 0c0-4-5-8-7-12Z"/><path d="M8 15c0 2 1 3 3 3"/></svg>',
     poop: "💩",
@@ -221,23 +239,25 @@ function render() {
               ? sleeping.type === "nap"
                 ? "End nap"
                 : "End night sleep"
-              : "Start night sleep"
+              : sleepContext().type === "nap"
+                ? "Start nap"
+                : "Start night sleep"
             : `Log ${type}`;
         return `<button class="care-tile ${type}" data-log="${type}"><span class="tile-icon" aria-hidden="true">${icons[type]}</span><span class="tile-plus" aria-hidden="true">${type === "sleep" && sleeping ? "↗" : "＋"}</span><span class="tile-label">${label}</span><span class="tile-last">${last ? `${type === "sleep" && sleeping ? "Started" : type === "sleep" && last.end_time ? "Ended" : "Last"} ${esc(when(type === "sleep" && last.end_time ? last.end_time : last.time))} · ${last.loggedBy ? esc(person(last.loggedBy)) : "shared log"}` : "Ready when he is"}</span></button>`;
       })
       .join(""),
   );
   const walk = events.find((e) => e.type === "walk" && active(e)),
-    showWalk = localStorage.getItem("winnie:walks") === "true" || walk;
+    showWalk = !!walk;
   $("walk-card").hidden = !showWalk;
   if (showWalk)
     $("walk-card").innerHTML =
       `<div class="section-heading"><h2>${walk ? "Out for a walk" : "A walk, together"}</h2><span aria-hidden="true">🐾</span></div><p class="fine">${walk ? `Started ${clock(walk.time)} · ${esc(person(walk.loggedBy))}` : "An optional way to let each other know you’re out."}</p><div class="button-row"><button class="secondary small" data-act="${walk ? "finish-walk" : "start-walk"}">${walk ? "Finish walk" : "Start walk"}</button>${walk ? '<button class="text-button" data-log="pee">Log pee</button><button class="text-button" data-log="poop">Log poop</button>' : ""}</div>`;
   const p = view.profile;
-  $("plan-card").hidden = !p.routine && !p.goal && !p.withPerson;
+  $("plan-card").hidden = !p.routine && !p.goal;
   if (!$("plan-card").hidden)
     $("plan-card").innerHTML =
-      `<div class="section-heading"><h2>What works for him</h2><button class="text-button" data-act="plan">Edit</button></div>${p.routine ? `<p>${esc(p.routine)}</p>` : ""}${p.goal ? `<div class="plan-line"><span class="mini-label">WE’RE PRACTICING</span><p>${esc(p.goal)}</p></div>` : ""}${p.withPerson ? `<p class="fine">${esc(person(p.withPerson))} is with Winnie.</p>` : ""}`;
+      `<div class="section-heading"><h2>For the next person</h2><button class="text-button" data-act="plan">Edit</button></div>${p.routine ? `<p>${esc(p.routine)}</p>` : ""}${p.goal ? `<div class="plan-line"><span class="mini-label">SAVED NOTE</span><p>${esc(p.goal)}</p></div>` : ""}${p.withPerson ? `<p class="fine">${esc(person(p.withPerson))} is with Winnie.</p>` : ""}`;
   const day = events.filter((e) => dayKey(e.time) === $("day-picker").value);
   $("day-summary").textContent = ["pee", "poop", "meal"]
     .map(
@@ -251,14 +271,7 @@ function render() {
       ? day.map(entry).join("")
       : '<div class="empty"><p>No entries for this day yet.</p></div>',
   );
-  if (poopId) {
-    const e = view.events.find((e) => e.id === poopId && !e.deletedAt);
-    $("photo-prompt").hidden = !e;
-    if (e)
-      $("poop-save-state").textContent = e.pending
-        ? "Poop saved on this phone. Photo optional."
-        : "Poop saved to your shared log. Photo optional.";
-  }
+  hydratePhotos();
   renderTrainer(events);
   if (tab === "story") renderStory();
 }
@@ -272,6 +285,7 @@ function entry(e) {
         ? "In progress"
         : "";
   const detail = [
+    e.foods?.join(" + "),
     e.loggedBy ? person(e.loggedBy) : "Shared history",
     duration,
     e.note !== eventLabel(e) ? e.note : "",
@@ -279,64 +293,100 @@ function entry(e) {
   ]
     .filter(Boolean)
     .join(" · ");
-  return `<button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}${e.photos?.length ? ` · ▧ ${e.photos.length}` : ""}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>`;
+  return `<div class="feed-entry"><button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>${e.photos?.length ? `<div class="feed-photos">${e.photos.map((p) => `<button data-open="${esc(e.id)}" aria-label="Open photo from ${esc(eventLabel(e))}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"></button>`).join("")}</div>` : ""}</div>`;
 }
 function renderStory() {
+  $("story-heading").textContent =
+    filter === "patterns"
+      ? "What his days tell us"
+      : filter === "care"
+        ? "Every entry"
+        : "His photos";
+  $("story-add").hidden = filter !== "moments";
   $("story-tools").hidden = filter === "patterns";
+  $("album-label").hidden = filter !== "moments";
+  document.querySelector(".history-filters label:first-child").hidden =
+    filter === "moments";
   if (filter === "patterns") {
     renderPatterns();
     return;
   }
-
   let events = facts();
-  const query = $("story-search").value.toLowerCase().trim();
+  const album = $("photo-album").value,
+    query = $("story-search").value.toLowerCase().trim();
   if (filter === "moments")
-    events = events.filter((e) => e.type === "moment" || e.photos?.length);
-  if (filter === "poop")
-    events = events.filter((e) => e.type === "poop" && e.photos?.length);
+    events = events.filter(
+      (e) =>
+        (e.type === "moment" || e.photos?.length) &&
+        (album === "all" || (e.type === album && e.photos?.length)),
+    );
   if (query)
     events = events.filter((e) =>
-      `${e.note || ""} ${eventLabel(e)} ${e.location || ""} ${(e.tags || []).join(" ")} ${person(e.loggedBy)}`
+      [
+        e.note,
+        eventLabel(e),
+        e.location,
+        (e.tags || []).join(" "),
+        (e.foods || []).join(" "),
+        person(e.loggedBy),
+      ]
+        .join(" ")
         .toLowerCase()
         .includes(query),
     );
-  if ($("history-type").value)
+  if (filter === "care" && $("history-type").value)
     events = events.filter((e) => e.type === $("history-type").value);
   if ($("history-from").value)
     events = events.filter((e) => dayKey(e.time) >= $("history-from").value);
   if ($("history-to").value)
     events = events.filter((e) => dayKey(e.time) <= $("history-to").value);
+  const count = events.length,
+    photos = events.reduce((n, e) => n + (e.photos?.length || 0), 0);
   $("story-count").textContent =
-    filter === "poop"
-      ? `${events.reduce((n, e) => n + (e.photos?.length || 0), 0)} ${events.reduce((n, e) => n + (e.photos?.length || 0), 0) === 1 ? "photo" : "photos"} · ${events.length} ${events.length === 1 ? "entry" : "entries"}`
-      : `${events.length.toLocaleString()} ${filter === "care" ? "entries" : "moments"}`;
-  $("load-more").hidden = events.length <= limit;
-  if (!events.length) {
-    $("story-items").innerHTML =
-      `<div class="empty card"><div class="big">${filter === "poop" ? "💩" : "♡"}</div><h3>${filter === "poop" ? "His finest work." : filter === "care" ? "Nothing here yet." : "The moments we’ll keep."}</h3><p>${query ? "Try a different search." : filter === "poop" ? "Add a photo after logging a poop, or open an older poop entry and add one there." : "A funny face. A little milestone. An ordinary afternoon with our boy."}</p><div class="button-row"><button class="secondary small" data-act="${filter === "poop" ? "find-poop" : "moment"}">${filter === "poop" ? "Find a poop entry" : "Add a moment"}</button></div></div>`;
+    filter === "care"
+      ? count.toLocaleString() + " " + (count === 1 ? "entry" : "entries")
+      : photos +
+        " " +
+        (photos === 1 ? "photo" : "photos") +
+        " · " +
+        count +
+        " " +
+        (count === 1 ? "moment" : "moments");
+  $("load-more").hidden = count <= limit;
+  if (!count) {
+    html(
+      "story-items",
+      `<div class="empty card"><h3>Nothing here yet</h3><p>${query || $("history-from").value || $("history-to").value ? "Try another search or date range." : filter === "care" ? "Care you log will appear here." : "Photos you add to care entries appear here, together with your moments."}</p>${filter === "moments" ? '<button class="secondary" data-act="moment">Add a moment</button>' : ""}</div>`,
+    );
     return;
   }
-  if (filter === "care") {
-    $("story-items").innerHTML = events
-      .slice(0, limit)
-      .map(
-        (e, i, a) =>
-          `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? `<p class="eyebrow" style="margin:23px 0 10px">${dateLabel(e.time)}</p>` : ""}${entry(e)}`,
-      )
-      .join("");
-    return;
-  }
-  $("story-items").innerHTML = `<div class="photo-grid">${events
-    .slice(0, limit)
-    .flatMap((e) =>
-      (filter === "poop" ? e.photos || [] : [e.photos?.[0] || null]).map(
-        (photo) =>
-          `<button class="memory-card" data-open="${esc(e.id)}">${photo ? `<img data-photo="${esc(photo.id)}" alt="${esc(filter === "poop" ? "Winnie’s poop photo" : e.note || "A moment with Winnie")}" loading="lazy">` : '<div class="empty big">♡</div>'}<div><strong>${esc(e.note || (e.type === "poop" ? "His finest work." : "A little moment with Winnie."))}</strong><small>${dateLabel(e.time)}${e.pending ? " · Pending" : ""}</small></div></button>`,
-      ),
-    )
-    .join("")}</div>`;
+  if (filter === "care")
+    html(
+      "story-items",
+      events
+        .slice(0, limit)
+        .map(
+          (e, i, a) =>
+            `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? '<p class="eyebrow history-day">' + dateLabel(e.time) + "</p>" : ""}${entry(e)}`,
+        )
+        .join(""),
+    );
+  else
+    html(
+      "story-items",
+      `<div class="photo-grid">${events
+        .slice(0, limit)
+        .flatMap((e) =>
+          (e.photos?.length ? e.photos : [null]).map(
+            (p) =>
+              `<button class="memory-card" data-open="${esc(e.id)}">${p ? `<img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy">` : '<div class="empty big">♡</div>'}<div><strong>${esc(photoCaption(e))}</strong><small>${dateLabel(e.time)}${e.loggedBy ? " · " + person(e.loggedBy) : ""}${e.pending ? " · Pending" : ""}</small></div></button>`,
+          ),
+        )
+        .join("")}</div>`,
+    );
   hydratePhotos();
 }
+
 async function hydratePhotos() {
   for (const img of document.querySelectorAll("img[data-photo]")) {
     const id = img.dataset.photo;
@@ -370,6 +420,10 @@ for (const id of ["story-search", "history-type", "history-from", "history-to"])
     limit = 60;
     renderStory();
   });
+$("photo-album").onchange = () => {
+  limit = 60;
+  renderStory();
+};
 $("load-more").onclick = () => {
   limit += 60;
   renderStory();
@@ -386,10 +440,12 @@ document.querySelectorAll("[data-filter]").forEach(
       renderStory();
     }),
 );
-async function log(type) {
-  if (Date.now() - actionLock < 600) return;
+async function log(type, extra = {}) {
+  if (type === lastLogType && Date.now() - actionLock < 600) return;
   actionLock = Date.now();
-  if (type === "sleep" || type === "nap") {
+  lastLogType = type;
+  if (type === "meal" && !extra.foods) return mealPicker();
+  if (type === "sleep" || type === "nap" || type === "slumber") {
     const sleeping = facts().find(
       (e) => ["nap", "slumber"].includes(e.type) && active(e),
     );
@@ -399,7 +455,7 @@ async function log(type) {
       );
       return;
     }
-    if (type === "sleep") type = "slumber";
+    if (type === "sleep") type = sleepContext().type;
   }
   const eventId = uid();
   await sync.enqueue("create", eventId, {
@@ -411,16 +467,57 @@ async function log(type) {
     tags: [],
     note: "",
     time_precision: "exact",
+    ...extra,
   });
   document.body.classList.remove("reaction");
   requestAnimationFrame(() => document.body.classList.add("reaction"));
   toast(`${TYPES[type][1]} saved on this device.`, () =>
     sync.enqueue("delete", eventId),
   );
-  if (type === "poop") {
-    poopId = eventId;
-    $("photo-prompt").hidden = false;
-    render();
+  if (["pee", "poop"].includes(type)) pottyPhoto(eventId, type);
+  return eventId;
+}
+function pottyPhoto(id, type) {
+  quickPhotoId = id;
+  openDialog(
+    `<h2 id="dialog-title">${TYPES[type][1]} saved</h2><p class="fine">Add his photo?</p><div class="photo-choice"><button class="primary" data-photo-camera="${id}">Take photo</button><button class="secondary" data-photo-library="${id}">Choose photo</button><button class="text-button" data-act="close">No photo</button></div><p id="form-error" class="error" role="alert"></p>`,
+  );
+}
+function mealPicker() {
+  openDialog(
+    `<h2 id="dialog-title">What did he eat?</h2><div class="food-grid">${foodChoices(
+      facts(),
+    )
+      .map(
+        (food) =>
+          `<button class="secondary" data-food="${esc(food)}">${esc(food)}</button>`,
+      )
+      .join(
+        "",
+      )}</div><form id="custom-food"><label>Add another food<input name="food" maxlength="40" required placeholder="e.g. Turkey" autocomplete="off"></label><button class="secondary small" type="submit">Add & log meal</button></form><button class="text-button" data-food-unknown>Log without food details</button><p id="form-error" class="error" role="alert"></p>`,
+  );
+  $("custom-food").onsubmit = safe(async (ev) => {
+    ev.preventDefault();
+    const food = normalizeFood(new FormData(ev.target).get("food"));
+    if (!food) throw Error("Enter a food name.");
+    const button = ev.target.querySelector("button");
+    button.disabled = true;
+    try {
+      await saveMeal(food);
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+async function saveMeal(food) {
+  if (mealSubmitting) return;
+  mealSubmitting = true;
+  try {
+    actionLock = 0;
+    const id = await log("meal", { foods: food ? [food] : [] });
+    if (id) closeDialog();
+  } finally {
+    mealSubmitting = false;
   }
 }
 function detail(id) {
@@ -436,15 +533,23 @@ function detail(id) {
     return;
   }
   openDialog(
-    `<h2 id="dialog-title">${TYPES[e.type]?.[0] || "•"} ${esc(eventLabel(e))}</h2><p class="fine">${dateLabel(e.time)} · ${clock(e.time)}${e.end_time != null ? ` → ${dateLabel(e.end_time)} ${clock(e.end_time)}` : ""}</p><p class="fine">${e.loggedBy ? `Logged by ${esc(person(e.loggedBy))}` : "Original shared history · person not recorded"}${e.pending ? " · Waiting to share" : ""}</p>${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}<div class="detail-meta">${(e.tags || []).map((t) => `<span class="pill">${esc(t)}</span>`).join("")}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${e.location ? `<p class="fine">${esc(e.location)}</p>` : ""}<div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${["pee", "poop"].includes(e.type) ? `<h3>Who initiated the trip?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
+    `<h2 id="dialog-title">${TYPES[e.type]?.[0] || "•"} ${esc(eventLabel(e))}</h2><p class="fine">${dateLabel(e.time)} · ${clock(e.time)}${e.end_time != null ? ` → ${dateLabel(e.end_time)} ${clock(e.end_time)}` : ""}</p><p class="fine">${e.loggedBy ? `Logged by ${esc(person(e.loggedBy))}` : "Original shared history · person not recorded"}${e.pending ? " · Waiting to share" : ""}</p>${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}<div class="detail-meta">${(e.tags || []).map((t) => `<span class="pill">${esc(t)}</span>`).join("")}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.foods?.length ? `<p class="detail-notes">Ate ${esc(e.foods.join(" + "))}</p>` : ""}${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${e.location ? `<p class="fine">${esc(e.location)}</p>` : ""}<div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${["pee", "poop"].includes(e.type) ? `<h3>Who initiated the trip?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
   );
   detailId = id;
   hydratePhotos();
 }
-function editForm(type = "note", id = null) {
+function editForm(type = "note", id = null, defaults = {}) {
   const e = id
     ? sync.view().events.find((e) => e.id === id)
-    : { type, time: Date.now(), end_time: null, note: "", who: "us", tags: [] };
+    : {
+        type,
+        time: Date.now(),
+        end_time: null,
+        note: "",
+        who: "us",
+        tags: [],
+        ...defaults,
+      };
   if (!e) return;
   const eventId = id || uid();
   let savedRevision = id ? e.revision : undefined;
@@ -461,9 +566,12 @@ function editForm(type = "note", id = null) {
       )
       .join(
         "",
-      )}</select></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>End time <span class="fine">(leave empty if in progress)</span><input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="A little detail to remember…">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags <span class="fine">(separate with commas)</span><input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(e.location || "")}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+      )}</select></label><label id="foods-label" ${e.type === "meal" ? "" : "hidden"}>What he ate<input name="foods" maxlength="500" value="${esc((e.foods || []).join(", "))}" placeholder="Chicken, sardine…"></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>End time <span class="fine">(leave empty if in progress)</span><input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="A little detail to remember…">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags <span class="fine">(separate with commas)</span><input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(e.location || "")}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
   );
   const f = $("event-form");
+  f.elements.type.addEventListener("change", () => {
+    $("foods-label").hidden = f.elements.type.value !== "meal";
+  });
   f.elements.type.onchange = () => {
     $("end-label").hidden = ![
       "nap",
@@ -484,6 +592,14 @@ function editForm(type = "note", id = null) {
       const input = new FormData(f),
         payload = {
           type: input.get("type"),
+          ...(input.get("type") === "meal"
+            ? {
+                foods: String(input.get("foods") || "")
+                  .split(",")
+                  .map(normalizeFood)
+                  .filter(Boolean),
+              }
+            : {}),
           time: new Date(input.get("time")).getTime(),
           end_time:
             input.get("end_time") && !$("end-label").hidden
@@ -532,10 +648,8 @@ function editForm(type = "note", id = null) {
         "Entry saved on this device.",
         id ? null : () => sync.enqueue("delete", eventId),
       );
-      if (payload.type === "poop") {
-        poopId = eventId;
+      if (["pee", "poop"].includes(payload.type) && !id && !formPhotos.length)
         render();
-      }
     } finally {
       submit.disabled = false;
     }
@@ -543,7 +657,7 @@ function editForm(type = "note", id = null) {
 }
 function moreCare() {
   openDialog(
-    `<h2 id="dialog-title">A little more care</h2><div class="type-grid"><button data-act="trainer">Trainer · log finished hour</button><button data-log="nap">☾ Start nap</button>${Object.entries(
+    `<h2 id="dialog-title">A little more care</h2><div class="type-grid"><button data-act="trainer">Trainer visit</button><button data-log="nap">☾ Start nap</button><button data-log="slumber">☾ Start night sleep</button>${Object.entries(
       TYPES,
     )
       .filter(
@@ -557,25 +671,21 @@ function moreCare() {
 function plan() {
   const p = sync.view().profile;
   openDialog(
-    `<h2 id="dialog-title">What works for him</h2><form id="plan-form"><label>Our current routine<textarea name="routine" maxlength="2000" placeholder="The useful things we both want to remember…">${esc(p.routine)}</textarea></label><label>One thing we’re practicing<textarea name="goal" maxlength="2000" placeholder="For example: ring the bell before putting on his harness.">${esc(p.goal)}</textarea></label><label>Who is with Winnie?<select name="withPerson"><option value="">Not set</option>${["brandon", "kim"].map((t) => `<option value="${t}" ${p.withPerson === t ? "selected" : ""}>${person(t)}</option>`).join("")}</select></label><p class="fine">Keep this current together. Clear a temporary instruction when it no longer applies.</p><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary">Save our plan</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+    `<h2 id="dialog-title">For the next person</h2><p class="fine">Leave one useful handoff note. It stays on Today until you clear it.</p><form id="plan-form"><label>Shared note<textarea name="routine" maxlength="2000" placeholder="e.g. He left half his breakfast. Offer it again later.">${esc(p.routine || "")}</textarea></label>${p.goal ? '<details><summary>Saved learning note</summary><p class="detail-notes">' + esc(p.goal) + "</p></details>" : ""}<div class="button-row"><button class="primary">Save note</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
   );
-  $("plan-form").onsubmit = safe(async (e) => {
-    e.preventDefault();
-    const f = new FormData(e.target);
+  $("plan-form").onsubmit = safe(async (ev) => {
+    ev.preventDefault();
     await sync.enqueue(
       "profile",
-      "profile",
-      {
-        routine: f.get("routine"),
-        goal: f.get("goal"),
-        withPerson: f.get("withPerson"),
-      },
+      null,
+      { routine: new FormData(ev.target).get("routine").trim() },
       p.revision,
     );
     closeDialog();
-    toast("Shared plan saved on this device.");
+    toast("Shared note saved.");
   });
 }
+
 function settings() {
   if (!sync.session) {
     $("shared-code").focus();
@@ -584,7 +694,8 @@ function settings() {
   const devices = sync.data.snapshot.devices || [],
     me = sync.session.token.split(".")[0];
   openDialog(
-    `<h2 id="dialog-title">Our little family</h2><div class="setting-block"><p>Using this device as <strong>${person(sync.session.person)}</strong></p><button class="secondary small" data-act="push">Enable partner notifications</button><p id="push-status">Get an update when the other person logs care. On iPhone, open Winnie from your Home Screen.</p></div><div class="setting-block"><button class="secondary small" data-act="plan">Edit our routine & learning goal</button><label class="switch-row">Show optional walk mode<input id="walk-setting" type="checkbox" ${localStorage.getItem("winnie:walks") === "true" ? "checked" : ""}></label><label class="switch-row">Quiet presentation<input id="quiet-setting" type="checkbox" ${document.body.classList.contains("quiet") ? "checked" : ""}></label></div><div class="setting-block"><h3>Our history</h3><p>${sync.data.snapshot.events.filter((e) => !e.deletedAt).length.toLocaleString()} shared entries. Original records keep their original attribution.</p><p>New entries: Brandon ${sync.data.snapshot.usage?.brandon || 0} · Kim ${sync.data.snapshot.usage?.kim || 0}</p><div class="button-row"><button class="secondary small" data-act="export">Export history & pending actions</button><button class="text-button" data-act="review">Review saved phone history</button></div><p>Photos can be saved from each entry. History exports include photo references.</p></div><div class="setting-block"><h3>Connected devices</h3>${devices
+    `<h2 id="dialog-title">Our little family</h2><div class="setting-block"><p>Using this device as <strong>${person(sync.session.person)}</strong></p><button class="secondary small" id="push-toggle" data-act="push" disabled>Checking notifications…</button><p id="push-status" role="status"></p></div><div class="setting-block"><button class="secondary small" data-act="plan">Shared handoff note</button><button class="secondary small" data-act="trainer-schedule">Trainer visits</button><p class="fine">Sleep switches between nap and night sleep at San Francisco sunrise and sunset.</p></div>
+<div class="setting-block"><h3>Our history</h3><p>${sync.data.snapshot.events.filter((e) => !e.deletedAt).length.toLocaleString()} shared entries. Original records keep their original attribution.</p><p>New entries: Brandon ${sync.data.snapshot.usage?.brandon || 0} · Kim ${sync.data.snapshot.usage?.kim || 0}</p><div class="button-row"><button class="secondary small" data-act="export">Export history & pending actions</button><button class="text-button" data-act="review">Review saved phone history</button></div><p>Photos can be saved from each entry. History exports include photo references.</p></div><div class="setting-block"><h3>Connected devices</h3>${devices
       .filter((d) => !d.revoked)
       .map(
         (d) =>
@@ -594,15 +705,45 @@ function settings() {
         "",
       )}<button class="text-button" data-act="invite">Show shared code for another device</button></div><div class="setting-block"><button class="text-button" data-act="reconnect">Reconnect as another person</button><p>Pending actions stay with their original shared log.</p></div><p id="form-error" class="error" role="alert"></p>`,
   );
-  $("walk-setting").onchange = (e) => {
-    localStorage.setItem("winnie:walks", e.target.checked);
-    render();
-  };
-  $("quiet-setting").onchange = (e) => {
-    localStorage.setItem("winnie:quiet", e.target.checked);
-    document.body.classList.toggle("quiet", e.target.checked);
-  };
+  updatePushStatus();
 }
+async function updatePushStatus() {
+  const button = $("push-toggle");
+  if (!button) return;
+  try {
+    const state = await sync.pushState();
+    if ($("push-toggle") !== button) return;
+    const labels = {
+      on: "Turn off partner notifications",
+      off: "Enable partner notifications",
+      repair: "Reconnect notifications",
+      blocked: "Notifications blocked in phone settings",
+      unsupported: "Open from your Home Screen to enable",
+    };
+    button.textContent = labels[state];
+    button.dataset.act = state === "on" ? "push-off" : "push";
+    button.disabled = ["blocked", "unsupported"].includes(state);
+    $("push-status").textContent =
+      state === "on"
+        ? "Partner notifications are on for this device."
+        : state === "repair"
+          ? "This phone and the shared log need to reconnect notifications."
+          : state === "blocked"
+            ? "Allow notifications for Winnie in your phone’s settings, then reopen this menu."
+            : state === "unsupported"
+              ? "On iPhone, add Winnie to your Home Screen in Safari and open it there."
+              : "Get an update when the other person logs care.";
+  } catch {
+    if ($("push-toggle") === button) {
+      button.textContent = "Retry notification check";
+      button.dataset.act = "push-check";
+      button.disabled = false;
+      $("push-status").textContent =
+        "Could not check this phone’s notification setup.";
+    }
+  }
+}
+
 function canonical(v) {
   if (Array.isArray(v)) return v.map(canonical);
   if (v && typeof v === "object")
@@ -729,7 +870,10 @@ for (const id of ["camera-input", "library-input"])
     }
     if (target !== "form") {
       toast(`${files.length === 1 ? "Photo" : "Photos"} saved on this device.`);
-      if ($("dialog").open && detailId === target) detail(target);
+      if (quickPhotoId === target) {
+        quickPhotoId = null;
+        closeDialog();
+      } else if ($("dialog").open && detailId === target) detail(target);
       render();
     } else toast("Photo ready. Save the entry to keep it.");
   });
@@ -745,12 +889,6 @@ function download(value, name, type = "application/json") {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
-$("poop-camera").onclick = () => choosePhoto(poopId, true);
-$("poop-library").onclick = () => choosePhoto(poopId);
-$("poop-dismiss").onclick = () => {
-  poopId = null;
-  $("photo-prompt").hidden = true;
-};
 $("earlier").onclick = () => editForm("pee");
 $("more").onclick = moreCare;
 $("add-moment").onclick = () => editForm("moment");
@@ -783,6 +921,32 @@ document.addEventListener(
     if (b.dataset.log) {
       if ($("dialog").open) closeDialog();
       return log(b.dataset.log);
+    }
+    if (b.dataset.food || b.hasAttribute("data-food-unknown")) {
+      b.disabled = true;
+      try {
+        await saveMeal(b.dataset.food || "");
+      } finally {
+        b.disabled = false;
+      }
+      return;
+    }
+    if (b.dataset.visit) {
+      await confirmVisit(b.dataset.visit);
+      return;
+    }
+    if (b.dataset.insightType) {
+      filter = "care";
+      $("history-type").value = b.dataset.insightType;
+      $("history-from").value = dayKey(Date.now() - 28 * 86400000);
+      $("history-to").value = dayKey(Date.now());
+      document
+        .querySelectorAll("[data-filter]")
+        .forEach((x) =>
+          x.classList.toggle("selected", x.dataset.filter === filter),
+        );
+      renderStory();
+      return;
     }
     if (b.dataset.open) return detail(b.dataset.open);
     if (b.dataset.patternDay) {
@@ -921,7 +1085,7 @@ document.addEventListener(
         renderStory();
         break;
       case "trainer":
-        await logTrainer();
+        trainerSchedule();
         break;
       case "start-walk":
         await log("walk");
@@ -934,14 +1098,38 @@ document.addEventListener(
         }
         break;
       }
+      case "trainer-schedule":
+        trainerSchedule();
+        break;
+      case "trainer-manual":
+        editForm("covered_gap", null, {
+          who: "trainer",
+          time: Date.now() - 3600000,
+          end_time: Date.now(),
+        });
+        break;
+      case "trainer-import":
+        $("trainer-import").value = "";
+        $("trainer-import").click();
+        break;
+      case "push-check":
+        await updatePushStatus();
+        break;
+      case "push-off":
+        b.disabled = true;
+        try {
+          await sync.disablePush();
+        } finally {
+          await updatePushStatus();
+        }
+        break;
       case "push":
         b.disabled = true;
         try {
           await sync.enablePush();
-          $("push-status").textContent =
-            "Partner notifications are enabled on this device.";
+          await updatePushStatus();
         } finally {
-          b.disabled = false;
+          await updatePushStatus();
         }
         break;
       case "export": {
@@ -1016,49 +1204,112 @@ function eventLabel(e) {
     : TYPES[e.type]?.[1] || e.type;
 }
 function renderTrainer(events) {
-  const visits = events.filter(
-      (e) =>
-        e.type === "covered_gap" &&
-        (e.kind === "trainer" || e.who === "trainer") &&
-        dayKey(e.time) === dayKey(Date.now()),
-    ),
-    scheduled = [2, 3, 4].includes(new Date().getDay());
-  $("trainer-card").hidden = !scheduled && !visits.length;
-  if (!$("trainer-card").hidden)
-    html(
-      "trainer-card",
-      `<div class="section-heading"><h2>Trainer visit</h2><span class="fine">Tue · Wed · Thu</span></div>${visits.length ? `<p class="fine">Logged ${clock(visits[0].time)}–${clock(visits[0].end_time)} · ${esc(person(visits[0].loggedBy))}</p><button class="text-button" data-edit="${esc(visits[0].id)}">Adjust visit</button>` : '<p class="fine">1 hour · ending now</p><div class="button-row"><button class="primary small" data-act="trainer">Log finished visit</button></div>'}`,
-    );
-}
-async function logTrainer() {
-  if (Date.now() - actionLock < 600) return;
-  actionLock = Date.now();
-  const now = Date.now(),
-    id = uid();
-  await sync.enqueue("create", id, {
-    type: "covered_gap",
-    kind: "trainer",
-    time: now - 3600000,
-    end_time: now,
-    who: "trainer",
-    note: "Trainer visit",
-    tags: [],
-    time_precision: "approx",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  });
-  if ($("dialog").open) closeDialog();
-  toast("Trainer hour saved. Tap the entry to adjust its time.", () =>
-    sync.enqueue("delete", id),
+  const schedule = sync.view().profile.trainerSchedule;
+  const today =
+    schedule?.visits.filter((v) => dayKey(v.start) === dayKey(Date.now())) ||
+    [];
+  $("trainer-card").hidden = !today.length;
+  if (!today.length) return;
+  html(
+    "trainer-card",
+    `<div class="section-heading"><h2>Trainer today</h2><button class="text-button" data-act="trainer-schedule">Schedule</button></div>${today.map((v) => visitRow(v, events)).join("")}`,
   );
 }
+function visitRow(v, events = facts()) {
+  const logged = events.find(
+    (e) =>
+      e.calendarVisitId === v.id ||
+      (e.type === "covered_gap" &&
+        e.who === "trainer" &&
+        Math.abs(e.time - v.start) < 1800000),
+  );
+  return `<div class="scheduled-visit"><strong>${esc(v.title)}</strong><p class="fine">${dateLabel(v.start)} · ${clock(v.start)}–${clock(v.end)} · ${logged ? "Confirmed" : "Planned"}</p>${logged ? `<button class="text-button" data-open="${esc(logged.id)}">View logged visit</button>` : v.end <= Date.now() ? `<button class="secondary small" data-visit="${esc(v.id)}">Confirm visit happened</button>` : '<span class="fine">Ready to confirm after the visit.</span>'}</div>`;
+}
+function trainerSchedule() {
+  const schedule = sync.view().profile.trainerSchedule,
+    visits =
+      schedule?.visits.filter((v) => v.end >= Date.now() - 7 * 86400000) || [];
+  openDialog(
+    `<h2 id="dialog-title">Trainer visits</h2><p class="fine">${schedule ? "Calendar snapshot checked " + dateLabel(Date.parse(schedule.checkedAt)) + " · through " + esc(schedule.through) + ". Changes in Google Calendar need a fresh import." : "Import planned visits from your calendar. They become care entries only when you confirm they happened."}</p>${visits.map((v) => visitRow(v)).join("") || "<p>No upcoming visits imported yet.</p>"}<div class="button-row"><button class="secondary small" data-act="trainer-import">Import calendar visits</button><button class="text-button" data-act="trainer-manual">Log another visit</button></div><p id="form-error" class="error" role="alert"></p>`,
+  );
+}
+async function confirmVisit(id) {
+  const visit = sync
+    .view()
+    .profile.trainerSchedule?.visits.find((v) => v.id === id);
+  if (!visit || visit.end > Date.now())
+    throw Error("Confirm this visit after it ends.");
+  if (facts().some((e) => e.calendarVisitId === id)) {
+    trainerSchedule();
+    return;
+  }
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(id),
+  );
+  const eventId =
+    "trainer-" +
+    Array.from(new Uint8Array(digest), (b) =>
+      b.toString(16).padStart(2, "0"),
+    ).join("");
+  await sync.enqueue("create", eventId, {
+    type: "covered_gap",
+    kind: "trainer",
+    calendarVisitId: id,
+    time: visit.start,
+    end_time: visit.end,
+    who: "trainer",
+    note: visit.title,
+    tags: [],
+    time_precision: "exact",
+    timezone: "America/Los_Angeles",
+  });
+  trainerSchedule();
+  toast("Trainer visit confirmed.");
+}
+$("trainer-import").onchange = safe(async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (file.size > 50000)
+    throw Error("Choose a smaller trainer calendar export.");
+  const schedule = validateTrainerImport(JSON.parse(await file.text())),
+    revision = sync.view().profile.revision;
+  openDialog(
+    `<h2 id="dialog-title">Use these calendar visits?</h2><p class="fine">${schedule.visits.length} planned visits · through ${esc(schedule.through)}. Existing care entries stay as they are.</p>${schedule.visits.map((v) => `<p><strong>${esc(v.title)}</strong><br><span class="fine">${dateLabel(v.start)} · ${clock(v.start)}–${clock(v.end)}</span></p>`).join("")}<div class="button-row"><button class="primary" id="save-trainer-import">Use these visits</button><button class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p>`,
+  );
+  $("save-trainer-import").onclick = safe(async (ev) => {
+    ev.target.disabled = true;
+    try {
+      await sync.enqueue(
+        "profile",
+        null,
+        { trainerSchedule: schedule },
+        revision,
+      );
+      trainerSchedule();
+      toast("Calendar visits saved to the shared schedule.");
+    } finally {
+      ev.target.disabled = false;
+    }
+  });
+});
+
 function renderPatterns() {
   const p = recordedPatterns(facts(), patternDays),
     max = Math.max(1, ...p.series.map((d) => d.pee + d.poop + d.meal));
   $("story-count").textContent =
     `${p.allCount.toLocaleString()} recorded entries${p.first ? " · since " + dateLabel(p.first) : ""}`;
   $("load-more").hidden = true;
-  $("story-items").innerHTML =
-    `<section class="card patterns"><div class="section-heading"><h2>What we’ve recorded</h2><label><span class="sr-only">Pattern time window</span><select id="pattern-window"><option value="7" ${patternDays === 7 ? "selected" : ""}>7 days</option><option value="28" ${patternDays === 28 ? "selected" : ""}>28 days</option><option value="90" ${patternDays === 90 ? "selected" : ""}>90 days</option></select></label></div><p class="fine">${p.start} — ${p.end}</p><div class="pattern-stats"><div><strong>${p.activeDays}<small> / ${p.days}</small></strong><span>days with entries</span></div><div><strong>${p.total}</strong><span>entries recorded</span></div></div><h3>Daily care entries</h3><div class="chart-legend"><span>● Pee</span><span>● Poop</span><span>● Meals</span></div><div class="daily-chart" style="--days:${p.days}" aria-label="Daily recorded care. Select a day to see its entries.">${p.series.map((d) => `<button data-pattern-day="${d.date}" title="${d.date}: ${d.pee} pee, ${d.poop} poop, ${d.meal} meal entries" aria-label="${d.date}: ${d.pee} pee, ${d.poop} poop, ${d.meal} meal entries" class="chart-column"><span style="height:${(d.meal / max) * 100}%" class="bar-meal"></span><span style="height:${(d.poop / max) * 100}%" class="bar-poop"></span><span style="height:${(d.pee / max) * 100}%" class="bar-pee"></span></button>`).join("")}</div><div class="chart-labels"><span>${p.start}</span><span>${p.end}</span></div><p class="fine">Blank days mean no entries were recorded. They don’t tell us whether care happened.</p><h3>This period and the previous ${p.days} days</h3><div class="comparison-table"><div class="table-row table-head"><span>Recorded entries</span><span>Previous</span><span>Current</span></div>${Object.entries(
+  html(
+    "story-items",
+    `<div class="insight-cards">${storyInsights(facts())
+      .map(
+        (c) =>
+          `<article class="card insight-card"><h3>${esc(c.title)}</h3><p>${esc(c.body)}</p>${c.type ? `<button class="text-button" data-insight-type="${c.type}">See the entries →</button>` : ""}</article>`,
+      )
+      .join(
+        "",
+      )}</div><section class="card patterns"><div class="section-heading"><h2>What we’ve recorded</h2><label><span class="sr-only">Pattern time window</span><select id="pattern-window"><option value="7" ${patternDays === 7 ? "selected" : ""}>7 days</option><option value="28" ${patternDays === 28 ? "selected" : ""}>28 days</option><option value="90" ${patternDays === 90 ? "selected" : ""}>90 days</option></select></label></div><p class="fine">${p.start} — ${p.end}</p><div class="pattern-stats"><div><strong>${p.activeDays}<small> / ${p.days}</small></strong><span>days with entries</span></div><div><strong>${p.total}</strong><span>entries recorded</span></div></div><h3>Daily care entries</h3><div class="chart-legend"><span>● Pee</span><span>● Poop</span><span>● Meals</span></div><div class="daily-chart" style="--days:${p.days}" aria-label="Daily recorded care. Select a day to see its entries.">${p.series.map((d) => `<button data-pattern-day="${d.date}" title="${d.date}: ${d.pee} pee, ${d.poop} poop, ${d.meal} meal entries" aria-label="${d.date}: ${d.pee} pee, ${d.poop} poop, ${d.meal} meal entries" class="chart-column"><span style="height:${(d.meal / max) * 100}%" class="bar-meal"></span><span style="height:${(d.poop / max) * 100}%" class="bar-poop"></span><span style="height:${(d.pee / max) * 100}%" class="bar-pee"></span></button>`).join("")}</div><div class="chart-labels"><span>${p.start}</span><span>${p.end}</span></div><p class="fine">Blank days mean no entries were recorded. They don’t tell us whether care happened.</p><h3>This period and the previous ${p.days} days</h3><div class="comparison-table"><div class="table-row table-head"><span>Recorded entries</span><span>Previous</span><span>Current</span></div>${Object.entries(
       p.counts,
     )
       .map(
@@ -1067,7 +1318,8 @@ function renderPatterns() {
       )
       .join(
         "",
-      )}</div><p class="fine">Previous period starts ${p.previousStart}, with entries on ${p.previousActiveDays} of ${p.days} days. Changes in logging habits can change these counts.</p>${p.tagged ? `<h3>Asking to go out</h3><p><strong>${p.selfAsked} of ${p.tagged}</strong> tagged entries record that he asked.</p><p class="fine">Entries without a signal label are excluded.</p>` : ""}${p.invalidSleep ? `<div class="notice" style="margin-top:16px">${p.invalidSleep} historical sleep ${p.invalidSleep === 1 ? "entry has" : "entries have"} an end time that needs review. Original values are preserved; no sleep duration score is inferred.</div>` : ""}<div class="button-row"><button class="text-button" data-act="all-history">Browse the full history →</button></div></section>`;
+      )}</div><p class="fine">Previous period starts ${p.previousStart}, with entries on ${p.previousActiveDays} of ${p.days} days. Changes in logging habits can change these counts.</p>${p.tagged ? `<h3>Asking to go out</h3><p><strong>${p.selfAsked} of ${p.tagged}</strong> tagged entries record that he asked.</p><p class="fine">Entries without a signal label are excluded.</p>` : ""}${p.invalidSleep ? `<div class="notice" style="margin-top:16px">${p.invalidSleep} historical sleep ${p.invalidSleep === 1 ? "entry has" : "entries have"} an end time that needs review. Original values are preserved; no sleep duration score is inferred.</div>` : ""}<div class="button-row"><button class="text-button" data-act="all-history">Browse the full history →</button></div></section>`,
+  );
   $("pattern-window").onchange = (e) => {
     patternDays = Number(e.target.value);
     renderPatterns();
