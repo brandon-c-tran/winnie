@@ -77,6 +77,7 @@ let tab = "today",
   photoTarget = null,
   lastUndo = null,
   actionLock = 0,
+  lastLogType = null,
   formPhotos = [],
   formType = null,
   detailId = null,
@@ -440,8 +441,9 @@ document.querySelectorAll("[data-filter]").forEach(
     }),
 );
 async function log(type, extra = {}) {
-  if (Date.now() - actionLock < 600) return;
+  if (type === lastLogType && Date.now() - actionLock < 600) return;
   actionLock = Date.now();
+  lastLogType = type;
   if (type === "meal" && !extra.foods) return mealPicker();
   if (type === "sleep" || type === "nap" || type === "slumber") {
     const sleeping = facts().find(
