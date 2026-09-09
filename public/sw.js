@@ -1,12 +1,14 @@
-const CACHE = "winnie-v3-20260908-r5";
+const CACHE = "winnie-v3-20260908-r6";
 const SHELL = [
   "/",
   "/index.html",
-  "/styles.css?v=3.1",
-  "/app.js?v=3.1",
-  "/sync.js?v=3.1",
-  "/insights.js?v=3.1",
-  "/everyday.js?v=3.1",
+  "/styles.css?v=3.2",
+  "/app.js?v=3.2",
+  "/sync.js?v=3.2",
+  "/insights.js?v=3.2",
+  "/insight-view.js?v=3.2",
+  "/photos/winnie-pixel-v1.png",
+  "/everyday.js?v=3.2",
   "/vendor/suncalc.js",
   "/manifest.json",
   "/icon-192.png",

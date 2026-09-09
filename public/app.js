@@ -1,13 +1,18 @@
-import { recordedPatterns } from "./insights.js?v=3.1";
+import {
+  rhythmInsights,
+  clockMinute,
+  durationLabel,
+  localParts,
+} from "./insights.js?v=3.2";
+import { insightsView } from "./insight-view.js?v=3.2";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
   photoCaption,
-  storyInsights,
   validateTrainerImport,
-} from "./everyday.js?v=3.1";
-import { WinnieSync } from "./sync.js?v=3.1";
+} from "./everyday.js?v=3.2";
+import { WinnieSync } from "./sync.js?v=3.2";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");
@@ -69,7 +74,12 @@ const when = (time) => {
 };
 const active = (e) => !e.deletedAt && e.end_time == null;
 const uid = () => crypto.randomUUID();
-let patternDays = 28;
+let patternDays = 28,
+  insightTopic = "poop",
+  insightData = null,
+  evidenceKey = null,
+  evidenceLimit = 30;
+let pixelTimer;
 let tab = "today",
   filter = "moments",
   limit = 60,
@@ -215,6 +225,13 @@ function render() {
   const sleeping = events.find(
     (e) => ["nap", "slumber"].includes(e.type) && active(e),
   );
+  $("pixel-winnie").dataset.state = sleeping ? "sleeping" : "awake";
+  $("pixel-winnie").setAttribute(
+    "aria-label",
+    sleeping
+      ? "Pixel Winnie is sleeping. Give him a gentle pat."
+      : "Give pixel Winnie a pat",
+  );
   $("hero-caption").textContent = sleeping
     ? `Sleep started at ${clock(sleeping.time)}.`
     : "Latest care, in one place.";
@@ -296,9 +313,10 @@ function entry(e) {
   return `<div class="feed-entry"><button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>${e.photos?.length ? `<div class="feed-photos">${e.photos.map((p) => `<button data-open="${esc(e.id)}" aria-label="Open photo from ${esc(eventLabel(e))}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"></button>`).join("")}</div>` : ""}</div>`;
 }
 function renderStory() {
+  $("story-view").classList.toggle("showing-insights", filter === "patterns");
   $("story-heading").textContent =
     filter === "patterns"
-      ? "What his days tell us"
+      ? "His rhythm"
       : filter === "care"
         ? "Every entry"
         : "His photos";
@@ -469,8 +487,7 @@ async function log(type, extra = {}) {
     time_precision: "exact",
     ...extra,
   });
-  document.body.classList.remove("reaction");
-  requestAnimationFrame(() => document.body.classList.add("reaction"));
+  reactWinnie();
   toast(`${TYPES[type][1]} saved on this device.`, () =>
     sync.enqueue("delete", eventId),
   );
@@ -935,30 +952,24 @@ document.addEventListener(
       await confirmVisit(b.dataset.visit);
       return;
     }
-    if (b.dataset.insightType) {
-      filter = "care";
-      $("history-type").value = b.dataset.insightType;
-      $("history-from").value = dayKey(Date.now() - 28 * 86400000);
-      $("history-to").value = dayKey(Date.now());
-      document
-        .querySelectorAll("[data-filter]")
-        .forEach((x) =>
-          x.classList.toggle("selected", x.dataset.filter === filter),
-        );
-      renderStory();
+    if (b.dataset.rhythm) {
+      insightTopic = b.dataset.rhythm;
+      renderPatterns();
+      document.querySelector('[data-rhythm="' + insightTopic + '"]')?.focus();
       return;
     }
-    if (b.dataset.open) return detail(b.dataset.open);
-    if (b.dataset.patternDay) {
-      filter = "care";
-      $("history-from").value = b.dataset.patternDay;
-      $("history-to").value = b.dataset.patternDay;
-      document
-        .querySelectorAll("[data-filter]")
-        .forEach((x) =>
-          x.classList.toggle("selected", x.dataset.filter === filter),
+    if (b.dataset.evidence) return showEvidence(b.dataset.evidence);
+    if (b.hasAttribute("data-evidence-more"))
+      return showEvidence(evidenceKey, true);
+    if (b.hasAttribute("data-evidence-back")) return showEvidence(evidenceKey);
+    if (b.dataset.open) {
+      const fromEvidence = !!b.closest(".evidence-list");
+      detail(b.dataset.open);
+      if (fromEvidence)
+        $("dialog-content").insertAdjacentHTML(
+          "afterbegin",
+          '<button class="text-button" data-evidence-back>← Back to the pattern</button>',
         );
-      renderStory();
       return;
     }
     if (b.dataset.edit) return editForm(null, b.dataset.edit);
@@ -968,6 +979,7 @@ document.addEventListener(
       try {
         await sync.enqueue("edit", b.dataset.end, { end_time: Date.now() });
         closeDialog();
+        reactWinnie();
         toast("Sleep end saved on this device.");
       } finally {
         b.disabled = false;
@@ -1067,6 +1079,7 @@ document.addEventListener(
         $("history-from").value = "";
         $("history-to").value = "";
         $("history-type").value = "";
+        $("story-search").value = "";
         document
           .querySelectorAll("[data-filter]")
           .forEach((x) =>
@@ -1294,34 +1307,126 @@ $("trainer-import").onchange = safe(async (ev) => {
   });
 });
 
+function reactWinnie() {
+  const pixel = $("pixel-winnie");
+  clearTimeout(pixelTimer);
+  pixel.classList.remove("delighted");
+  // Restart a short acknowledgement; no looping animation while using the app.
+  void pixel.offsetWidth;
+  pixel.classList.add("delighted");
+  pixelTimer = setTimeout(() => pixel.classList.remove("delighted"), 1600);
+}
+$("pixel-winnie").onclick = reactWinnie;
 function renderPatterns() {
-  const p = recordedPatterns(facts(), patternDays),
-    max = Math.max(1, ...p.series.map((d) => d.pee + d.poop + d.meal));
-  $("story-count").textContent =
-    `${p.allCount.toLocaleString()} recorded entries${p.first ? " · since " + dateLabel(p.first) : ""}`;
+  insightData = rhythmInsights(facts(), patternDays);
+  $("story-count").textContent = "";
   $("load-more").hidden = true;
-  html(
-    "story-items",
-    `<div class="insight-cards">${storyInsights(facts())
-      .map(
-        (c) =>
-          `<article class="card insight-card"><h3>${esc(c.title)}</h3><p>${esc(c.body)}</p>${c.type ? `<button class="text-button" data-insight-type="${c.type}">See the entries →</button>` : ""}</article>`,
-      )
-      .join(
-        "",
-      )}</div><section class="card patterns"><div class="section-heading"><h2>What we’ve recorded</h2><label><span class="sr-only">Pattern time window</span><select id="pattern-window"><option value="7" ${patternDays === 7 ? "selected" : ""}>7 days</option><option value="28" ${patternDays === 28 ? "selected" : ""}>28 days</option><option value="90" ${patternDays === 90 ? "selected" : ""}>90 days</option></select></label></div><p class="fine">${p.start} — ${p.end}</p><div class="pattern-stats"><div><strong>${p.activeDays}<small> / ${p.days}</small></strong><span>days with entries</span></div><div><strong>${p.total}</strong><span>entries recorded</span></div></div><h3>Daily care entries</h3><div class="chart-legend"><span>● Pee</span><span>● Poop</span><span>● Meals</span></div><div class="daily-chart" style="--days:${p.days}" aria-label="Daily recorded care. Select a day to see its entries.">${p.series.map((d) => `<button data-pattern-day="${d.date}" title="${d.date}: ${d.pee} pee, ${d.poop} poop, ${d.meal} meal entries" aria-label="${d.date}: ${d.pee} pee, ${d.poop} poop, ${d.meal} meal entries" class="chart-column"><span style="height:${(d.meal / max) * 100}%" class="bar-meal"></span><span style="height:${(d.poop / max) * 100}%" class="bar-poop"></span><span style="height:${(d.pee / max) * 100}%" class="bar-pee"></span></button>`).join("")}</div><div class="chart-labels"><span>${p.start}</span><span>${p.end}</span></div><p class="fine">Blank days mean no entries were recorded. They don’t tell us whether care happened.</p><h3>This period and the previous ${p.days} days</h3><div class="comparison-table"><div class="table-row table-head"><span>Recorded entries</span><span>Previous</span><span>Current</span></div>${Object.entries(
-      p.counts,
-    )
-      .map(
-        ([type, count]) =>
-          `<div class="table-row"><span>${type === "slumber" ? "Night sleep" : TYPES[type][1]}</span><span>${count.previous}</span><span>${count.current}</span></div>`,
-      )
-      .join(
-        "",
-      )}</div><p class="fine">Previous period starts ${p.previousStart}, with entries on ${p.previousActiveDays} of ${p.days} days. Changes in logging habits can change these counts.</p>${p.tagged ? `<h3>Asking to go out</h3><p><strong>${p.selfAsked} of ${p.tagged}</strong> tagged entries record that he asked.</p><p class="fine">Entries without a signal label are excluded.</p>` : ""}${p.invalidSleep ? `<div class="notice" style="margin-top:16px">${p.invalidSleep} historical sleep ${p.invalidSleep === 1 ? "entry has" : "entries have"} an end time that needs review. Original values are preserved; no sleep duration score is inferred.</div>` : ""}<div class="button-row"><button class="text-button" data-act="all-history">Browse the full history →</button></div></section>`,
-  );
+  html("story-items", insightsView(insightData, insightTopic));
   $("pattern-window").onchange = (e) => {
     patternDays = Number(e.target.value);
     renderPatterns();
+    $("pattern-window").focus();
   };
+}
+function showEvidence(key, more = false) {
+  evidenceKey = key;
+  evidenceLimit = more ? evidenceLimit + 30 : 30;
+  const d = insightData,
+    p = d.potty[insightTopic],
+    all = new Map(facts().map((e) => [e.id, e]));
+  let title, rows, description;
+  if (key === "meals") {
+    title = "Meals followed by a poop";
+    description =
+      d.afterMeals.pairs.length +
+      " matched pairs from " +
+      d.afterMeals.meals +
+      " meals with a full four-hour window.";
+    rows = d.afterMeals.pairs.map((p) => ({
+      ids: [p.meal, p.poop],
+      time: p.time,
+      gap: p.minutes,
+    }));
+  } else if (key === "gaps") {
+    title = "Between daytime " + insightTopic + " breaks";
+    description = "Consecutive entries on the same day, between 6am and 10pm.";
+    rows = p.gaps.map((g) => ({
+      ids: [g.before, g.after],
+      time: g.time,
+      gap: g.minutes,
+    }));
+  } else {
+    const n =
+      key === "early-nights"
+        ? d.oldNight
+        : key === "past-nights"
+          ? d.pastNight
+          : d.night;
+    const ids = key === "times" ? p.ids : n.ids;
+    title =
+      key === "times"
+        ? "His recorded " + insightTopic + " times"
+        : key === "early-nights"
+          ? "His earliest recorded nights"
+          : key === "past-nights"
+            ? "Nights in the previous period"
+            : "His recent recorded nights";
+    description =
+      key === "times"
+        ? "The entries behind the time-of-day pattern."
+        : "Completed night intervals used in this comparison.";
+    rows = ids.map((id) => ({ ids: [id], time: all.get(id)?.time || 0 }));
+  }
+  rows.sort((a, b) => b.time - a.time);
+  const rowHTML = rows
+    .slice(0, evidenceLimit)
+    .map(
+      (row) =>
+        '<div class="evidence-row"><p>' +
+        new Date(row.time).toLocaleDateString("en-US", {
+          timeZone: "America/Los_Angeles",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }) +
+        (row.gap != null ? " · " + durationLabel(row.gap) + " apart" : "") +
+        "</p><div>" +
+        row.ids
+          .map((id) => {
+            const e = all.get(id);
+            if (!e) return "";
+            return (
+              '<button class="evidence-entry" data-open="' +
+              esc(id) +
+              '"><span>' +
+              esc(TYPES[e.type]?.[1] || e.type) +
+              "</span><strong>" +
+              clockMinute(localParts(e.time).minute) +
+              (e.end_time
+                ? " → " + clockMinute(localParts(e.end_time).minute)
+                : "") +
+              '</strong><span aria-hidden="true">↗</span></button>'
+            );
+          })
+          .join("") +
+        "</div></div>",
+    )
+    .join("");
+  openDialog(
+    '<h2 id="dialog-title">' +
+      title +
+      '</h2><p class="fine">' +
+      description +
+      ' Times are in San Francisco.</p><div class="evidence-list">' +
+      rowHTML +
+      "</div>" +
+      (rows.length > evidenceLimit
+        ? '<button class="secondary small" data-evidence-more>Show more entries</button>'
+        : "") +
+      '<p class="fine">Showing ' +
+      Math.min(evidenceLimit, rows.length) +
+      " of " +
+      rows.length +
+      ".</p>",
+  );
 }
