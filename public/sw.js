@@ -1,18 +1,22 @@
-const CACHE = "winnie-v3-20260908-r6";
+const CACHE = "winnie-v3-20260909-r8";
 const SHELL = [
   "/",
   "/index.html",
-  "/styles.css?v=3.2",
-  "/app.js?v=3.2",
-  "/sync.js?v=3.2",
-  "/insights.js?v=3.2",
-  "/insight-view.js?v=3.2",
-  "/photos/winnie-pixel-v1.png",
-  "/everyday.js?v=3.2",
+  "/styles.css?v=3.3",
+  "/app.js?v=3.3",
+  "/sync.js?v=3.3",
+  "/insights.js?v=3.3",
+  "/insight-view.js?v=3.3",
+  "/companion.js?v=3.3",
+  "/photos/winnie-pixel-v2.png",
+  "/everyday.js?v=3.3",
   "/vendor/suncalc.js",
-  "/manifest.json",
+  "/manifest.json?v=3.3",
+  "/icons/winnie-v2-32.png",
+  "/icons/winnie-v2-180.png",
+  "/icons/winnie-v2-192.png",
+  "/icons/winnie-v2-512.png",
   "/icon-192.png",
-  "/icon-512.png",
 ];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
@@ -90,7 +94,7 @@ self.addEventListener("push", (event) => {
       }
       await self.registration.showNotification(data.title, {
         body: data.body,
-        icon: "/icon-192.png",
+        icon: "/icons/winnie-v2-192.png",
         badge: "/icon-192.png",
         tag: data.tag,
         data: { url: data.url, eventId: data.eventId },

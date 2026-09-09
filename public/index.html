@@ -12,10 +12,19 @@
       content="A shared day and a little life worth remembering. Winnie's care, together."
     />
     <title>Winnie · His day, together</title>
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="icon" href="/icon-192.png" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    <link rel="stylesheet" href="/styles.css?v=3.2" />
+    <link rel="manifest" href="/manifest.json?v=3.3" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/icons/winnie-v2-32.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/icons/winnie-v2-180.png"
+    />
+    <link rel="stylesheet" href="/styles.css?v=3.3" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to Winnie's day</a>
@@ -92,15 +101,6 @@
                 <p id="today-date" class="eyebrow"></p>
                 <h1>His day,<br /><em>together.</em></h1>
                 <p id="hero-caption">Latest care, in one place.</p>
-                <button
-                  id="pixel-winnie"
-                  class="pixel-winnie"
-                  data-state="awake"
-                  aria-label="Give pixel Winnie a pat"
-                >
-                  <span class="pixel-sprite" aria-hidden="true"></span
-                  ><span class="pixel-heart" aria-hidden="true">♥</span>
-                </button>
               </div>
               <div class="portrait-wrap">
                 <img
@@ -109,6 +109,11 @@
                   alt="Winnie smiling"
                 /><span class="portrait-label">our good boy ♡</span>
               </div>
+              <div
+                class="winnie-lane winnie-home"
+                data-winnie-lane
+                aria-hidden="true"
+              ></div>
             </div>
             <div class="section-heading">
               <h2>A little care</h2>
@@ -126,6 +131,11 @@
             <section id="trainer-card" class="card plan-card" hidden></section>
             <section id="walk-card" class="card walk-card" hidden></section>
             <section id="plan-card" class="card plan-card" hidden></section>
+            <div
+              class="winnie-lane winnie-feed-lane"
+              data-winnie-lane
+              aria-hidden="true"
+            ></div>
             <div class="section-heading">
               <h2>Our shared day</h2>
               <label class="date-label"
@@ -148,6 +158,11 @@
                 <h1>A life worth<br /><em>remembering.</em></h1>
               </div>
             </div>
+            <div
+              class="winnie-lane winnie-story-lane"
+              data-winnie-lane
+              aria-hidden="true"
+            ></div>
             <div class="section-heading">
               <h2 id="story-heading">His photos</h2>
               <button id="story-add" class="text-button">
@@ -190,8 +205,19 @@
           </section>
         </div>
       </main>
-      <footer class="footer"><span>Winnie · v3.2</span></footer>
+      <footer class="footer"><span>Winnie · v3.3</span></footer>
     </div>
+    <button
+      id="pixel-winnie"
+      class="pixel-winnie"
+      data-state="awake"
+      data-facing="right"
+      aria-label="Give pixel Winnie a pat"
+      hidden
+    >
+      <span class="pixel-sprite" aria-hidden="true"></span
+      ><span class="pixel-heart" aria-hidden="true">♥</span>
+    </button>
     <div id="toast" class="toast" hidden role="status">
       <span id="toast-text"></span><button id="undo">Undo</button
       ><button id="toast-close" aria-label="Dismiss confirmation">×</button>
@@ -216,6 +242,6 @@
       accept="application/json,.json"
       hidden
     />
-    <script type="module" src="/app.js?v=3.2"></script>
+    <script type="module" src="/app.js?v=3.3"></script>
   </body>
 </html>
