@@ -15,7 +15,7 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
-    <link rel="stylesheet" href="/styles.css?v=3.0.1" />
+    <link rel="stylesheet" href="/styles.css?v=3.1" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to Winnie's day</a>
@@ -114,25 +114,6 @@
                 ▧ Add a moment
               </button>
             </div>
-            <section
-              id="photo-prompt"
-              class="photo-prompt"
-              hidden
-              aria-label="Add a poop photo"
-            >
-              <div>
-                <span class="mini-label">ONE FOR THE COLLECTION</span>
-                <h3>His finest work. 💩</h3>
-                <p id="poop-save-state">Poop logged. Photo optional.</p>
-              </div>
-              <div class="button-row">
-                <button id="poop-camera" class="primary small">
-                  Take photo</button
-                ><button id="poop-library" class="secondary small">
-                  Choose photo</button
-                ><button id="poop-dismiss" class="text-button">Done</button>
-              </div>
-            </section>
             <section id="trainer-card" class="card plan-card" hidden></section>
             <section id="walk-card" class="card walk-card" hidden></section>
             <section id="plan-card" class="card plan-card" hidden></section>
@@ -159,18 +140,24 @@
               </div>
             </div>
             <div class="section-heading">
-              <h2>All the little moments</h2>
+              <h2 id="story-heading">His photos</h2>
               <button id="story-add" class="text-button">
                 ＋ Add a moment
               </button>
             </div>
-            <div class="filters" role="group" aria-label="Story collection">
-              <button data-filter="moments" class="selected">Moments</button
-              ><button data-filter="poop">💩 Poop photos</button
-              ><button data-filter="care">All care</button
-              ><button data-filter="patterns">Patterns</button>
+            <div class="filters" role="group" aria-label="His story sections">
+              <button data-filter="moments" class="selected">Photos</button
+              ><button data-filter="patterns">Insights</button
+              ><button data-filter="care">All entries</button>
             </div>
             <div id="story-tools">
+              <label id="album-label"
+                >Collection<select id="photo-album">
+                  <option value="all">All moments</option>
+                  <option value="poop">Poop photos</option>
+                  <option value="meal">Meal photos</option>
+                </select></label
+              >
               <label class="search-box"
                 ><span aria-hidden="true">⌕</span
                 ><input
@@ -194,7 +181,7 @@
           </section>
         </div>
       </main>
-      <footer class="footer"><span>Winnie · v3.0</span></footer>
+      <footer class="footer"><span>Winnie · v3.1</span></footer>
     </div>
     <div id="toast" class="toast" hidden role="status">
       <span id="toast-text"></span><button id="undo">Undo</button
@@ -214,6 +201,12 @@
       capture="environment"
       hidden
     /><input id="library-input" type="file" accept="image/*" multiple hidden />
-    <script type="module" src="/app.js?v=3"></script>
+    <input
+      id="trainer-import"
+      type="file"
+      accept="application/json,.json"
+      hidden
+    />
+    <script type="module" src="/app.js?v=3.1"></script>
   </body>
 </html>

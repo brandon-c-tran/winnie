@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHandler } from "../netlify/lib/api.mjs";
 import { MemoryStore } from "../tests/store.mjs";
+const port = Number(process.env.WINNIE_DEV_PORT || 4173);
 const root = path.resolve("public"),
   stores = {
     main: new MemoryStore(),
@@ -45,7 +46,7 @@ const mime = {
 http
   .createServer(async (req, res) => {
     try {
-      const url = new URL(req.url, "http://localhost:4173");
+      const url = new URL(req.url, `http://localhost:${port}`);
       if (url.pathname === "/.netlify/functions/api") {
         const chunks = [];
         for await (const chunk of req) chunks.push(chunk);
@@ -82,8 +83,8 @@ http
       res.end("Not found");
     }
   })
-  .listen(4173, "127.0.0.1", () =>
+  .listen(port, "127.0.0.1", () =>
     console.log(
-      "Winnie local preview: http://localhost:4173 · shared code: winnie-local-demo · isolated memory store",
+      `Winnie local preview: http://localhost:${port} · shared code: winnie-local-demo · isolated memory store`,
     ),
   );

@@ -1,6 +1,6 @@
 {
   "name": "winnie-project",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "description": "Winnie's shared care and family story",
   "type": "module",
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@netlify/blobs": "11.0.3",
+    "suncalc": "2.0.2",
     "web-push": "3.6.7"
   },
   "devDependencies": {
