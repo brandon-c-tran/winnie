@@ -20,6 +20,222 @@
   font-synthesis: none;
 }
 
+/* A small atlas of the places remembered in his entries. */
+.places-controls {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0 24px;
+}
+.places-controls label {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.places-controls select {
+  width: 100%;
+  margin-top: 6px;
+}
+.places-intro h2 {
+  font-family: Georgia, serif;
+  font-size: clamp(23px, 5vw, 32px);
+  font-weight: 400;
+  line-height: 1.2;
+  max-width: 420px;
+  margin: 8px 0 12px;
+}
+.places-map {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #cddbd3;
+  border-radius: 22px;
+  background: #e3eef0;
+  margin: 22px 0 14px;
+  isolation: isolate;
+}
+.places-map svg {
+  width: 100%;
+  display: block;
+  color: #b4cccc;
+}
+.map-canvas {
+  position: relative;
+}
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--paper);
+  background: var(--green);
+  color: white;
+  box-shadow:
+    0 0 0 5px #345b4322,
+    0 3px 9px #263d3322;
+  cursor: pointer;
+  transition:
+    box-shadow 0.2s,
+    background 0.2s;
+}
+.map-pin strong {
+  font-size: 14px;
+  line-height: 1.1;
+}
+.map-pin small {
+  font-size: 8px;
+  line-height: 1.2;
+}
+.map-pin.cluster {
+  width: 48px;
+  height: 48px;
+}
+.map-pin:hover,
+.map-pin:focus-visible,
+.map-pin.active {
+  background: #81562f;
+  box-shadow: 0 0 0 6px #c38a4d55;
+}
+.place-history:focus {
+  outline: none;
+}
+.place-history + .places-cities {
+  margin-top: 28px;
+}
+.map-land {
+  fill: #e9eddd;
+  stroke: #b7c9b1;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.map-marker {
+  cursor: pointer;
+  outline: none;
+}
+.map-dot {
+  fill: var(--green);
+  stroke: #fffefb;
+  stroke-width: 3;
+  transition: fill 0.2s;
+}
+.map-marker text {
+  fill: white;
+  font:
+    600 13px system-ui,
+    sans-serif;
+  pointer-events: none;
+}
+.map-halo {
+  fill: #345b4319;
+  transition: fill 0.2s;
+}
+.map-marker:hover .map-halo,
+.map-marker:focus .map-halo,
+.map-marker.active .map-halo {
+  fill: #c38a4d66;
+}
+.map-marker.active .map-dot {
+  fill: #81562f;
+}
+.map-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fffefbdc;
+  font-size: 13px;
+  font-weight: 600;
+}
+.places-cities {
+  display: grid;
+  gap: 9px;
+}
+.place-city {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--ink);
+  transition:
+    background 0.18s,
+    transform 0.18s;
+}
+.place-city:hover {
+  transform: translateY(-2px);
+}
+.place-city.selected {
+  background: #eaf0e5;
+  border-color: #9aae94;
+}
+.place-city > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.place-city strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.place-city .fine {
+  display: block;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.place-number {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  font-size: 12px;
+}
+.place-history {
+  margin-top: 28px;
+  scroll-margin-top: 24px;
+}
+.place-entry-date {
+  margin: 18px 0 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.places-about {
+  margin: 24px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.places-about summary {
+  cursor: pointer;
+}
+.places-about a {
+  color: var(--green);
+}
+@media (prefers-reduced-motion: reduce) {
+  .place-city,
+  .map-dot,
+  .map-halo {
+    transition: none;
+  }
+  .place-city:hover {
+    transform: none;
+  }
+}
+
 /* A shared fridge door: structured content, tactile paper, no dragging needed. */
 .fridge-board {
   margin: 26px 0 24px;
