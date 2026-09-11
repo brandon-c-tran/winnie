@@ -1623,3 +1623,85 @@ a {
 .rhythm-unready[open] summary {
   margin-bottom: 20px;
 }
+
+/* Latest state and quick logging share one compact card. */
+.care-cell {
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  min-width: 0;
+}
+.care-cell .care-tile {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  padding: 15px;
+  min-height: 0;
+}
+.care-elapsed {
+  display: block;
+  font-size: 25px;
+  letter-spacing: -1px;
+  margin: 5px 0 11px;
+}
+.care-cell .tile-label {
+  font-size: 15px;
+}
+.care-context {
+  display: block;
+  text-align: left;
+  width: 100%;
+  padding: 11px 15px;
+  background: transparent;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.care-context span {
+  display: block;
+}
+.care-detail-link {
+  color: var(--green);
+  margin-top: 5px;
+}
+.place-summary {
+  padding: 12px 0;
+  overflow-wrap: anywhere;
+}
+#handoff-card p,
+#next-care-card p {
+  overflow-wrap: anywhere;
+}
+
+.care-cell .tile-icon {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 6px;
+  font-size: 21px;
+}
+.care-cell .care-elapsed {
+  margin: 4px 0 8px;
+}
+@media (max-width: 600px) {
+  #today-view .hero {
+    padding: 22px 0;
+  }
+  #today-view .hero h1 {
+    font-size: 36px;
+  }
+  #today-view .portrait {
+    width: 112px;
+    height: 112px;
+  }
+  #today-view #hero-caption {
+    font-size: 12px;
+  }
+  .care-cell .care-tile {
+    padding: 12px;
+  }
+  .care-context {
+    padding: 9px 12px;
+  }
+}

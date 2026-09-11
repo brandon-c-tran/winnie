@@ -150,10 +150,33 @@ function eventFields(input, old = {}) {
     "signal",
     "foods",
     "calendarVisitId",
+    "placePin",
   ];
   const fields = Object.fromEntries(
     allowed.filter((k) => Object.hasOwn(input, k)).map((k) => [k, input[k]]),
   );
+  if (Object.hasOwn(fields, "placePin") && fields.placePin !== null) {
+    const p = fields.placePin;
+    assert(
+      p &&
+        Number.isFinite(p.lat) &&
+        Math.abs(p.lat) <= 90 &&
+        Number.isFinite(p.lng) &&
+        Math.abs(p.lng) <= 180 &&
+        Number.isFinite(p.accuracy) &&
+        p.accuracy >= 0 &&
+        Number.isFinite(p.capturedAt) &&
+        p.capturedAt > 0 &&
+        p.capturedAt <= Date.now() + 60000,
+      "Invalid place pin.",
+    );
+    fields.placePin = {
+      lat: p.lat,
+      lng: p.lng,
+      accuracy: p.accuracy,
+      capturedAt: p.capturedAt,
+    };
+  }
   const event = { ...old, ...fields };
   for (const key of [
     "type",
@@ -276,6 +299,23 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         throw new Fault(400, err.message);
       }
     }
+    if (Object.hasOwn(payload, "nextCare")) {
+      const p = payload.nextCare;
+      assert(
+        p === null ||
+          (p &&
+            typeof p.label === "string" &&
+            p.label.trim().length > 0 &&
+            p.label.length <= 200 &&
+            (p.dueAt === null || (Number.isFinite(p.dueAt) && p.dueAt > 0)) &&
+            ["", "brandon", "kim"].includes(p.claimedBy)),
+        "Choose a next step, valid time, and person.",
+      );
+      doc.profile.nextCare =
+        p === null
+          ? null
+          : { label: p.label.trim(), dueAt: p.dueAt, claimedBy: p.claimedBy };
+    }
     for (const field of ["routine", "goal", "withPerson"])
       if (Object.hasOwn(payload, field)) {
         assert(
@@ -288,6 +328,10 @@ export function applyCommand(doc, command, device, now = Date.now()) {
             "Choose a person.",
           );
         doc.profile[field] = payload[field];
+        if (field === "routine") {
+          doc.profile.routineUpdatedBy = device.person;
+          doc.profile.routineUpdatedAt = now;
+        }
       }
     doc.profile.revision++;
     doc.profile.updatedBy = device.person;
