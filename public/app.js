@@ -1,3 +1,4 @@
+import { createAutoPlace } from "./auto-place.js?v=3.6";
 import {
   latestCare,
   elapsed,
@@ -5,24 +6,24 @@ import {
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "./care-state.js?v=3.5";
-import { protectAppSelection } from "./selection.js?v=3.5";
-import { createWinnieCompanion } from "./companion.js?v=3.5";
+} from "./care-state.js?v=3.6";
+import { protectAppSelection } from "./selection.js?v=3.6";
+import { createWinnieCompanion } from "./companion.js?v=3.6";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "./insights.js?v=3.5";
-import { insightsView } from "./insight-view.js?v=3.5";
+} from "./insights.js?v=3.6";
+import { insightsView } from "./insight-view.js?v=3.6";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
   photoCaption,
   validateTrainerImport,
-} from "./everyday.js?v=3.5";
-import { WinnieSync } from "./sync.js?v=3.5";
+} from "./everyday.js?v=3.6";
+import { WinnieSync } from "./sync.js?v=3.6";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");
@@ -90,6 +91,18 @@ let patternDays = 28,
   evidenceKey = null,
   evidenceLimit = 30;
 const companion = createWinnieCompanion($("pixel-winnie"));
+const autoPlaceEnabled = () =>
+  localStorage.getItem("winnie:auto-place") !== "off";
+const autoPlace = createAutoPlace({
+  getEvent: (id) => sync.view().events.find((e) => e.id === id),
+  save: (id, placePin, revision) =>
+    sync.enqueue("edit", id, { placePin }, revision),
+  enabled: autoPlaceEnabled,
+  report: (id, message) => {
+    const status = $("auto-place-status");
+    if (status?.dataset.event === id) status.textContent = message;
+  },
+});
 let tab = "today",
   filter = "moments",
   limit = 60,
@@ -499,12 +512,13 @@ async function log(type, extra = {}) {
     sync.enqueue("delete", eventId),
   );
   if (["pee", "poop"].includes(type)) pottyPhoto(eventId, type);
+  void autoPlace.attach(eventId);
   return eventId;
 }
 function pottyPhoto(id, type) {
   quickPhotoId = id;
   openDialog(
-    `<h2 id="dialog-title">${TYPES[type][1]} saved</h2><p class="fine">Add his photo or remember the spot.</p><button class="text-button" data-place="${esc(id)}">⌖ Add place</button><div class="photo-choice"><button class="primary" data-photo-camera="${id}">Take photo</button><button class="secondary" data-photo-library="${id}">Choose photo</button><button class="text-button" data-act="close">No photo</button></div><p id="form-error" class="error" role="alert"></p>`,
+    `<h2 id="dialog-title">${TYPES[type][1]} saved</h2><p class="fine">Add his photo?</p><p class="fine" id="auto-place-status" data-event="${esc(id)}" role="status">${autoPlaceEnabled() ? "Location is added automatically when available." : "Automatic location is off on this device."}</p><div class="photo-choice"><button class="primary" data-photo-camera="${id}">Take photo</button><button class="secondary" data-photo-library="${id}">Choose photo</button><button class="text-button" data-act="close">No photo</button></div><p id="form-error" class="error" role="alert"></p>`,
   );
 }
 function mealPicker() {
@@ -563,6 +577,7 @@ function detail(id) {
   hydratePhotos();
 }
 function editForm(type = "note", id = null, defaults = {}) {
+  if (id) autoPlace.cancel(id);
   const e = id
     ? sync.view().events.find((e) => e.id === id)
     : {
@@ -659,6 +674,13 @@ function editForm(type = "note", id = null, defaults = {}) {
         payload,
         savedRevision,
       );
+      if (
+        !id &&
+        !entrySaved &&
+        payload.time === new Date(dateTime(e.time)).getTime() &&
+        payload.time_precision === "exact"
+      )
+        void autoPlace.attach(eventId);
       entrySaved = true;
       savedRevision = sync
         .view()
@@ -761,6 +783,7 @@ function placeSummary(e) {
     : "";
 }
 function placePicker(id) {
+  autoPlace.cancel(id);
   const e = sync.view().events.find((e) => e.id === id && !e.deletedAt);
   if (!e) return;
   let pin = validPin(e.placePin) ? e.placePin : null,
@@ -837,7 +860,7 @@ function settings() {
   const devices = sync.data.snapshot.devices || [],
     me = sync.session.token.split(".")[0];
   openDialog(
-    `<h2 id="dialog-title">Our little family</h2><div class="setting-block"><p>Using this device as <strong>${person(sync.session.person)}</strong></p><button class="secondary small" id="push-toggle" data-act="push" disabled>Checking notifications…</button><p id="push-status" role="status"></p></div><div class="setting-block"><button class="secondary small" data-act="plan">Shared handoff note</button><button class="secondary small" data-act="trainer-schedule">Trainer visits</button><p class="fine">Sleep switches between nap and night sleep at San Francisco sunrise and sunset.</p></div>
+    `<h2 id="dialog-title">Our little family</h2><div class="setting-block"><p>Using this device as <strong>${person(sync.session.person)}</strong></p><button class="secondary small" id="push-toggle" data-act="push" disabled>Checking notifications…</button><p id="push-status" role="status"></p></div><div class="setting-block"><button class="secondary small" data-act="auto-place">Automatic location: ${autoPlaceEnabled() ? "on" : "off"}</button><p class="fine">Saves this phone’s location with new logs when permitted. No location tracking between logs. Each phone controls its own permission.</p></div><div class="setting-block"><button class="secondary small" data-act="plan">Shared handoff note</button><button class="secondary small" data-act="trainer-schedule">Trainer visits</button><p class="fine">Sleep switches between nap and night sleep at San Francisco sunrise and sunset.</p></div>
 <div class="setting-block"><h3>Our history</h3><p>${sync.data.snapshot.events.filter((e) => !e.deletedAt).length.toLocaleString()} shared entries. Original records keep their original attribution.</p><p>New entries: Brandon ${sync.data.snapshot.usage?.brandon || 0} · Kim ${sync.data.snapshot.usage?.kim || 0}</p><div class="button-row"><button class="secondary small" data-act="export">Export history & pending actions</button><button class="text-button" data-act="review">Review saved phone history</button></div><p>Photos can be saved from each entry. History exports include photo references.</p></div><div class="setting-block"><h3>Connected devices</h3>${devices
       .filter((d) => !d.revoked)
       .map(
@@ -1194,6 +1217,14 @@ document.addEventListener(
         break;
       case "review":
         review();
+        break;
+      case "auto-place":
+        localStorage.setItem(
+          "winnie:auto-place",
+          autoPlaceEnabled() ? "off" : "on",
+        );
+        if (!autoPlaceEnabled()) autoPlace.cancelAll();
+        settings();
         break;
       case "next-care":
         nextCareForm();
