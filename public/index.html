@@ -12,7 +12,7 @@
       content="A shared day and a little life worth remembering. Winnie's care, together."
     />
     <title>Winnie · His day, together</title>
-    <link rel="manifest" href="/manifest.json?v=3.4" />
+    <link rel="manifest" href="/manifest.json?v=3.5" />
     <link
       rel="icon"
       type="image/png"
@@ -24,7 +24,7 @@
       sizes="180x180"
       href="/icons/winnie-v2-180.png"
     />
-    <link rel="stylesheet" href="/styles.css?v=3.4" />
+    <link rel="stylesheet" href="/styles.css?v=3.5" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to Winnie's day</a>
@@ -111,7 +111,7 @@
             <div class="hero">
               <div>
                 <p id="today-date" class="eyebrow"></p>
-                <h1>His day,<br /><em>together.</em></h1>
+                <h1>Winnie,<br /><em>right now.</em></h1>
                 <p id="hero-caption">Latest care, in one place.</p>
               </div>
               <div class="portrait-wrap">
@@ -123,7 +123,7 @@
               </div>
             </div>
             <div class="section-heading">
-              <h2>A little care</h2>
+              <h2>Latest care</h2>
               <button id="earlier" class="text-button">
                 Log earlier <span aria-hidden="true">↗</span>
               </button>
@@ -135,6 +135,8 @@
                 ▧ Add a moment
               </button>
             </div>
+            <section id="handoff-card" class="card plan-card"></section>
+            <section id="next-care-card" class="card plan-card"></section>
             <section id="trainer-card" class="card plan-card" hidden></section>
             <section id="walk-card" class="card walk-card" hidden></section>
             <section id="plan-card" class="card plan-card" hidden></section>
@@ -202,7 +204,7 @@
           </section>
         </div>
       </main>
-      <footer class="footer"><span>Winnie · v3.4</span></footer>
+      <footer class="footer"><span>Winnie · v3.5</span></footer>
     </div>
 
     <div id="toast" class="toast" hidden role="status">
@@ -229,6 +231,6 @@
       accept="application/json,.json"
       hidden
     />
-    <script type="module" src="/app.js?v=3.4"></script>
+    <script type="module" src="/app.js?v=3.5"></script>
   </body>
 </html>
