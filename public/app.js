@@ -3,10 +3,10 @@ import {
   placeName,
   placeLabel,
   loadCities,
-} from "./places.js?v=3.8";
-import { createPlacesView } from "./places-view.js?v=3.8";
-import { createFridge } from "./fridge.js?v=3.8";
-import { createAutoPlace } from "./auto-place.js?v=3.8";
+} from "./places.js?v=3.8.1";
+import { createPlacesView } from "./places-view.js?v=3.8.1";
+import { createFridge } from "./fridge.js?v=3.8.1";
+import { createAutoPlace } from "./auto-place.js?v=3.8.1";
 import {
   latestCare,
   elapsed,
@@ -14,24 +14,24 @@ import {
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "./care-state.js?v=3.8";
-import { protectAppSelection } from "./selection.js?v=3.8";
-import { createWinnieCompanion } from "./companion.js?v=3.8";
+} from "./care-state.js?v=3.8.1";
+import { protectAppSelection } from "./selection.js?v=3.8.1";
+import { createWinnieCompanion } from "./companion.js?v=3.8.1";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "./insights.js?v=3.8";
-import { insightsView } from "./insight-view.js?v=3.8";
+} from "./insights.js?v=3.8.1";
+import { insightsView } from "./insight-view.js?v=3.8.1";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
   photoCaption,
   validateTrainerImport,
-} from "./everyday.js?v=3.8";
-import { WinnieSync } from "./sync.js?v=3.8";
+} from "./everyday.js?v=3.8.1";
+import { WinnieSync } from "./sync.js?v=3.8.1";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");

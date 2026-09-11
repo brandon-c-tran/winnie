@@ -98,7 +98,7 @@ export function cityFor(event, resolve = lookup) {
   return pin && resolve ? resolve(pin) : null;
 }
 export function cityLabel(city) {
-  return city.distance > 30 ? `Near ${city.name}` : `${city.name} area`;
+  return city.distance > 30 ? `Near ${city.name}` : city.name;
 }
 export function placeLabel(event, resolve = lookup) {
   const name = placeName(event),
