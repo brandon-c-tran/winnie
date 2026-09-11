@@ -166,7 +166,7 @@ export function createHandler(getStores, { runDispatch = dispatch } = {}) {
         return json(snapshot(doc));
       }
       if (action === "command" && req.method === "POST") {
-        const command = await body(req);
+        const command = await body(req, 2000000);
         if (command.kind === "attach") {
           assert(validId(command.payload?.photoId), "Invalid photo.");
           assert(
