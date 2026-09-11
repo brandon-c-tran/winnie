@@ -12,7 +12,7 @@
       content="A shared day and a little life worth remembering. Winnie's care, together."
     />
     <title>Winnie · His day, together</title>
-    <link rel="manifest" href="/manifest.json?v=3.8" />
+    <link rel="manifest" href="/manifest.json?v=3.9" />
     <link
       rel="icon"
       type="image/png"
@@ -24,7 +24,7 @@
       sizes="180x180"
       href="/icons/winnie-v2-180.png"
     />
-    <link rel="stylesheet" href="/styles.css?v=3.8" />
+    <link rel="stylesheet" href="/styles.css?v=3.9" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to Winnie's day</a>
@@ -103,6 +103,7 @@
           <nav class="tabs" aria-label="Main navigation">
             <button class="selected" id="today-tab" aria-current="page">
               Today</button
+            ><button id="care-tab">Care</button
             ><button id="story-tab">
               His story <span aria-hidden="true">♡</span>
             </button>
@@ -146,6 +147,9 @@
             <section id="plan-card" class="card plan-card" hidden></section>
             <div class="section-heading">
               <h2>Our shared day</h2>
+              <button class="text-button small" data-act="all-history">
+                History ↗
+              </button>
               <label class="date-label"
                 ><span class="sr-only">Choose day</span
                 ><input id="day-picker" type="date"
@@ -153,6 +157,18 @@
             </div>
             <div id="day-summary" class="day-summary"></div>
             <div id="timeline" class="timeline"></div>
+          </section>
+          <section id="care-view" hidden>
+            <div class="section-heading care-heading"><h1>Care</h1></div>
+            <div class="filters" aria-label="Care sections">
+              <button data-care-section="upcoming" class="selected">
+                Upcoming
+              </button>
+              <button data-care-section="patterns">Trends</button>
+              <button data-care-section="care">History</button>
+            </div>
+            <div id="care-upcoming"></div>
+            <div id="care-library" hidden></div>
           </section>
           <section id="story-view" hidden>
             <div class="story-cover">
@@ -174,43 +190,43 @@
             </div>
             <div class="filters" role="group" aria-label="His story sections">
               <button data-filter="moments" class="selected">Photos</button
-              ><button data-filter="places">Places</button
-              ><button data-filter="patterns">Insights</button
-              ><button data-filter="care">All entries</button>
+              ><button data-filter="places">Places</button>
             </div>
-            <div id="story-tools">
-              <label id="album-label"
-                >Collection<select id="photo-album">
-                  <option value="all">All moments</option>
-                  <option value="poop">Poop photos</option>
-                  <option value="meal">Meal photos</option>
-                </select></label
-              >
-              <label class="search-box"
-                ><span aria-hidden="true">⌕</span
-                ><input
-                  id="story-search"
-                  type="search"
-                  placeholder="Find a memory or entry"
-                  aria-label="Search history"
-              /></label>
-              <div class="history-filters">
-                <label
-                  >Type<select id="history-type">
-                    <option value="">All types</option>
+            <div id="story-library">
+              <div id="story-tools">
+                <label id="album-label"
+                  >Collection<select id="photo-album">
+                    <option value="all">All moments</option>
+                    <option value="poop">Poop photos</option>
+                    <option value="meal">Meal photos</option>
                   </select></label
-                ><label>From<input type="date" id="history-from" /></label
-                ><label>To<input type="date" id="history-to" /></label>
+                >
+                <label class="search-box"
+                  ><span aria-hidden="true">⌕</span
+                  ><input
+                    id="story-search"
+                    type="search"
+                    placeholder="Find a memory or entry"
+                    aria-label="Search history"
+                /></label>
+                <div class="history-filters">
+                  <label
+                    >Type<select id="history-type">
+                      <option value="">All types</option>
+                    </select></label
+                  ><label>From<input type="date" id="history-from" /></label
+                  ><label>To<input type="date" id="history-to" /></label>
+                </div>
               </div>
+              <p id="story-count" class="fine"></p>
+              <div id="story-items"></div>
+              <button id="load-more" class="secondary" hidden>Show more</button>
             </div>
-            <p id="story-count" class="fine"></p>
             <div id="places-view" hidden></div>
-            <div id="story-items"></div>
-            <button id="load-more" class="secondary" hidden>Show more</button>
           </section>
         </div>
       </main>
-      <footer class="footer"><span>Winnie · v3.8</span></footer>
+      <footer class="footer"><span>Winnie · v3.9</span></footer>
     </div>
 
     <div id="toast" class="toast" hidden role="status">
@@ -237,6 +253,6 @@
       accept="application/json,.json"
       hidden
     />
-    <script type="module" src="/app.js?v=3.8"></script>
+    <script type="module" src="/app.js?v=3.9"></script>
   </body>
 </html>

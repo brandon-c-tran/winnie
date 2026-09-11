@@ -1,12 +1,13 @@
+import { createCare } from "./care-view.js?v=3.9";
 import {
   eventPosition,
   placeName,
   placeLabel,
   loadCities,
-} from "./places.js?v=3.8";
-import { createPlacesView } from "./places-view.js?v=3.8";
-import { createFridge } from "./fridge.js?v=3.8";
-import { createAutoPlace } from "./auto-place.js?v=3.8";
+} from "./places.js?v=3.9";
+import { createPlacesView } from "./places-view.js?v=3.9";
+import { createFridge } from "./fridge.js?v=3.9";
+import { createAutoPlace } from "./auto-place.js?v=3.9";
 import {
   latestCare,
   elapsed,
@@ -14,24 +15,24 @@ import {
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "./care-state.js?v=3.8";
-import { protectAppSelection } from "./selection.js?v=3.8";
-import { createWinnieCompanion } from "./companion.js?v=3.8";
+} from "./care-state.js?v=3.9";
+import { protectAppSelection } from "./selection.js?v=3.9";
+import { createWinnieCompanion } from "./companion.js?v=3.9";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "./insights.js?v=3.8";
-import { insightsView } from "./insight-view.js?v=3.8";
+} from "./insights.js?v=3.9";
+import { insightsView } from "./insight-view.js?v=3.9";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
   photoCaption,
   validateTrainerImport,
-} from "./everyday.js?v=3.8";
-import { WinnieSync } from "./sync.js?v=3.8";
+} from "./everyday.js?v=3.9";
+import { WinnieSync } from "./sync.js?v=3.9";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");
@@ -105,7 +106,23 @@ const places = createPlacesView({
   hydratePhotos,
 });
 const companion = createWinnieCompanion($("pixel-winnie"));
+const care = createCare({
+  root: $("care-upcoming"),
+  sync,
+  esc,
+  person,
+  openDialog,
+  closeDialog,
+  toast,
+  safe,
+  detail,
+  celebrate: reactWinnie,
+  attachLocation: (id) => {
+    void autoPlace.attach(id);
+  },
+});
 const fridge = createFridge({
+  careDueHTML: care.fridgeHTML,
   root: $("fridge-board"),
   sync,
   esc,
@@ -214,11 +231,46 @@ $("undo").onclick = safe(async () => {
     $("undo").disabled = false;
   }
 });
+let careSection = "upcoming",
+  storySection = "moments";
+const libraryFilters = { care: {}, story: {} };
+const libraryFields = [
+  "story-search",
+  "history-type",
+  "history-from",
+  "history-to",
+];
 function setTab(next) {
+  if (tab !== next) {
+    if (libraryFilters[tab])
+      for (const id of libraryFields) libraryFilters[tab][id] = $(id).value;
+    if (libraryFilters[next])
+      for (const id of libraryFields)
+        $(id).value = libraryFilters[next][id] || "";
+    limit = 60;
+  }
   tab = next;
   $("today-view").hidden = tab !== "today";
   $("story-view").hidden = tab !== "story";
-  for (const t of ["today", "story"]) {
+  $("care-view").hidden = tab !== "care";
+  if (tab === "care") filter = careSection;
+  if (tab === "story") filter = storySection;
+  const library = $(tab === "care" ? "care-library" : "story-library");
+  for (const id of ["story-tools", "story-count", "story-items", "load-more"])
+    library.append($(id));
+  $("care-upcoming").hidden = careSection !== "upcoming";
+  $("care-library").hidden = careSection === "upcoming";
+  document
+    .querySelectorAll("[data-care-section]")
+    .forEach((b) =>
+      b.classList.toggle("selected", b.dataset.careSection === careSection),
+    );
+  document
+    .querySelectorAll("[data-filter]")
+    .forEach((b) =>
+      b.classList.toggle("selected", b.dataset.filter === storySection),
+    );
+  for (const t of ["today", "care", "story"]) {
     $(`${t}-tab`).classList.toggle("selected", t === tab);
     if (t === tab) $(`${t}-tab`).setAttribute("aria-current", "page");
     else $(`${t}-tab`).removeAttribute("aria-current");
@@ -227,6 +279,21 @@ function setTab(next) {
 }
 $("today-tab").onclick = () => setTab("today");
 $("story-tab").onclick = () => setTab("story");
+$("care-tab").onclick = () => setTab("care");
+document.querySelectorAll("[data-care-section]").forEach(
+  (b) =>
+    (b.onclick = () => {
+      careSection = b.dataset.careSection;
+      setTab("care");
+    }),
+);
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-care-nav]");
+  if (b) {
+    careSection = b.dataset.careNav;
+    setTab("care");
+  }
+});
 $("day-picker").onchange = render;
 $("retry").onclick = () => sync.flush();
 const renderedHTML = new Map();
@@ -342,6 +409,10 @@ function render() {
   hydratePhotos();
   renderTrainer(events);
   if (tab === "story") renderStory();
+  if (tab === "care") {
+    care.render();
+    if (careSection !== "upcoming") renderStory();
+  }
 }
 function entry(e) {
   const duration =
@@ -516,6 +587,7 @@ document.querySelectorAll("[data-filter]").forEach(
   (button) =>
     (button.onclick = () => {
       filter = button.dataset.filter;
+      storySection = filter;
       limit = 60;
       $("history-type").value = "";
       document
@@ -1278,6 +1350,8 @@ document.addEventListener(
         editForm("moment");
         break;
       case "all-history":
+        careSection = "care";
+        setTab("care");
         filter = "care";
         $("history-from").value = "";
         $("history-to").value = "";
@@ -1291,6 +1365,8 @@ document.addEventListener(
         renderStory();
         break;
       case "find-poop":
+        careSection = "care";
+        setTab("care");
         filter = "care";
         document
           .querySelectorAll("[data-filter]")
@@ -1414,6 +1490,7 @@ if (linkedEvent && sync.session) {
   detail(linkedEvent);
 }
 function eventLabel(e) {
+  if (e.careTitle) return e.careTitle;
   return e.type === "covered_gap" &&
     (e.kind === "trainer" || e.who === "trainer")
     ? "Trainer visit"
@@ -1619,7 +1696,7 @@ function showEvidence(key, more = false) {
 }
 
 setInterval(() => {
-  if (!document.hidden && !$("dialog").open && tab === "today") render();
+  if (!document.hidden && !$("dialog").open) render();
 }, 60000);
 
 loadCities()

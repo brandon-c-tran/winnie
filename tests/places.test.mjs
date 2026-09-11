@@ -25,13 +25,13 @@ test("old coordinates and new pins have one readable, nonmutating interpretation
   ]) {
     const original = JSON.stringify(e);
     assert.deepEqual(eventPosition(e), sf);
-    assert.equal(placeLabel(e, lookup), "San Francisco area");
+    assert.equal(placeLabel(e, lookup), "San Francisco");
     assert(mapURL(e).includes("37.7749,-122.4194"));
     assert.equal(JSON.stringify(e), original);
   }
   assert.equal(
     placeLabel({ coords: sf, location: "Our park" }, lookup),
-    "Our park · San Francisco area",
+    "Our park · San Francisco",
   );
   assert.equal(placeLabel({ location: "Home" }, lookup), "Home");
   assert.equal(placeName({ location: null }), "");

@@ -1,4 +1,4 @@
-import { groupPlaces, loadCities, cityLabel } from "./places.js?v=3.8";
+import { groupPlaces, loadCities, cityLabel } from "./places.js?v=3.9";
 
 export function mapFrame(cities, minimum = 0.9) {
   let west = Math.min(...cities.map((c) => c.lng)),
@@ -114,9 +114,9 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
           g = m.groups[0],
           index = groups.findIndex((c) => c.id === g.id) + 1;
         const label = multiple
-          ? `Zoom into ${m.groups.length} nearby city areas`
+          ? `Zoom into ${m.groups.length} nearby cities`
           : cityLabel(g);
-        return `<button class="map-pin ${multiple ? "cluster" : ""} ${g.id === selected ? "active" : ""}" ${multiple ? `data-map-cluster="${m.groups.map((c) => c.id).join(",")}"` : `data-city="${esc(g.id)}"`} style="left:${m.x / 6.4}%;top:${m.y / 4}%" aria-label="${esc(label)}" title="${esc(label)}"><strong>${multiple ? m.groups.length : index}</strong>${multiple ? "<small>areas</small>" : ""}</button>`;
+        return `<button class="map-pin ${multiple ? "cluster" : ""} ${g.id === selected ? "active" : ""}" ${multiple ? `data-map-cluster="${m.groups.map((c) => c.id).join(",")}"` : `data-city="${esc(g.id)}"`} style="left:${m.x / 6.4}%;top:${m.y / 4}%" aria-label="${esc(label)}" title="${esc(label)}"><strong>${multiple ? m.groups.length : index}</strong>${multiple ? "<small>cities</small>" : ""}</button>`;
       })
       .join(
         "",
@@ -155,10 +155,10 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
           `<option value="${v}" ${type === v ? "selected" : ""}>${n}</option>`,
       )
       .join("")}</select></label></div>
-      <div class="places-intro"><p class="eyebrow">Where he’s been</p><h2>${groups.length ? `${groups.length} city ${groups.length === 1 ? "area" : "areas"}, remembered together.` : "His map starts with a saved location."}</h2><p class="fine">${mapped.toLocaleString()} ${mapped === 1 ? "entry" : "entries"} with a location${missing ? ` · ${missing.toLocaleString()} without a map location` : ""}</p></div>
+      <div class="places-intro"><p class="eyebrow">Where he’s been</p><h2>${groups.length ? `${groups.length} ${groups.length === 1 ? "city" : "cities"}, remembered together.` : "His map starts with a saved location."}</h2><p class="fine">${mapped.toLocaleString()} ${mapped === 1 ? "entry" : "entries"} with a location${missing ? ` · ${missing.toLocaleString()} without a map location` : ""}</p></div>
       ${
         groups.length
-          ? `${map(groups, chosen)}<div class="places-cities" aria-label="City areas">${groups.map((g, i) => `<button class="place-city ${g.id === selected ? "selected" : ""}" data-city="${esc(g.id)}" aria-pressed="${g.id === selected}"><span class="place-number">${i + 1}</span><span><strong>${esc(cityLabel(g))}</strong><span class="fine">${esc(region(g))} · ${g.days.size} recorded ${g.days.size === 1 ? "day" : "days"} · ${g.events.length} ${g.events.length === 1 ? "entry" : "entries"}</span><span class="fine">First ${date(g.first)} · Latest ${date(g.last)}</span></span><span aria-hidden="true">↗</span></button>`).join("")}</div>${
+          ? `${map(groups, chosen)}<div class="places-cities" aria-label="Cities">${groups.map((g, i) => `<button class="place-city ${g.id === selected ? "selected" : ""}" data-city="${esc(g.id)}" aria-pressed="${g.id === selected}"><span class="place-number">${i + 1}</span><span><strong>${esc(cityLabel(g))}</strong><span class="fine">${esc(region(g))} · ${g.days.size} recorded ${g.days.size === 1 ? "day" : "days"} · ${g.events.length} ${g.events.length === 1 ? "entry" : "entries"}</span><span class="fine">First ${date(g.first)} · Latest ${date(g.last)}</span></span><span aria-hidden="true">↗</span></button>`).join("")}</div>${
               chosen
                 ? `<section class="place-history"><div class="section-heading"><h3>${esc(cityLabel(chosen))}</h3><button class="text-button" data-map-all>All places</button></div><p class="fine">Saved entries, newest first</p>${chosen.events
                     .slice(0, limit)
