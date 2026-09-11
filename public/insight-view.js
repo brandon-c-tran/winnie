@@ -1,7 +1,7 @@
 import {
   clockMinute as time,
   durationLabel as duration,
-} from "./insights.js?v=3.7";
+} from "./insights.js?v=3.8";
 const date = (day) =>
   new Date(day + "T12:00:00Z").toLocaleDateString("en-US", {
     month: "short",

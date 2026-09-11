@@ -1,5 +1,12 @@
-import { createFridge } from "./fridge.js?v=3.7";
-import { createAutoPlace } from "./auto-place.js?v=3.7";
+import {
+  eventPosition,
+  placeName,
+  placeLabel,
+  loadCities,
+} from "./places.js?v=3.8";
+import { createPlacesView } from "./places-view.js?v=3.8";
+import { createFridge } from "./fridge.js?v=3.8";
+import { createAutoPlace } from "./auto-place.js?v=3.8";
 import {
   latestCare,
   elapsed,
@@ -7,24 +14,24 @@ import {
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "./care-state.js?v=3.7";
-import { protectAppSelection } from "./selection.js?v=3.7";
-import { createWinnieCompanion } from "./companion.js?v=3.7";
+} from "./care-state.js?v=3.8";
+import { protectAppSelection } from "./selection.js?v=3.8";
+import { createWinnieCompanion } from "./companion.js?v=3.8";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "./insights.js?v=3.7";
-import { insightsView } from "./insight-view.js?v=3.7";
+} from "./insights.js?v=3.8";
+import { insightsView } from "./insight-view.js?v=3.8";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
   photoCaption,
   validateTrainerImport,
-} from "./everyday.js?v=3.7";
-import { WinnieSync } from "./sync.js?v=3.7";
+} from "./everyday.js?v=3.8";
+import { WinnieSync } from "./sync.js?v=3.8";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");
@@ -91,6 +98,12 @@ let patternDays = 28,
   insightData = null,
   evidenceKey = null,
   evidenceLimit = 30;
+const places = createPlacesView({
+  root: $("places-view"),
+  esc,
+  entry,
+  hydratePhotos,
+});
 const companion = createWinnieCompanion($("pixel-winnie"));
 const fridge = createFridge({
   root: $("fridge-board"),
@@ -302,7 +315,7 @@ function render() {
               ? "Sleeping since"
               : "Sleep ended"
             : "Last " + type;
-        return `<div class="care-cell ${type}"><button class="care-tile ${type}" data-log="${type}" aria-label="${label}"><span class="tile-icon" aria-hidden="true">${icons[type]}</span><span class="tile-plus" aria-hidden="true">${type === "sleep" && sleeping ? "↗" : "＋"}</span><span class="mini-label">${last ? stateLabel : TYPES[type]?.[1] || "Sleep"}</span><strong class="care-elapsed">${esc(stamp)}</strong><span class="tile-label">${label}</span></button>${last ? `<button class="care-context" data-open="${esc(last.id)}" aria-label="View last ${type} entry"><span>${dateLabel(time)} · ${clock(time)} · ${last.loggedBy ? esc(person(last.loggedBy)) : "Shared history"}${last.pending ? " · Waiting to share" : ""}</span>${last.foods?.length ? `<span>${esc(last.foods.join(" + "))}</span>` : ""}${last.location || validPin(last.placePin) ? `<span>⌖ ${esc(last.location || "Saved map pin")}</span>` : ""}<span class="care-detail-link">View entry ↗</span></button>` : ""}</div>`;
+        return `<div class="care-cell ${type}"><button class="care-tile ${type}" data-log="${type}" aria-label="${label}"><span class="tile-icon" aria-hidden="true">${icons[type]}</span><span class="tile-plus" aria-hidden="true">${type === "sleep" && sleeping ? "↗" : "＋"}</span><span class="mini-label">${last ? stateLabel : TYPES[type]?.[1] || "Sleep"}</span><strong class="care-elapsed">${esc(stamp)}</strong><span class="tile-label">${label}</span></button>${last ? `<button class="care-context" data-open="${esc(last.id)}" aria-label="View last ${type} entry"><span>${dateLabel(time)} · ${clock(time)} · ${last.loggedBy ? esc(person(last.loggedBy)) : "Shared history"}${last.pending ? " · Waiting to share" : ""}</span>${last.foods?.length ? `<span>${esc(last.foods.join(" + "))}</span>` : ""}${placeLabel(last) ? `<span>⌖ ${esc(placeLabel(last))}</span>` : ""}<span class="care-detail-link">View entry ↗</span></button>` : ""}</div>`;
       })
       .join(""),
   );
@@ -341,7 +354,7 @@ function entry(e) {
         : "";
   const detail = [
     e.foods?.join(" + "),
-    e.location || (validPin(e.placePin) ? "Saved map pin" : ""),
+    placeLabel(e),
     e.loggedBy ? person(e.loggedBy) : "Shared history",
     duration,
     e.note !== eventLabel(e) ? e.note : "",
@@ -353,15 +366,28 @@ function entry(e) {
 }
 function renderStory() {
   companion.refresh();
-  $("story-view").classList.toggle("showing-insights", filter === "patterns");
+  $("story-view").classList.toggle(
+    "showing-insights",
+    ["patterns", "places"].includes(filter),
+  );
   $("story-heading").textContent =
     filter === "patterns"
       ? "His rhythm"
       : filter === "care"
         ? "Every entry"
-        : "His photos";
+        : filter === "places"
+          ? "His places"
+          : "His photos";
   $("story-add").hidden = filter !== "moments";
-  $("story-tools").hidden = filter === "patterns";
+  $("story-tools").hidden = ["patterns", "places"].includes(filter);
+  $("places-view").hidden = filter !== "places";
+  $("story-items").hidden = filter === "places";
+  $("story-count").hidden = filter === "places";
+  if (filter === "places") {
+    $("load-more").hidden = true;
+    places.render(facts());
+    return;
+  }
   $("album-label").hidden = filter !== "moments";
   document.querySelector(".history-filters label:first-child").hidden =
     filter === "moments";
@@ -383,7 +409,7 @@ function renderStory() {
       [
         e.note,
         eventLabel(e),
-        e.location,
+        placeLabel(e),
         (e.tags || []).join(" "),
         (e.foods || []).join(" "),
         person(e.loggedBy),
@@ -591,7 +617,7 @@ function detail(id) {
     return;
   }
   openDialog(
-    `<h2 id="dialog-title">${TYPES[e.type]?.[0] || "•"} ${esc(eventLabel(e))}</h2><p class="fine">${dateLabel(e.time)} · ${clock(e.time)}${e.end_time != null ? ` → ${dateLabel(e.end_time)} ${clock(e.end_time)}` : ""}</p><p class="fine">${e.loggedBy ? `Logged by ${esc(person(e.loggedBy))}` : "Original shared history · person not recorded"}${e.pending ? " · Waiting to share" : ""}</p>${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}<div class="detail-meta">${(e.tags || []).map((t) => `<span class="pill">${esc(t)}</span>`).join("")}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.foods?.length ? `<p class="detail-notes">Ate ${esc(e.foods.join(" + "))}</p>` : ""}${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${placeSummary(e)}<button class="text-button" data-place="${esc(id)}">⌖ ${e.location || validPin(e.placePin) ? "Edit place" : "Add place"}</button><div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${["pee", "poop"].includes(e.type) ? `<h3>Who initiated the trip?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
+    `<h2 id="dialog-title">${TYPES[e.type]?.[0] || "•"} ${esc(eventLabel(e))}</h2><p class="fine">${dateLabel(e.time)} · ${clock(e.time)}${e.end_time != null ? ` → ${dateLabel(e.end_time)} ${clock(e.end_time)}` : ""}</p><p class="fine">${e.loggedBy ? `Logged by ${esc(person(e.loggedBy))}` : "Original shared history · person not recorded"}${e.pending ? " · Waiting to share" : ""}</p>${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}<div class="detail-meta">${(e.tags || []).map((t) => `<span class="pill">${esc(t)}</span>`).join("")}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.foods?.length ? `<p class="detail-notes">Ate ${esc(e.foods.join(" + "))}</p>` : ""}${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${placeSummary(e)}<button class="text-button" data-place="${esc(id)}">⌖ ${placeLabel(e) ? "Edit place" : "Add place"}</button><div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${["pee", "poop"].includes(e.type) ? `<h3>Who initiated the trip?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
   );
   detailId = id;
   hydratePhotos();
@@ -625,7 +651,7 @@ function editForm(type = "note", id = null, defaults = {}) {
       )
       .join(
         "",
-      )}</select></label><label id="foods-label" ${e.type === "meal" ? "" : "hidden"}>What he ate<input name="foods" maxlength="500" value="${esc((e.foods || []).join(", "))}" placeholder="Chicken, sardine…"></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>End time <span class="fine">(leave empty if in progress)</span><input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="A little detail to remember…">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags <span class="fine">(separate with commas)</span><input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(e.location || "")}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+      )}</select></label><label id="foods-label" ${e.type === "meal" ? "" : "hidden"}>What he ate<input name="foods" maxlength="500" value="${esc((e.foods || []).join(", "))}" placeholder="Chicken, sardine…"></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>End time <span class="fine">(leave empty if in progress)</span><input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="A little detail to remember…">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags <span class="fine">(separate with commas)</span><input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(placeName(e))}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
   );
   const f = $("event-form");
   f.elements.type.addEventListener("change", () => {
@@ -671,10 +697,11 @@ function editForm(type = "note", id = null, defaults = {}) {
             .split(",")
             .map((x) => x.trim())
             .filter(Boolean),
-          location: input.get("location"),
-          ...(input.get("location") !== (e.location || "")
-            ? { placePin: null }
-            : {}),
+          location:
+            input.get("location") === placeName(e)
+              ? e.location || ""
+              : input.get("location"),
+          ...(input.get("location") !== placeName(e) ? { placePin: null } : {}),
           time_precision: input.get("time_precision"),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           retroactive: true,
@@ -776,24 +803,22 @@ function nextCareForm() {
 function placeSummary(e) {
   const url = mapURL(e);
   return url
-    ? `<div class="place-summary"><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">⌖ ${esc(e.location || "Saved map pin")} ↗</a>${validPin(e.placePin) ? `<p class="fine">Phone location · accuracy about ${Math.round(e.placePin.accuracy)} m</p>` : ""}</div>`
+    ? `<div class="place-summary"><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">⌖ ${esc(placeLabel(e))} ↗</a>${validPin(e.placePin) ? `<p class="fine">Phone location · accuracy about ${Math.round(e.placePin.accuracy)} m</p>` : ""}</div>`
     : "";
 }
 function placePicker(id) {
   autoPlace.cancel(id);
   const e = sync.view().events.find((e) => e.id === id && !e.deletedAt);
   if (!e) return;
-  let pin = validPin(e.placePin) ? e.placePin : null,
+  let pin = validPin(e.placePin) ? e.placePin : eventPosition(e),
+    pinChanged = false,
     locating = false;
-  const recent = [
-    ...new Set(
-      facts()
-        .map((e) => e.location?.trim())
-        .filter(Boolean),
-    ),
-  ].slice(0, 12);
+  const recent = [...new Set(facts().map(placeName).filter(Boolean))].slice(
+    0,
+    12,
+  );
   openDialog(
-    `<h2 id="dialog-title">Where were you with Winnie?</h2><p class="fine">${esc(eventLabel(e))} · ${dateLabel(e.time)} · ${clock(e.time)}</p><form id="place-form"><label>Place name<input name="place" maxlength="500" list="recent-places" placeholder="e.g. Home, our park, the beach" value="${esc(e.location || "")}"></label><datalist id="recent-places">${recent.map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist>${canCaptureHere(e) ? '<button type="button" class="secondary small" id="capture-place">Use current location</button><p class="fine">Only if you’re still where this happened. Saved with this entry and shared with each other.</p>' : '<p class="fine">Name the original place for this older entry. Your current location won’t be attached.</p>'}<p id="pin-status" class="fine" role="status">${pin ? `Map pin saved · accuracy about ${Math.round(pin.accuracy)} m` : "No map pin attached."}</p><button type="button" class="text-button" id="remove-pin" ${pin ? "" : "hidden"}>Remove map pin</button><div class="button-row"><button class="primary" id="save-place">Save place</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
+    `<h2 id="dialog-title">Where were you with Winnie?</h2><p class="fine">${esc(eventLabel(e))} · ${dateLabel(e.time)} · ${clock(e.time)}</p><form id="place-form"><label>Place name<input name="place" maxlength="500" list="recent-places" placeholder="e.g. Home, our park, the beach" value="${esc(placeName(e))}"></label><datalist id="recent-places">${recent.map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist>${canCaptureHere(e) ? '<button type="button" class="secondary small" id="capture-place">Use current location</button><p class="fine">Only if you’re still where this happened. Saved with this entry and shared with each other.</p>' : '<p class="fine">Name the original place for this older entry. Your current location won’t be attached.</p>'}<p id="pin-status" class="fine" role="status">${pin ? `${placeLabel(e)}${Number.isFinite(pin.accuracy) ? ` · accuracy about ${Math.round(pin.accuracy)} m` : ""}` : "No map pin attached."}</p><button type="button" class="text-button" id="remove-pin" ${pin ? "" : "hidden"}>Remove map pin</button><div class="button-row"><button class="primary" id="save-place">Save place</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
   );
   const form = $("place-form"),
     status = $("pin-status"),
@@ -815,7 +840,8 @@ function placePicker(id) {
             "This entry is now too old for a current location. Name the place instead.",
           );
         pin = found;
-        status.textContent = `Map pin ready · accuracy about ${Math.round(pin.accuracy)} m`;
+        pinChanged = true;
+        status.textContent = `${placeLabel({ placePin: pin })} · accuracy about ${Math.round(pin.accuracy)} m`;
         remove.hidden = false;
       } catch (err) {
         if (form.isConnected) status.textContent = err.message;
@@ -827,6 +853,7 @@ function placePicker(id) {
     };
   remove.onclick = () => {
     pin = null;
+    pinChanged = true;
     remove.hidden = true;
     status.textContent = "Map pin removed. Save to keep this change.";
   };
@@ -838,7 +865,14 @@ function placePicker(id) {
       await sync.enqueue(
         "edit",
         id,
-        { location: new FormData(form).get("place").trim(), placePin: pin },
+        {
+          location:
+            new FormData(form).get("place").trim() === placeName(e) &&
+            !pinChanged
+              ? e.location || ""
+              : new FormData(form).get("place").trim(),
+          ...(pinChanged ? { placePin: pin } : {}),
+        },
         e.revision,
       );
       detail(id);
@@ -945,7 +979,7 @@ function compareEntry(e) {
       ? "Ended " + dateLabel(e.end_time) + " at " + clock(e.end_time)
       : "",
     e.note ? "Note: " + e.note : "",
-    e.location ? "Place: " + e.location : "",
+    placeLabel(e) ? "Place: " + placeLabel(e) : "",
     e.tags?.length ? "Tags: " + e.tags.join(", ") : "",
     e.signal ? "Signal: " + e.signal : "",
     e.deletedAt ? "This entry was removed." : "",
@@ -1587,3 +1621,7 @@ function showEvidence(key, more = false) {
 setInterval(() => {
   if (!document.hidden && !$("dialog").open && tab === "today") render();
 }, 60000);
+
+loadCities()
+  .then(() => render())
+  .catch(() => {});

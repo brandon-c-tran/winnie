@@ -1,3 +1,4 @@
+import { eventPosition, placeName } from "./places.js?v=3.8";
 export function latestCare(events, now = Date.now()) {
   const actual = events
     .filter((e) => !e.deletedAt && Number.isFinite(e.time) && e.time <= now)
@@ -33,10 +34,11 @@ export function validPin(pin) {
   );
 }
 export function mapURL(event) {
-  if (validPin(event.placePin))
-    return `https://www.google.com/maps/search/?api=1&query=${event.placePin.lat},${event.placePin.lng}`;
-  return event.location?.trim()
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location.trim())}`
+  const pin = eventPosition(event);
+  if (pin)
+    return `https://www.google.com/maps/search/?api=1&query=${pin.lat},${pin.lng}`;
+  return placeName(event)
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeName(event))}`
     : null;
 }
 export function canCaptureHere(event, now = Date.now()) {
