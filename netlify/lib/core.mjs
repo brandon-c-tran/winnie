@@ -1,3 +1,4 @@
+import { validateFridge } from "../../public/fridge-model.js";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { validateTrainerImport, normalizeFood } from "../../public/everyday.js";
 
@@ -295,6 +296,13 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         doc.profile.trainerSchedule = validateTrainerImport(
           payload.trainerSchedule,
         );
+      } catch (err) {
+        throw new Fault(400, err.message);
+      }
+    }
+    if (Object.hasOwn(payload, "fridge")) {
+      try {
+        doc.profile.fridge = validateFridge(payload.fridge);
       } catch (err) {
         throw new Fault(400, err.message);
       }

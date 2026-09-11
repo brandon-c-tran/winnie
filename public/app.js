@@ -1,4 +1,5 @@
-import { createAutoPlace } from "./auto-place.js?v=3.6";
+import { createFridge } from "./fridge.js?v=3.7";
+import { createAutoPlace } from "./auto-place.js?v=3.7";
 import {
   latestCare,
   elapsed,
@@ -6,24 +7,24 @@ import {
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "./care-state.js?v=3.6";
-import { protectAppSelection } from "./selection.js?v=3.6";
-import { createWinnieCompanion } from "./companion.js?v=3.6";
+} from "./care-state.js?v=3.7";
+import { protectAppSelection } from "./selection.js?v=3.7";
+import { createWinnieCompanion } from "./companion.js?v=3.7";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "./insights.js?v=3.6";
-import { insightsView } from "./insight-view.js?v=3.6";
+} from "./insights.js?v=3.7";
+import { insightsView } from "./insight-view.js?v=3.7";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
   photoCaption,
   validateTrainerImport,
-} from "./everyday.js?v=3.6";
-import { WinnieSync } from "./sync.js?v=3.6";
+} from "./everyday.js?v=3.7";
+import { WinnieSync } from "./sync.js?v=3.7";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");
@@ -91,6 +92,25 @@ let patternDays = 28,
   evidenceKey = null,
   evidenceLimit = 30;
 const companion = createWinnieCompanion($("pixel-winnie"));
+const fridge = createFridge({
+  root: $("fridge-board"),
+  sync,
+  esc,
+  person,
+  openDialog,
+  closeDialog,
+  toast,
+  hydratePhotos,
+  editCompletedCare: (type) => {
+    editForm(type, null, {
+      end_time: Date.now(),
+      ...(type === "covered_gap" ? { who: "trainer" } : {}),
+    });
+    document.querySelector("#event-form [name=time]").value = "";
+  },
+  log,
+  safe,
+});
 const autoPlaceEnabled = () =>
   localStorage.getItem("winnie:auto-place") !== "off";
 const autoPlace = createAutoPlace({
@@ -718,33 +738,10 @@ function moreCare() {
   );
 }
 function plan() {
-  const p = sync.view().profile;
-  openDialog(
-    `<h2 id="dialog-title">For the next person</h2><p class="fine">Leave one useful handoff note. It stays on Today until you clear it.</p><form id="plan-form"><label>Shared note<textarea name="routine" maxlength="2000" placeholder="e.g. He left half his breakfast. Offer it again later.">${esc(p.routine || "")}</textarea></label>${p.goal ? '<details><summary>Saved learning note</summary><p class="detail-notes">' + esc(p.goal) + "</p></details>" : ""}<div class="button-row"><button class="primary">Save note</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
-  );
-  $("plan-form").onsubmit = safe(async (ev) => {
-    ev.preventDefault();
-    await sync.enqueue(
-      "profile",
-      null,
-      { routine: new FormData(ev.target).get("routine").trim() },
-      p.revision,
-    );
-    closeDialog();
-    toast("Shared note saved.");
-  });
+  fridge.edit();
 }
-
-function renderHandoff(p) {
-  html(
-    "handoff-card",
-    `<div class="section-heading"><h2>For each other</h2><button class="text-button" data-act="plan">${p.routine ? "Edit note" : "Leave a note"}</button></div><p>${esc(p.routine || "Anything the other person should know?")}</p>${p.routine && p.routineUpdatedBy ? `<p class="fine">${esc(person(p.routineUpdatedBy))} · updated ${esc(when(p.routineUpdatedAt))}</p>` : ""}${p.goal ? `<details><summary>Saved note</summary><p class="detail-notes">${esc(p.goal)}</p></details>` : ""}`,
-  );
-  const next = p.nextCare;
-  html(
-    "next-care-card",
-    `<div class="section-heading"><h2>Next together</h2><button class="text-button" data-act="next-care">${next ? "Edit" : "Plan care"}</button></div>${next ? `<p><strong>${esc(next.label)}</strong></p><p class="fine">${next.dueAt ? `${next.dueAt < Date.now() ? "Planned for" : "Planned"} ${dateLabel(next.dueAt)} · ${clock(next.dueAt)}` : "When you’re ready"} · ${next.claimedBy ? esc(person(next.claimedBy)) + " has this" : "Not claimed yet"}</p>${!next.claimedBy ? '<button class="secondary small" data-act="claim-care">I’ll do this</button>' : ""}` : '<p class="fine">Choose one next step and who’s doing it.</p>'}`,
-  );
+function renderHandoff() {
+  fridge.render();
 }
 function nextCareForm() {
   const p = sync.view().profile,
@@ -771,9 +768,9 @@ function nextCareForm() {
   });
   if (n)
     $("clear-care-plan").onclick = safe(async () => {
-      await sync.enqueue("profile", null, { nextCare: null }, p.revision);
+      await fridge.putPlanAway(p);
       closeDialog();
-      toast("Plan cleared.");
+      toast("Plan kept in Saved.");
     });
 }
 function placeSummary(e) {
@@ -1388,17 +1385,8 @@ function eventLabel(e) {
     ? "Trainer visit"
     : TYPES[e.type]?.[1] || e.type;
 }
-function renderTrainer(events) {
-  const schedule = sync.view().profile.trainerSchedule;
-  const today =
-    schedule?.visits.filter((v) => dayKey(v.start) === dayKey(Date.now())) ||
-    [];
-  $("trainer-card").hidden = !today.length;
-  if (!today.length) return;
-  html(
-    "trainer-card",
-    `<div class="section-heading"><h2>Trainer today</h2><button class="text-button" data-act="trainer-schedule">Schedule</button></div>${today.map((v) => visitRow(v, events)).join("")}`,
-  );
+function renderTrainer() {
+  $("trainer-card").hidden = true;
 }
 function visitRow(v, events = facts()) {
   const logged = events.find(
