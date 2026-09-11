@@ -20,6 +20,228 @@
   font-synthesis: none;
 }
 
+.care-heading {
+  margin: 26px 0 10px;
+}
+.care-heading h1 {
+  font:
+    400 36px Georgia,
+    serif;
+  margin: 0;
+}
+#care-upcoming {
+  margin-top: 28px;
+}
+#care-upcoming .section-heading {
+  align-items: center;
+  gap: 12px;
+}
+#care-upcoming h2 {
+  font:
+    400 25px Georgia,
+    serif;
+  margin: 6px 0;
+}
+.care-plan-empty {
+  padding: 32px 22px;
+  border: 1px dashed #b9c8b5;
+  border-radius: 22px;
+  background: linear-gradient(140deg, #eff2e8, #fffdf5);
+}
+.care-plan-empty > span {
+  font-size: 28px;
+  color: var(--gold);
+}
+.care-plan-empty h3 {
+  font:
+    400 24px Georgia,
+    serif;
+  max-width: 280px;
+}
+.care-plan-empty p {
+  line-height: 1.6;
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 390px;
+}
+.care-plan-list {
+  display: grid;
+  gap: 10px;
+}
+.care-plan-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 18px 14px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--paper);
+}
+.care-plan-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: #edf1e6;
+  border-radius: 10px;
+  color: var(--green);
+}
+.care-plan-row.overdue .care-plan-icon {
+  background: #f4e6d5;
+  color: #805730;
+}
+.care-plan-body {
+  flex: 1;
+  min-width: 0;
+}
+.care-plan-title {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  min-height: 30px;
+}
+.care-plan-row p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 3px 0;
+  line-height: 1.5;
+}
+.care-owner {
+  font-size: 11px;
+  color: var(--green);
+}
+.care-trainer-link {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin: 18px 0;
+  padding: 18px 16px;
+  border-radius: 15px;
+  background: #f0ede4;
+  border: 0;
+  color: var(--ink);
+  text-align: left;
+  font-size: 13px;
+}
+.care-trainer-link span:last-child {
+  color: var(--muted);
+  font-size: 12px;
+}
+.care-inactive {
+  margin: 20px 0;
+}
+.care-inactive summary {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 12px 0;
+  cursor: pointer;
+}
+.care-inactive article {
+  margin: 10px 0;
+}
+.care-calendar-note {
+  line-height: 1.6;
+}
+.care-repeat {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.care-repeat label {
+  min-width: 0;
+}
+.care-detail-due {
+  font:
+    400 23px Georgia,
+    serif;
+}
+.care-last-done {
+  display: block;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: var(--light);
+  border-radius: 12px;
+  color: var(--green);
+  text-align: left;
+  font-size: 13px;
+  margin: 18px 0;
+}
+.fridge-recurring {
+  grid-column: 1/-1;
+  background: #fffdf0;
+  padding: 16px;
+  border-radius: 5px 5px 14px 5px;
+  box-shadow: 0 5px 10px #263d3310;
+  border-top: 4px solid #c38a4d77;
+}
+.fridge-plan-empty {
+  padding: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  align-self: end;
+}
+.fridge-plan-empty .paper-clip,
+.fridge-plan-empty .fridge-card-heading,
+.fridge-plan-empty h3,
+.fridge-plan-empty p {
+  display: none;
+}
+.fridge-plan-empty .claim-magnet {
+  width: 100%;
+  min-height: 48px;
+  background: #ffffff60;
+  border: 1px dashed #9aaf9e;
+  text-align: center;
+  border-radius: 12px;
+}
+.fridge-recurring .care-plan-row {
+  border: 0;
+  border-top: 1px solid #e9e5d4;
+  border-radius: 0;
+  background: none;
+  padding: 12px 0;
+}
+.fridge-recurring .care-plan-icon {
+  display: none;
+}
+.fridge-recurring .fridge-done {
+  width: auto;
+  margin: 0;
+  padding: 10px 14px;
+  flex: none;
+}
+.fridge-recurring .fridge-card-heading {
+  margin-bottom: 10px;
+}
+#care-library .history-filters {
+  margin-top: 12px;
+}
+#care-library .rhythm-toolbar {
+  margin-top: 20px;
+}
+@media (max-width: 420px) {
+  #care-upcoming h2 {
+    font-size: 22px;
+  }
+  .care-plan-row {
+    gap: 8px;
+  }
+  .care-plan-icon {
+    width: 26px;
+    height: 30px;
+  }
+  .care-plan-title {
+    font-size: 14px;
+  }
+}
+
 /* A small atlas of the places remembered in his entries. */
 .places-controls {
   display: flex;

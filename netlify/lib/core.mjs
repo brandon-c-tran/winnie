@@ -1,4 +1,10 @@
 import { validateFridge } from "../../public/fridge-model.js";
+import {
+  validateCarePlans,
+  planState,
+  completionId,
+  validDay,
+} from "../../public/care-plans.js";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { validateTrainerImport, normalizeFood } from "../../public/everyday.js";
 
@@ -152,6 +158,9 @@ function eventFields(input, old = {}) {
     "foods",
     "calendarVisitId",
     "placePin",
+    "carePlanId",
+    "careDue",
+    "careTitle",
   ];
   const fields = Object.fromEntries(
     allowed.filter((k) => Object.hasOwn(input, k)).map((k) => [k, input[k]]),
@@ -179,6 +188,23 @@ function eventFields(input, old = {}) {
     };
   }
   const event = { ...old, ...fields };
+  if (old.carePlanId)
+    assert(
+      !["carePlanId", "careDue"].some(
+        (k) => Object.hasOwn(fields, k) && fields[k] !== old[k],
+      ),
+      "The original care link must be preserved.",
+    );
+  if (event.carePlanId) {
+    assert(
+      validId(event.carePlanId) &&
+        validDay(event.careDue) &&
+        typeof event.careTitle === "string" &&
+        event.careTitle.length <= 200,
+      "Invalid care completion.",
+    );
+    assert(event.time <= Date.now(), "Completed care cannot be in the future.");
+  }
   for (const key of [
     "type",
     "time_precision",
@@ -193,6 +219,9 @@ function eventFields(input, old = {}) {
     "appointment_kind",
     "signal",
     "calendarVisitId",
+    "carePlanId",
+    "careDue",
+    "careTitle",
   ])
     if (Object.hasOwn(fields, key))
       assert(typeof fields[key] === "string", "Invalid event text.");
@@ -291,6 +320,13 @@ export function applyCommand(doc, command, device, now = Date.now()) {
       409,
       { current: doc.profile },
     );
+    if (Object.hasOwn(payload, "carePlans")) {
+      try {
+        doc.profile.carePlans = validateCarePlans(payload.carePlans);
+      } catch (err) {
+        throw new Fault(400, err.message);
+      }
+    }
     if (Object.hasOwn(payload, "trainerSchedule")) {
       try {
         doc.profile.trainerSchedule = validateTrainerImport(
@@ -374,6 +410,27 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         delete event.deviceId;
         delete event.photos;
       } else {
+        if (payload.carePlanId) {
+          const plan = doc.profile.carePlans?.find(
+            (p) => p.id === payload.carePlanId,
+          );
+          assert(
+            plan && !plan.paused,
+            "This care plan is unavailable. Refresh Care.",
+            409,
+          );
+          const state = planState(plan, doc.events, now);
+          assert(
+            state.due === payload.careDue &&
+              eventId === completionId(plan, state.due),
+            "This care occurrence changed. Refresh Care before completing it.",
+            409,
+          );
+          assert(
+            !state.done || payload.time > state.done.time,
+            "Complete this occurrence after the previous one.",
+          );
+        }
         event = {
           ...eventFields(payload),
           id: eventId,

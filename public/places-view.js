@@ -1,4 +1,4 @@
-import { groupPlaces, loadCities, cityLabel } from "./places.js?v=3.8.1";
+import { groupPlaces, loadCities, cityLabel } from "./places.js?v=3.9";
 
 export function mapFrame(cities, minimum = 0.9) {
   let west = Math.min(...cities.map((c) => c.lng)),
