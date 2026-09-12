@@ -448,7 +448,7 @@ export function applyCommand(doc, command, device, now = Date.now()) {
     } else {
       assert(event, "This entry is missing.", 404);
       assert(
-        event.revision === expectedRevision,
+        kind === "react" || event.revision === expectedRevision,
         "This entry changed on another device. Review both versions.",
         409,
         { current: event },
@@ -459,7 +459,19 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         409,
         { current: event },
       );
-      if (kind === "edit") {
+      if (kind === "react") {
+        assert(
+          ["", "❤️", "😂", "👏"].includes(payload.emoji),
+          "Choose an available reaction.",
+        );
+        event.reactions ||= {};
+        notify =
+          !!payload.emoji &&
+          event.reactions[device.person]?.emoji !== payload.emoji;
+        if (payload.emoji)
+          event.reactions[device.person] = { emoji: payload.emoji, at: now };
+        else delete event.reactions[device.person];
+      } else if (kind === "edit") {
         const updated = { ...event, ...eventFields(payload, event) };
         ensureActivity(doc, updated);
         notify =
@@ -517,6 +529,7 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         actor: device.person,
         recipient: target.id,
         kind,
+        ...(kind === "react" ? { emoji: payload.emoji } : {}),
         action:
           kind === "attach"
             ? "added"

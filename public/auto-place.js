@@ -1,4 +1,4 @@
-import { canCaptureHere, capturePlace, validPin } from "./care-state.js?v=3.9";
+import { canCaptureHere, capturePlace, validPin } from "./care-state.js?v=3.10";
 
 // One request per new entry. Never wait for GPS before saving care.
 export function createAutoPlace({

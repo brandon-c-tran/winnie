@@ -1,13 +1,13 @@
-import { createCare } from "./care-view.js?v=3.9";
+import { createCare } from "./care-view.js?v=3.10";
 import {
   eventPosition,
   placeName,
   placeLabel,
   loadCities,
-} from "./places.js?v=3.9";
-import { createPlacesView } from "./places-view.js?v=3.9";
-import { createFridge } from "./fridge.js?v=3.9";
-import { createAutoPlace } from "./auto-place.js?v=3.9";
+} from "./places.js?v=3.10";
+import { createPlacesView } from "./places-view.js?v=3.10";
+import { createFridge } from "./fridge.js?v=3.10";
+import { createAutoPlace } from "./auto-place.js?v=3.10";
 import {
   latestCare,
   elapsed,
@@ -15,24 +15,24 @@ import {
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "./care-state.js?v=3.9";
-import { protectAppSelection } from "./selection.js?v=3.9";
-import { createWinnieCompanion } from "./companion.js?v=3.9";
+} from "./care-state.js?v=3.10";
+import { protectAppSelection } from "./selection.js?v=3.10";
+import { createWinnieCompanion } from "./companion.js?v=3.10";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "./insights.js?v=3.9";
-import { insightsView } from "./insight-view.js?v=3.9";
+} from "./insights.js?v=3.10";
+import { insightsView } from "./insight-view.js?v=3.10";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
   photoCaption,
   validateTrainerImport,
-} from "./everyday.js?v=3.9";
-import { WinnieSync } from "./sync.js?v=3.9";
+} from "./everyday.js?v=3.10";
+import { WinnieSync } from "./sync.js?v=3.10";
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
     img.src = new URL(img.src).searchParams.get("url");
@@ -116,6 +116,21 @@ const care = createCare({
   toast,
   safe,
   detail,
+  contextHTML: () => {
+    const visits = (sync.view().profile.trainerSchedule?.visits || [])
+      .filter((v) => v.end >= Date.now() - 86400000)
+      .sort((a, b) => a.start - b.start)
+      .slice(0, 3);
+    const recent = facts()
+      .filter((e) =>
+        ["medication", "appointment", "enrichment", "covered_gap"].includes(
+          e.type,
+        ),
+      )
+      .sort((a, b) => b.time - a.time)
+      .slice(0, 3);
+    return `<section class="care-overview-section"><div class="section-heading"><h3>Trainer visits</h3><button class="text-button" data-act="trainer-schedule">Schedule ↗</button></div>${visits.map((v) => visitRow(v)).join("") || '<p class="fine">No upcoming visits in the saved calendar. Open Schedule to import visits or log one.</p>'}</section><section class="care-overview-section"><div class="section-heading"><h3>Recent care</h3><button class="text-button" data-care-nav="care">History ↗</button></div>${recent.map((e) => entry(e)).join("") || '<p class="fine">Training, medication and appointments will appear here as you log them.</p>'}<button class="secondary small" data-act="more">Log care</button></section>`;
+  },
   celebrate: reactWinnie,
   attachLocation: (id) => {
     void autoPlace.attach(id);
@@ -414,6 +429,64 @@ function render() {
     if (careSection !== "upcoming") renderStory();
   }
 }
+function reactions(e) {
+  if (e.deletedAt) return "";
+  const me = sync.session?.person;
+  const mine = e.reactions?.[me]?.emoji;
+  return `<div class="entry-reactions" data-reactions-for="${esc(e.id)}" aria-label="Reactions">${[
+    "❤️",
+    "😂",
+    "👏",
+  ]
+    .map(
+      (emoji) =>
+        `<button class="reaction-chip" data-react="${emoji}" data-event="${esc(e.id)}" aria-label="React ${emoji}" aria-pressed="${mine === emoji}">${emoji}${Object.entries(
+          e.reactions || {},
+        )
+          .filter(([, r]) => r.emoji === emoji)
+          .map(([p]) => `<span>${esc(person(p))}</span>`)
+          .join("")}</button>`,
+    )
+    .join("")}</div>`;
+}
+document.addEventListener(
+  "click",
+  safe(async (ev) => {
+    const b = ev.target.closest("[data-react]");
+    if (!b) return;
+    const e = sync.view().events.find((e) => e.id === b.dataset.event);
+    if (!e || e.deletedAt) return;
+    const emoji =
+      e.reactions?.[sync.session.person]?.emoji === b.dataset.react
+        ? ""
+        : b.dataset.react;
+    await sync.enqueue("react", e.id, { emoji });
+    if (emoji) reactWinnie();
+  }),
+);
+function refreshReactions() {
+  document.querySelectorAll("[data-reactions-for]").forEach((node) => {
+    const e = sync
+      .view()
+      .events.find((e) => e.id === node.dataset.reactionsFor);
+    if (!e) return;
+    const holder = document.createElement("div");
+    holder.innerHTML = reactions(e);
+    const fresh = holder.firstElementChild;
+    if (!fresh) {
+      node.remove();
+      return;
+    }
+    // Preserve focus while partner updates arrive in an open detail.
+    [...node.children].forEach((b, i) => {
+      b.innerHTML = fresh.children[i].innerHTML;
+      b.setAttribute(
+        "aria-pressed",
+        fresh.children[i].getAttribute("aria-pressed"),
+      );
+    });
+  });
+}
 function entry(e) {
   const duration =
     e.end_time != null
@@ -433,7 +506,7 @@ function entry(e) {
   ]
     .filter(Boolean)
     .join(" · ");
-  return `<div class="feed-entry"><button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>${e.photos?.length ? `<div class="feed-photos">${e.photos.map((p) => `<button data-open="${esc(e.id)}" aria-label="Open photo from ${esc(eventLabel(e))}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"></button>`).join("")}</div>` : ""}</div>`;
+  return `<div class="feed-entry"><button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>${e.photos?.length ? `<div class="feed-photos">${e.photos.map((p) => `<button data-open="${esc(e.id)}" aria-label="Open photo from ${esc(eventLabel(e))}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"></button>`).join("")}</div>` : ""}${reactions(e)}</div>`;
 }
 function renderStory() {
   companion.refresh();
@@ -689,7 +762,7 @@ function detail(id) {
     return;
   }
   openDialog(
-    `<h2 id="dialog-title">${TYPES[e.type]?.[0] || "•"} ${esc(eventLabel(e))}</h2><p class="fine">${dateLabel(e.time)} · ${clock(e.time)}${e.end_time != null ? ` → ${dateLabel(e.end_time)} ${clock(e.end_time)}` : ""}</p><p class="fine">${e.loggedBy ? `Logged by ${esc(person(e.loggedBy))}` : "Original shared history · person not recorded"}${e.pending ? " · Waiting to share" : ""}</p>${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}<div class="detail-meta">${(e.tags || []).map((t) => `<span class="pill">${esc(t)}</span>`).join("")}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.foods?.length ? `<p class="detail-notes">Ate ${esc(e.foods.join(" + "))}</p>` : ""}${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${placeSummary(e)}<button class="text-button" data-place="${esc(id)}">⌖ ${placeLabel(e) ? "Edit place" : "Add place"}</button><div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${["pee", "poop"].includes(e.type) ? `<h3>Who initiated the trip?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
+    `<h2 id="dialog-title">${TYPES[e.type]?.[0] || "•"} ${esc(eventLabel(e))}</h2><p class="fine">${dateLabel(e.time)} · ${clock(e.time)}${e.end_time != null ? ` → ${dateLabel(e.end_time)} ${clock(e.end_time)}` : ""}</p><p class="fine">${e.loggedBy ? `Logged by ${esc(person(e.loggedBy))}` : "Original shared history · person not recorded"}${e.pending ? " · Waiting to share" : ""}</p>${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}${reactions(e)}<div class="detail-meta">${(e.tags || []).map((t) => `<span class="pill">${esc(t)}</span>`).join("")}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.foods?.length ? `<p class="detail-notes">Ate ${esc(e.foods.join(" + "))}</p>` : ""}${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${placeSummary(e)}<button class="text-button" data-place="${esc(id)}">⌖ ${placeLabel(e) ? "Edit place" : "Add place"}</button><div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${["pee", "poop"].includes(e.type) ? `<h3>Who initiated the trip?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
   );
   detailId = id;
   hydratePhotos();
@@ -1211,6 +1284,7 @@ document.addEventListener(
       return;
     }
     if (b.dataset.evidence) return showEvidence(b.dataset.evidence);
+    if (b.dataset.act === "more") return moreCare();
     if (b.hasAttribute("data-evidence-more"))
       return showEvidence(evidenceKey, true);
     if (b.hasAttribute("data-evidence-back")) return showEvidence(evidenceKey);
@@ -1461,7 +1535,10 @@ document.addEventListener(
     }
   }),
 );
-sync.addEventListener("change", render);
+sync.addEventListener("change", () => {
+  render();
+  refreshReactions();
+});
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("/sw.js", { updateViaCache: "none" })

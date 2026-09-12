@@ -4,7 +4,7 @@ import {
   planState,
   completionId,
   validateCarePlans,
-} from "./care-plans.js?v=3.9";
+} from "./care-plans.js?v=3.10";
 
 export function createCare({
   root,
@@ -17,6 +17,7 @@ export function createCare({
   safe,
   detail,
   celebrate,
+  contextHTML = () => "",
   attachLocation = () => {},
 }) {
   const $ = (id) => document.getElementById(id);
@@ -46,7 +47,7 @@ export function createCare({
     const all = states(),
       active = all.filter((s) => !s.paused && s.due),
       inactive = all.filter((s) => s.paused || !s.due);
-    const content = `<div class="section-heading"><div><h2>Upcoming care</h2></div><button class="secondary small" data-care-action="new">＋ Add care</button></div>${active.length ? `<div class="care-plan-list">${active.map((s) => row(s)).join("")}</div>` : '<div class="care-plan-empty"><span aria-hidden="true">▤</span><h3>One less thing to keep in your head.</h3><p>Save a due date for grooming, a vet visit, or care you repeat. When it’s due, it joins your fridge.</p><button class="primary small" data-care-action="new">Plan his first care</button></div>'}<button class="care-trainer-link" data-act="trainer-schedule"><span>▤ Trainer visits</span><span>View schedule ↗</span></button>${inactive.length ? `<details class="care-inactive"><summary>Paused & completed (${inactive.length})</summary>${inactive.map((s) => row(s)).join("")}</details>` : ""}<p class="fine care-calendar-note">Schedules use San Francisco dates. Record a completion once to update both of you.</p>`;
+    const content = `<div class="section-heading"><div><h2>Upcoming care</h2></div><button class="secondary small" data-care-action="new">＋ Add care</button></div>${active.length ? `<div class="care-plan-list">${active.map((s) => row(s)).join("")}</div>` : '<div class="care-plan-empty"><h3>What’s next for Winnie?</h3><p>Add his next grooming, appointment or medication reminder.</p><button class="secondary small" data-care-action="new">Set a reminder</button></div>'}${contextHTML()}${inactive.length ? `<details class="care-inactive"><summary>Paused & completed (${inactive.length})</summary>${inactive.map((s) => row(s)).join("")}</details>` : ""}<p class="fine care-calendar-note">Schedules use San Francisco dates. Record a completion once to update both of you.</p>`;
     if (content !== lastContent) {
       const expanded = root.querySelector(".care-inactive")?.open;
       lastContent = content;

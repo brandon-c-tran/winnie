@@ -1,4 +1,4 @@
-import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=3.9";
+import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=3.10";
 
 export function createFridge({
   root,
