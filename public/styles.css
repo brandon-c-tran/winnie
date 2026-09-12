@@ -957,6 +957,12 @@ button:disabled {
   opacity: 0.5;
   cursor: wait;
 }
+/* The skip-link target is a page region, not an interactive control. Safari
+   may restore focus here when a dialog closes. Keep control focus below. */
+#main:focus {
+  outline: none;
+}
+
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
@@ -2613,5 +2619,62 @@ a {
   }
   .care-context {
     padding: 9px 12px;
+  }
+}
+#main .care-overview-section {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line, #dedfd5);
+}
+#main .care-overview-section h3 {
+  margin: 0;
+  font-size: 23px;
+}
+#main .care-plan-empty {
+  padding: 20px;
+  border-radius: 20px;
+}
+#main .care-plan-empty h3 {
+  font-size: 24px;
+}
+.entry-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0 12px 42px;
+}
+.reaction-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  min-width: 42px;
+  justify-content: center;
+  padding: 5px 10px;
+  border: 1px solid #dedfd5;
+  background: transparent;
+  border-radius: 24px;
+  font-size: 17px;
+  transition:
+    background 0.18s,
+    transform 0.18s;
+}
+.reaction-chip span {
+  font-size: 12px;
+  color: #365642;
+}
+.reaction-chip[aria-pressed="true"] {
+  background: #e3ecdb;
+  border-color: #658466;
+}
+.reaction-chip:active {
+  transform: scale(0.9);
+}
+#dialog .entry-reactions {
+  padding-left: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reaction-chip {
+    transition: none;
   }
 }

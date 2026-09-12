@@ -32,9 +32,15 @@ export function notification(job) {
     minute: "2-digit",
   });
   return {
-    title: `${person} ${job.action} ${labels[job.type] || job.type}`,
-    body: date,
-    tag: `winnie-${job.eventId}`,
+    title:
+      job.kind === "react"
+        ? `${person} reacted ${job.emoji}`
+        : `${person} ${job.action} ${labels[job.type] || job.type}`,
+    body:
+      job.kind === "react"
+        ? `To Winnie's ${job.type === "moment" ? "moment" : labels[job.type]?.replace(/^a /, "") || job.type} · ${date}`
+        : date,
+    tag: `winnie-${job.kind === "react" ? "reaction-" : ""}${job.eventId}`,
     eventId: job.eventId,
     url: `/?event=${encodeURIComponent(job.eventId)}`,
   };

@@ -1,4 +1,4 @@
-import { notificationState } from "./everyday.js?v=3.9";
+import { notificationState } from "./everyday.js?v=3.10";
 const API = "/.netlify/functions/api";
 const empty = () => ({
   snapshot: {
@@ -53,6 +53,12 @@ export function project(data) {
           pending: true,
         });
     } else if (e) {
+      if (c.kind === "react") {
+        e.reactions ||= {};
+        if (c.payload.emoji)
+          e.reactions[item.person] = { emoji: c.payload.emoji };
+        else delete e.reactions[item.person];
+      }
       if (c.kind === "edit") Object.assign(e, c.payload);
       if (c.kind === "delete") e.deletedAt = Date.now();
       if (c.kind === "restore") delete e.deletedAt;
