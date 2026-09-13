@@ -702,7 +702,7 @@ async function log(type, extra = {}) {
   toast(`${TYPES[type][1]} saved on this device.`, () =>
     sync.enqueue("delete", eventId),
   );
-  if (["pee", "poop"].includes(type)) pottyPhoto(eventId, type);
+  if (type === "poop") pottyPhoto(eventId, type);
   void autoPlace.attach(eventId);
   return eventId;
 }

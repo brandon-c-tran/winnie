@@ -1,4 +1,4 @@
-const CACHE = "winnie-v3-20260912-r16";
+const CACHE = "winnie-v3-20260913-r17";
 const SHELL = [
   "/care-plans.js?v=3.10",
   "/care-view.js?v=3.10",
@@ -9,7 +9,7 @@ const SHELL = [
   "/",
   "/index.html",
   "/styles.css?v=3.10",
-  "/app.js?v=3.10",
+  "/app.js?v=3.10.1",
   "/sync.js?v=3.10",
   "/insights.js?v=3.10",
   "/insight-view.js?v=3.10",
