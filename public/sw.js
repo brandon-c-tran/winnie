@@ -1,4 +1,4 @@
-const CACHE = "winnie-v3-20260913-r17";
+const CACHE = "winnie-v3-20260914-r18";
 const SHELL = [
   "/care-plans.js?v=3.10",
   "/care-view.js?v=3.10",
@@ -8,8 +8,8 @@ const SHELL = [
   "/geo/land.json",
   "/",
   "/index.html",
-  "/styles.css?v=3.10",
-  "/app.js?v=3.10.1",
+  "/styles.css?v=3.10.2",
+  "/app.js?v=3.10.2",
   "/sync.js?v=3.10",
   "/insights.js?v=3.10",
   "/insight-view.js?v=3.10",
