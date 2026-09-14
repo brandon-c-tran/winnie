@@ -2638,10 +2638,71 @@ a {
   font-size: 24px;
 }
 .entry-reactions {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   padding: 4px 0 12px 42px;
+}
+.reaction-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 9px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.reaction-trigger > span:first-child {
+  font-size: 17px;
+}
+.reaction-trigger.has-reactions {
+  background: var(--paper);
+  border-color: var(--line);
+}
+.reaction-total {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+.reaction-total > span:first-child {
+  font-size: 16px;
+}
+.reaction-picker {
+  position: absolute;
+  z-index: 5;
+  bottom: calc(100% - 4px);
+  left: 42px;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: 0 6px 24px #263d3220;
+  animation: reaction-appear 0.15s ease-out;
+}
+#dialog .reaction-picker {
+  left: 0;
+}
+@keyframes reaction-appear {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reaction-picker {
+    animation: none;
+  }
 }
 .reaction-chip {
   display: inline-flex;

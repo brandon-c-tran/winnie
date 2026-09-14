@@ -429,62 +429,97 @@ function render() {
     if (careSection !== "upcoming") renderStory();
   }
 }
+let reactionPickerId = null;
+const reactionEmojis = ["❤️", "😂", "👏"];
 function reactions(e) {
   if (e.deletedAt) return "";
-  const me = sync.session?.person;
-  const mine = e.reactions?.[me]?.emoji;
-  return `<div class="entry-reactions" data-reactions-for="${esc(e.id)}" aria-label="Reactions">${[
-    "❤️",
-    "😂",
-    "👏",
-  ]
-    .map(
-      (emoji) =>
-        `<button class="reaction-chip" data-react="${emoji}" data-event="${esc(e.id)}" aria-label="React ${emoji}" aria-pressed="${mine === emoji}">${emoji}${Object.entries(
-          e.reactions || {},
-        )
-          .filter(([, r]) => r.emoji === emoji)
-          .map(([p]) => `<span>${esc(person(p))}</span>`)
-          .join("")}</button>`,
-    )
-    .join("")}</div>`;
+  const mine = e.reactions?.[sync.session?.person]?.emoji;
+  const groups = reactionEmojis
+    .map((emoji) => ({
+      emoji,
+      people: Object.entries(e.reactions || {})
+        .filter(([, r]) => r.emoji === emoji)
+        .map(([p]) => person(p)),
+    }))
+    .filter((g) => g.people.length);
+  const expanded = reactionPickerId === e.id;
+  const description = groups
+    .map((g) => g.emoji + " " + g.people.join(" and "))
+    .join(", ");
+  return `<div class="entry-reactions" data-reactions-for="${esc(e.id)}"><button class="reaction-trigger ${groups.length ? "has-reactions" : ""}" data-reaction-picker="${esc(e.id)}" aria-expanded="${expanded}" aria-label="${esc(description ? description + ". Add or change your reaction" : "React to this entry")}">${groups.length ? groups.map((g) => `<span class="reaction-total"><span aria-hidden="true">${g.emoji}</span><span>${g.people.length}</span></span>`).join("") : '<span aria-hidden="true">♡</span><span>React</span>'}</button>${expanded ? `<div class="reaction-picker" role="group" aria-label="Choose your reaction">${reactionEmojis.map((emoji) => `<button class="reaction-chip" data-react="${emoji}" data-event="${esc(e.id)}" aria-label="${mine === emoji ? "Remove your" : "React with"} ${emoji} reaction" aria-pressed="${mine === emoji}">${emoji}</button>`).join("")}</div>` : ""}</div>`;
 }
 document.addEventListener(
   "click",
   safe(async (ev) => {
+    const trigger = ev.target.closest("[data-reaction-picker]");
+    if (trigger) {
+      reactionPickerId =
+        reactionPickerId === trigger.dataset.reactionPicker
+          ? null
+          : trigger.dataset.reactionPicker;
+      refreshReactions();
+      return;
+    }
     const b = ev.target.closest("[data-react]");
-    if (!b) return;
-    const e = sync.view().events.find((e) => e.id === b.dataset.event);
-    if (!e || e.deletedAt) return;
-    const emoji =
-      e.reactions?.[sync.session.person]?.emoji === b.dataset.react
-        ? ""
-        : b.dataset.react;
-    await sync.enqueue("react", e.id, { emoji });
-    if (emoji) reactWinnie();
+    if (b) {
+      const e = sync.view().events.find((e) => e.id === b.dataset.event);
+      if (!e || e.deletedAt) return;
+      const emoji =
+        e.reactions?.[sync.session.person]?.emoji === b.dataset.react
+          ? ""
+          : b.dataset.react;
+      const host = b.closest("[data-reactions-for]");
+      reactionPickerId = null;
+      await sync.enqueue("react", e.id, { emoji });
+      refreshReactions();
+      const target = host.isConnected
+        ? host
+        : [...document.querySelectorAll("[data-reactions-for]")].find(
+            (n) => n.dataset.reactionsFor === e.id && n.getClientRects().length,
+          );
+      target
+        ?.querySelector("[data-reaction-picker]")
+        ?.focus({ preventScroll: true });
+      if (emoji) reactWinnie();
+      return;
+    }
+    if (reactionPickerId && !ev.target.closest(".entry-reactions")) {
+      reactionPickerId = null;
+      refreshReactions();
+    }
   }),
 );
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape" || !reactionPickerId) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  const host = document.activeElement.closest("[data-reactions-for]");
+  reactionPickerId = null;
+  refreshReactions();
+  host?.querySelector("[data-reaction-picker]")?.focus({ preventScroll: true });
+});
 function refreshReactions() {
+  const events = sync.view().events;
   document.querySelectorAll("[data-reactions-for]").forEach((node) => {
-    const e = sync
-      .view()
-      .events.find((e) => e.id === node.dataset.reactionsFor);
-    if (!e) return;
-    const holder = document.createElement("div");
-    holder.innerHTML = reactions(e);
-    const fresh = holder.firstElementChild;
-    if (!fresh) {
+    const e = events.find((e) => e.id === node.dataset.reactionsFor);
+    if (!e || e.deletedAt) {
       node.remove();
       return;
     }
-    // Preserve focus while partner updates arrive in an open detail.
-    [...node.children].forEach((b, i) => {
-      b.innerHTML = fresh.children[i].innerHTML;
-      b.setAttribute(
-        "aria-pressed",
-        fresh.children[i].getAttribute("aria-pressed"),
+    const focused = node.contains(document.activeElement);
+    const selected = document.activeElement.dataset.react;
+    const holder = document.createElement("div");
+    holder.innerHTML = reactions(e);
+    if (node.innerHTML === holder.firstElementChild.innerHTML) return;
+    node.innerHTML = holder.firstElementChild.innerHTML;
+    if (focused) {
+      const choice = [...node.querySelectorAll("[data-react]")].find(
+        (b) => b.dataset.react === selected,
       );
-    });
+      (choice || node.querySelector("[data-reaction-picker]"))?.focus({
+        preventScroll: true,
+      });
+    }
   });
 }
 function entry(e) {
