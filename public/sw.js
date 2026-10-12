@@ -1,4 +1,5 @@
-const CACHE = "winnie-v4-20261012-r1";
+// Versioned files are served cache-first: change a file, bump its ?v= tag and CACHE.
+const CACHE = "winnie-v4-20261012-r2";
 const SHELL = [
   "/care-plans.js?v=3.10",
   "/care-view.js?v=3.10",
@@ -8,9 +9,9 @@ const SHELL = [
   "/geo/land.json",
   "/",
   "/index.html",
-  "/styles.css?v=4.0.0",
-  "/app.js?v=4.0.0",
-  "/room.js?v=4.0",
+  "/styles.css?v=4.1.0",
+  "/app.js?v=4.1.0",
+  "/room.js?v=4.1",
   "/icons.js?v=4.0",
   "/fonts/pixelify-sans-latin.woff2",
   "/fonts/rubik-latin.woff2",
@@ -58,24 +59,35 @@ self.addEventListener("fetch", (event) => {
     event.request.method !== "GET"
   )
     return;
-  if (event.request.mode === "navigate" || /\.(js|css)$/.test(url.pathname)) {
+  if (event.request.mode === "navigate") {
+    // Open instantly from cache; refresh the shell in the background. A new
+    // deploy changes CACHE, and the page reloads itself on APP_UPDATED.
+    const network = fetch(event.request).then(async (response) => {
+      if (response.ok)
+        await (await caches.open(CACHE)).put("/index.html", response.clone());
+      return response;
+    });
+    event.waitUntil(network.catch(() => {}));
     event.respondWith(
-      fetch(event.request)
-        .then(async (response) => {
-          if (response.ok) {
-            const cache = await caches.open(CACHE);
-            await cache.put(
-              event.request.mode === "navigate" ? "/index.html" : event.request,
-              response.clone(),
-            );
-          }
+      caches
+        .match("/index.html")
+        .then((cached) => cached || network)
+        .catch(() => network),
+    );
+    return;
+  }
+  if (/\.(js|css)$/.test(url.pathname) && !url.search) {
+    // Unversioned module imports (vendor files): cache first, refresh in the background.
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        const network = fetch(event.request).then(async (response) => {
+          if (response.ok)
+            await (await caches.open(CACHE)).put(event.request, response.clone());
           return response;
-        })
-        .catch(() =>
-          caches.match(
-            event.request.mode === "navigate" ? "/index.html" : event.request,
-          ),
-        ),
+        });
+        event.waitUntil(network.catch(() => {}));
+        return cached || network;
+      }),
     );
     return;
   }
