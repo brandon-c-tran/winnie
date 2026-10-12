@@ -19,7 +19,7 @@ import {
   capturePlace,
 } from "./care-state.js?v=3.10";
 import { protectAppSelection } from "./selection.js?v=3.10";
-import { createRoom, sfEpoch } from "./room.js?v=4.0";
+import { createRoom, sfEpoch } from "./room.js?v=4.1";
 import { icon, TYPES as TYPE_META, GROOMING, typeIcon, typeColor } from "./icons.js?v=4.0";
 import { getTimes } from "./vendor/suncalc.js";
 import {
@@ -215,14 +215,30 @@ function safe(fn) {
     }
   };
 }
+let closingTimer = 0;
 function openDialog(html) {
-  if (!$("dialog").open) dialogReturn = document.activeElement;
+  const d = $("dialog");
+  clearTimeout(closingTimer);
+  d.classList.remove("closing");
+  if (!d.open) dialogReturn = document.activeElement;
   $("dialog-content").innerHTML = html;
   detailId = null;
-  if (!$("dialog").open) $("dialog").showModal();
+  if (!d.open) {
+    d.showModal();
+    room?.pause(true);
+  }
 }
 function closeDialog() {
-  $("dialog").close();
+  const d = $("dialog");
+  if (d.open && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    d.classList.add("closing");
+    clearTimeout(closingTimer);
+    closingTimer = setTimeout(() => {
+      d.classList.remove("closing");
+      d.close();
+    }, 150);
+  } else d.close();
+  room?.pause(false);
   detailId = null;
   quickPhotoId = null;
   formPhotos = [];
@@ -230,6 +246,13 @@ function closeDialog() {
   dialogReturn?.focus?.();
 }
 $("dialog-close").onclick = closeDialog;
+$("dialog").addEventListener("close", () => room?.pause(false));
+$("dialog").addEventListener("click", (ev) => {
+  // Tapping the dimmed area above a sheet closes it.
+  if (ev.target === $("dialog")) closeDialog();
+});
+// iOS Safari only shows :active press states when the page listens for touches.
+document.addEventListener("touchstart", () => {}, { passive: true });
 $("dialog").addEventListener("cancel", () => {
   detailId = null;
   formPhotos = [];
@@ -990,7 +1013,9 @@ async function log(type, extra = {}) {
   }
   const eventId = uid();
   freshEntry = eventId;
-  await sync.enqueue("create", eventId, {
+  room.react(["pee", "poop", "meal"].includes(type) ? type : "heart");
+  flashTile(type);
+  const saved = sync.enqueue("create", eventId, {
     type,
     time: Date.now(),
     end_time: null,
@@ -1001,7 +1026,6 @@ async function log(type, extra = {}) {
     time_precision: "exact",
     ...extra,
   });
-  room.react(["pee", "poop", "meal"].includes(type) ? type : "heart");
   const label = TYPES[type][1];
   toast(
     `${["nap", "slumber", "walk"].includes(type) ? label + " started" : label + " logged"} · ${clock(Date.now())}`,
@@ -1013,7 +1037,7 @@ async function log(type, extra = {}) {
           ...(type === "poop" ? [] : [["+ Note", () => editForm(null, eventId)]]),
         ],
   );
-  flashTile(type);
+  await saved;
   void autoPlace.attach(eventId);
   return eventId;
 }
@@ -1028,7 +1052,7 @@ function flashTile(type) {
   setTimeout(() => {
     renderedHTML.delete("care-actions");
     render();
-  }, 1400);
+  }, 1100);
 }
 async function endSleep(e) {
   await sync.enqueue("edit", e.id, { end_time: Date.now() });
@@ -1996,6 +2020,15 @@ if ("serviceWorker" in navigator) {
     .then((r) => r.update())
     .catch(() => {});
   navigator.serviceWorker.addEventListener("message", (e) => {
+    if (e.data?.type === "APP_UPDATED") {
+      const reload = () => {
+        if (!$("dialog").open && !document.querySelector("input:focus, textarea:focus"))
+          location.reload();
+      };
+      reload();
+      document.addEventListener("visibilitychange", () => !document.hidden && reload());
+      return;
+    }
     if (e.data?.type === "OPEN_EVENT") {
       setTab("today");
       sync

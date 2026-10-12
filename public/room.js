@@ -82,7 +82,9 @@ export function createRoom(canvas, opts = {}) {
   const pic = document.createElement("canvas"), pc = pic.getContext("2d");
   const tiny = document.createElement("canvas"), tc = tiny.getContext("2d");
   const roomCache = document.createElement("canvas"), rc = roomCache.getContext("2d");
-  let roomKey = "", photoRev = 0;
+  const skyLayer = document.createElement("canvas"), skc = skyLayer.getContext("2d");
+  const beamLayer = document.createElement("canvas"), bc = beamLayer.getContext("2d");
+  let roomKey = "", photoRev = 0, skyKey = "", beamKey = "", skyAlt = 0, lastSig = "", paused = false;
   pic.width = 18; pic.height = 14; tiny.width = 14; tiny.height = 14;
   let W = 195, k = 2, L;
   const st = { epoch: Date.now(), sleep: null, walk: false, notes: 2, pending: 0, error: false, due: false };
@@ -107,8 +109,8 @@ export function createRoom(canvas, opts = {}) {
     k = Math.max(1, Math.round((cssW * dpr) / 220));
     if (k > 1 && (cssW * dpr) / k < 180) k--;
     W = Math.floor((cssW * dpr) / k);
-    for (const c of [scene, out, relit, mask, roomCache]) { c.width = W; c.height = ROOM_H; }
-    roomKey = "";
+    for (const c of [scene, out, relit, mask, roomCache, skyLayer, beamLayer]) { c.width = W; c.height = ROOM_H; }
+    roomKey = skyKey = beamKey = lastSig = "";
     canvas.width = W * k; canvas.height = ROOM_H * k;
     canvas.style.width = (W * k) / dpr + "px"; canvas.style.height = (ROOM_H * k) / dpr + "px";
     layout();
@@ -369,9 +371,14 @@ export function createRoom(canvas, opts = {}) {
     if (key !== roomKey) { roomKey = key; rc.clearRect(0, 0, W, ROOM_H); paintRoom(rc); }
     s.clearRect(0, 0, W, ROOM_H);
     s.drawImage(roomCache, 0, 0);
-    const alt = paintSky(s);
+    const sk = skyFrameKey();
+    if (sk !== skyKey) { skyKey = sk; skc.clearRect(0, 0, W, ROOM_H); skyAlt = paintSky(skc); }
+    s.drawImage(skyLayer, 0, 0);
+    const alt = skyAlt;
     paintDoor(s);
-    paintBeam(s, alt);
+    const bk = [Math.floor(st.epoch / 60000), Math.round(alt)].join();
+    if (bk !== beamKey) { beamKey = bk; bc.clearRect(0, 0, W, ROOM_H); paintBeam(bc, alt); }
+    s.drawImage(beamLayer, 0, 0);
     paintBed(s, false);
     paintEnvelope(s);
     if (!dog.bed) { paintDog(s); paintBowl(s); }
@@ -445,9 +452,20 @@ export function createRoom(canvas, opts = {}) {
     else if (roll < 0.85) plan([{ do: "fn", fn: () => (dog.face = -dog.face) }, { do: "pose", pose: "sit", ticks: 30 }], false);
     else plan([{ do: "walk", x: L.toy.x - 40 }, { do: "fn", fn: () => { dog.face = 1; say("?"); } }, { do: "wag", ticks: 30 }], false);
   }
+  const skyFrameKey = () => [Math.floor(st.epoch / 60000), Math.floor(tick / 24), (tick >> 3) % 7, st.walk && !reduced ? Math.floor(tick * 0.35) : 0].join();
+  function frameSig() {
+    return [
+      dog.x | 0, dog.y | 0, frameOf(), dog.alpha, dog.bob, dog.tail, dog.face, dog.hidden, dog.bed, dog.pose === "eat" ? (tick >> 2) % 2 : 0,
+      dog.pose === "sleep" && !reduced ? (tick % 48) < 24 : 0,
+      parts.map((p) => `${p.k}${p.x | 0},${p.y | 0}${p.life > 6 || tick % 2}`).join(";"),
+      paws.map((p) => Math.min(6, Math.ceil(p.life / 10))).join(""),
+      emote?.text, kibble, doorOpen, flash, calFlash, envLift, envGone > 0, leash, skyFrameKey(),
+      st.pending, st.error, st.notes, st.due, st.sleep, st.walk, hasPhoto, photoRev,
+    ].join("|");
+  }
   function loop(ts) {
     raf = 0;
-    if (!visible) return;
+    if (!visible || paused) return;
     const dt = Math.min(200, ts - (last || ts)); last = ts; acc += dt;
     let ticked = false;
     while (acc >= 33) {
@@ -461,10 +479,13 @@ export function createRoom(canvas, opts = {}) {
       if (st.sleep && dog.bed && tick % 40 === 0) burst("z", 1, dog.x + 44, 66);
       if (envGone > 0) { envLift += 1; if (--envGone <= 0) envLift = 0; }
     }
-    if (ticked) draw();
+    if (ticked) {
+      const sig = frameSig();
+      if (sig !== lastSig) { lastSig = sig; draw(); }
+    }
     raf = requestAnimationFrame(loop);
   }
-  function wake() { if (!raf && visible && !still) { last = 0; raf = requestAnimationFrame(loop); } }
+  function wake() { if (!raf && visible && !paused && !still) { last = 0; raf = requestAnimationFrame(loop); } }
 
   // ---------- public ----------
   function set(next, { instant = false } = {}) {
@@ -567,6 +588,7 @@ export function createRoom(canvas, opts = {}) {
   if (sprite.complete) size(); else sprite.addEventListener("load", size, { once: true });
   return {
     set, react, setPhoto, draw: () => draw(),
+    pause(on) { paused = !!on; if (!paused) wake(); },
     place(x, pose = "sit", face = 1) { dog.x = x; dog.pose = pose; dog.face = face; draw(); },
     get layout() { return L; }, get dog() { return dog; },
     feed(n) { kibble = n; draw(); },
