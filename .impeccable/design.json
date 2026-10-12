@@ -1,0 +1,1131 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-12T23:15:04.848Z",
+  "title": "Design System: Winnie",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "Bandana Navy Ink",
+        "canonical": "#22264a",
+        "oklch": "oklch(28.5% 0.066 276.6)",
+        "tonalRamp": [
+          "#060526",
+          "#1c2043",
+          "#373c62",
+          "#545a83",
+          "#767da8",
+          "#99a1ce",
+          "#bfc7f6",
+          "#e2ebff"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Midnight Text",
+        "canonical": "#1d2146",
+        "oklch": "oklch(26.6% 0.068 276.1)",
+        "tonalRamp": [
+          "#060527",
+          "#1c2044",
+          "#363c64",
+          "#535a84",
+          "#757da9",
+          "#99a1d0",
+          "#bec7f8",
+          "#e1ebff"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Dusk Muted",
+        "canonical": "#555c88",
+        "oklch": "oklch(48.8% 0.071 276.5)",
+        "tonalRamp": [
+          "#060528",
+          "#1c1f46",
+          "#363c65",
+          "#535a86",
+          "#757dab",
+          "#98a1d2",
+          "#bec7f9",
+          "#e1ebff"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Periwinkle Ground",
+        "canonical": "#eef1fb",
+        "oklch": "oklch(95.9% 0.014 272.7)",
+        "tonalRamp": [
+          "#090b11",
+          "#22242b",
+          "#3d3f47",
+          "#5b5d66",
+          "#7d8089",
+          "#a1a4ad",
+          "#c7cad4",
+          "#ebeef8"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "sunk": {
+        "role": "neutral",
+        "displayName": "Sunk Periwinkle",
+        "canonical": "#e3e7f6",
+        "oklch": "oklch(92.9% 0.021 274.0)",
+        "tonalRamp": [
+          "#080a14",
+          "#21232e",
+          "#3c3f4b",
+          "#5a5d6a",
+          "#7c808d",
+          "#a0a4b2",
+          "#c6cad8",
+          "#eaeefd"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#d3d8ee",
+        "oklch": "oklch(88.5% 0.031 275.6)",
+        "tonalRamp": [
+          "#080a18",
+          "#202333",
+          "#3b3f50",
+          "#585c6f",
+          "#7b7f93",
+          "#9fa3b8",
+          "#c4c9df",
+          "#e8edff"
+        ]
+      },
+      "edge": {
+        "role": "neutral",
+        "displayName": "Edge",
+        "canonical": "#22264a",
+        "oklch": "oklch(28.5% 0.066 276.6)",
+        "tonalRamp": [
+          "#060526",
+          "#1c2043",
+          "#373c62",
+          "#545a83",
+          "#767da8",
+          "#99a1ce",
+          "#bfc7f6",
+          "#e2ebff"
+        ]
+      },
+      "btn": {
+        "role": "neutral",
+        "displayName": "Button Paper",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "drop": {
+        "role": "neutral",
+        "displayName": "Ledge Shadow",
+        "canonical": "rgb(34 38 74 / 0.26)"
+      },
+      "pee": {
+        "role": "secondary",
+        "displayName": "Sun Yellow",
+        "canonical": "#ffd84a",
+        "oklch": "oklch(89.1% 0.159 93.2)",
+        "tonalRamp": [
+          "#1b0400",
+          "#3e1900",
+          "#5c3800",
+          "#7c5700",
+          "#a17b00",
+          "#c7a000",
+          "#eec733",
+          "#ffec61"
+        ]
+      },
+      "poop": {
+        "role": "secondary",
+        "displayName": "Caramel",
+        "canonical": "#eaa56d",
+        "oklch": "oklch(77.6% 0.109 59.3)",
+        "tonalRamp": [
+          "#270000",
+          "#470d00",
+          "#682d00",
+          "#894c0a",
+          "#b06f36",
+          "#d7935c",
+          "#ffb981",
+          "#ffdda4"
+        ]
+      },
+      "meal": {
+        "role": "secondary",
+        "displayName": "Mint",
+        "canonical": "#7fe0a6",
+        "oklch": "oklch(83.2% 0.124 156.2)",
+        "tonalRamp": [
+          "#001600",
+          "#003304",
+          "#005121",
+          "#00713f",
+          "#309660",
+          "#5abc84",
+          "#82e3a9",
+          "#a6ffcc"
+        ]
+      },
+      "sleep": {
+        "role": "secondary",
+        "displayName": "Periwinkle",
+        "canonical": "#aabcff",
+        "oklch": "oklch(80.6% 0.097 272.5)",
+        "tonalRamp": [
+          "#050033",
+          "#161c52",
+          "#2f3a72",
+          "#4b5994",
+          "#6c7cba",
+          "#90a1e2",
+          "#b5c7ff",
+          "#d8ebff"
+        ]
+      },
+      "walk": {
+        "role": "secondary",
+        "displayName": "Grass",
+        "canonical": "#a2e36f",
+        "oklch": "oklch(84.7% 0.162 133.0)",
+        "tonalRamp": [
+          "#001200",
+          "#003000",
+          "#144f00",
+          "#346f00",
+          "#579313",
+          "#7bb945",
+          "#a0e16d",
+          "#c3ff91"
+        ]
+      },
+      "photo": {
+        "role": "secondary",
+        "displayName": "Bubblegum Pink",
+        "canonical": "#ff9ec2",
+        "oklch": "oklch(80.7% 0.122 356.4)",
+        "tonalRamp": [
+          "#28000c",
+          "#4c0025",
+          "#6e1a41",
+          "#913b5f",
+          "#b85e82",
+          "#e183a6",
+          "#ffa8cc",
+          "#ffccf0"
+        ]
+      },
+      "care": {
+        "role": "secondary",
+        "displayName": "Lilac",
+        "canonical": "#d3b8ff",
+        "oklch": "oklch(83.0% 0.102 301.7)",
+        "tonalRamp": [
+          "#14002d",
+          "#2e124c",
+          "#4a306c",
+          "#684e8d",
+          "#8b71b3",
+          "#b095da",
+          "#d6bbff",
+          "#fadfff"
+        ]
+      },
+      "groom": {
+        "role": "secondary",
+        "displayName": "Aqua",
+        "canonical": "#8fe3e0",
+        "oklch": "oklch(86.2% 0.082 192.8)",
+        "tonalRamp": [
+          "#001314",
+          "#002f2f",
+          "#004d4b",
+          "#016c6a",
+          "#3a908d",
+          "#61b5b2",
+          "#88dcd9",
+          "#acfffd"
+        ]
+      },
+      "sick": {
+        "role": "secondary",
+        "displayName": "Lime Wash",
+        "canonical": "#d6eaa0",
+        "oklch": "oklch(90.5% 0.098 120.7)",
+        "tonalRamp": [
+          "#070f00",
+          "#1e2900",
+          "#394700",
+          "#56651d",
+          "#788942",
+          "#9cae67",
+          "#c1d58c",
+          "#e5f9af"
+        ]
+      },
+      "plain": {
+        "role": "secondary",
+        "displayName": "Plain",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "alert": {
+        "role": "tertiary",
+        "displayName": "Alarm Red",
+        "canonical": "#e8505b",
+        "oklch": "oklch(64.1% 0.187 20.1)",
+        "tonalRamp": [
+          "#2b0000",
+          "#600000",
+          "#88000e",
+          "#af0c2d",
+          "#d9424f",
+          "#ff6a72",
+          "#ff9297",
+          "#ffbbbd"
+        ]
+      },
+      "ok": {
+        "role": "tertiary",
+        "displayName": "Signal Green",
+        "canonical": "#3fbf6a",
+        "oklch": "oklch(71.5% 0.166 150.8)",
+        "tonalRamp": [
+          "#001500",
+          "#003500",
+          "#005500",
+          "#007523",
+          "#009a48",
+          "#41c16c",
+          "#6de891",
+          "#93ffb4"
+        ]
+      },
+      "amber": {
+        "role": "tertiary",
+        "displayName": "Amber",
+        "canonical": "#ffc23d",
+        "oklch": "oklch(84.8% 0.156 82.4)",
+        "tonalRamp": [
+          "#200000",
+          "#460f00",
+          "#663000",
+          "#885000",
+          "#ad7400",
+          "#d49900",
+          "#fcbf39",
+          "#ffe465"
+        ]
+      },
+      "sticky-yellow": {
+        "role": "tertiary",
+        "displayName": "Sticky Yellow",
+        "canonical": "#ffe066",
+        "oklch": "oklch(91.0% 0.144 95.1)",
+        "tonalRamp": [
+          "#1a0500",
+          "#3a1d00",
+          "#583b00",
+          "#775a00",
+          "#9b7d00",
+          "#c1a314",
+          "#e8c94d",
+          "#ffed74"
+        ]
+      },
+      "sticky-rose": {
+        "role": "tertiary",
+        "displayName": "Sticky Rose",
+        "canonical": "#ff9ec2",
+        "oklch": "oklch(80.7% 0.122 356.4)",
+        "tonalRamp": [
+          "#28000c",
+          "#4c0025",
+          "#6e1a41",
+          "#913b5f",
+          "#b85e82",
+          "#e183a6",
+          "#ffa8cc",
+          "#ffccf0"
+        ]
+      },
+      "pending-paper": {
+        "role": "tertiary",
+        "displayName": "Pending Paper",
+        "canonical": "#ffe08a",
+        "oklch": "oklch(91.4% 0.111 90.3)",
+        "tonalRamp": [
+          "#1c0300",
+          "#381e00",
+          "#563b00",
+          "#765900",
+          "#9a7d21",
+          "#bfa14b",
+          "#e6c872",
+          "#ffec96"
+        ]
+      },
+      "review-paper": {
+        "role": "tertiary",
+        "displayName": "Review Paper",
+        "canonical": "#ffadb2",
+        "oklch": "oklch(82.8% 0.097 15.4)",
+        "tonalRamp": [
+          "#270001",
+          "#480514",
+          "#69262f",
+          "#8c454b",
+          "#b2676d",
+          "#da8b91",
+          "#ffb1b6",
+          "#ffd4d9"
+        ]
+      },
+      "gingham-blue": {
+        "role": "tertiary",
+        "displayName": "Gingham Stripe",
+        "canonical": "rgb(92 122 214 / 0.55)"
+      },
+      "gingham-paper": {
+        "role": "neutral",
+        "displayName": "Gingham Paper",
+        "canonical": "#f6f7ff",
+        "oklch": "oklch(97.8% 0.011 280.5)",
+        "tonalRamp": [
+          "#0a0b10",
+          "#232429",
+          "#3e3f45",
+          "#5c5d64",
+          "#7f8087",
+          "#a3a4ab",
+          "#c9cad2",
+          "#edeef6"
+        ]
+      },
+      "focus-pink": {
+        "role": "tertiary",
+        "displayName": "Focus Pink",
+        "canonical": "#ff6fae",
+        "oklch": "oklch(73.4% 0.186 355.3)",
+        "tonalRamp": [
+          "#28000d",
+          "#5a0028",
+          "#800044",
+          "#a61362",
+          "#d04385",
+          "#fa6baa",
+          "#ff92d0",
+          "#ffbaf4"
+        ]
+      },
+      "toast-rim": {
+        "role": "neutral",
+        "displayName": "Toast Rim",
+        "canonical": "#070818",
+        "oklch": "oklch(14.4% 0.035 277.9)",
+        "tonalRamp": [
+          "#080919",
+          "#202235",
+          "#3b3e52",
+          "#595c71",
+          "#7b7f95",
+          "#9fa3bb",
+          "#c5c9e2",
+          "#e8edff"
+        ]
+      },
+      "tabbar-text": {
+        "role": "neutral",
+        "displayName": "Tab Bar Periwinkle",
+        "canonical": "#c9d1ff",
+        "oklch": "oklch(87.0% 0.064 277.2)",
+        "tonalRamp": [
+          "#070625",
+          "#1d2042",
+          "#373c61",
+          "#545a82",
+          "#767da7",
+          "#9aa1cd",
+          "#c0c7f5",
+          "#e3ebff"
+        ]
+      },
+      "dark-text": {
+        "role": "neutral",
+        "displayName": "Dark: Moon Text",
+        "canonical": "#eef0ff",
+        "oklch": "oklch(95.8% 0.020 279.9)",
+        "tonalRamp": [
+          "#090a14",
+          "#22232e",
+          "#3d3f4b",
+          "#5b5d69",
+          "#7d7f8c",
+          "#a2a3b1",
+          "#c7c9d8",
+          "#ebedfc"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dark: Muted",
+        "canonical": "#a9b0dc",
+        "oklch": "oklch(76.7% 0.063 277.7)",
+        "tonalRamp": [
+          "#070625",
+          "#1d2042",
+          "#383c61",
+          "#555a81",
+          "#777da6",
+          "#9ba1cd",
+          "#c0c7f4",
+          "#e4ebff"
+        ]
+      },
+      "dark-ground": {
+        "role": "neutral",
+        "displayName": "Dark: Night Ground",
+        "canonical": "#11143a",
+        "oklch": "oklch(21.5% 0.072 275.1)",
+        "tonalRamp": [
+          "#060529",
+          "#1b1f46",
+          "#353c66",
+          "#525a87",
+          "#737dac",
+          "#97a1d3",
+          "#bcc8fa",
+          "#e0ecff"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Dark: Surface",
+        "canonical": "#1c2150",
+        "oklch": "oklch(27.3% 0.085 274.7)",
+        "tonalRamp": [
+          "#06022e",
+          "#191e4c",
+          "#333b6c",
+          "#4f598e",
+          "#717cb3",
+          "#94a1da",
+          "#bac7ff",
+          "#ddebff"
+        ]
+      },
+      "dark-sunk": {
+        "role": "neutral",
+        "displayName": "Dark: Sunk",
+        "canonical": "#171b46",
+        "oklch": "oklch(24.7% 0.080 274.9)",
+        "tonalRamp": [
+          "#06032c",
+          "#1a1e4a",
+          "#343b69",
+          "#505a8a",
+          "#727cb0",
+          "#96a1d7",
+          "#bbc7ff",
+          "#deebff"
+        ]
+      },
+      "dark-line": {
+        "role": "neutral",
+        "displayName": "Dark: Hairline",
+        "canonical": "#2d3470",
+        "oklch": "oklch(35.4% 0.103 274.9)",
+        "tonalRamp": [
+          "#060035",
+          "#181a54",
+          "#313975",
+          "#4d5797",
+          "#6e7bbd",
+          "#929fe5",
+          "#b7c6ff",
+          "#daeaff"
+        ]
+      },
+      "dark-edge": {
+        "role": "neutral",
+        "displayName": "Dark: Edge",
+        "canonical": "#3d4594",
+        "oklch": "oklch(42.8% 0.128 275.2)",
+        "tonalRamp": [
+          "#070039",
+          "#181360",
+          "#2f3482",
+          "#4a54a5",
+          "#6b78cc",
+          "#8e9df4",
+          "#b2c3ff",
+          "#d5e8ff"
+        ]
+      },
+      "dark-btn": {
+        "role": "neutral",
+        "displayName": "Dark: Button Paper",
+        "canonical": "#e2e7ff",
+        "oklch": "oklch(93.1% 0.033 276.4)",
+        "tonalRamp": [
+          "#080919",
+          "#202334",
+          "#3b3e51",
+          "#585c71",
+          "#7b7f94",
+          "#9fa3ba",
+          "#c4c9e1",
+          "#e8edff"
+        ]
+      },
+      "dark-drop": {
+        "role": "neutral",
+        "displayName": "Dark: Ledge Shadow",
+        "canonical": "rgb(0 0 0 / 0.42)"
+      },
+      "room-wall": {
+        "role": "tertiary",
+        "displayName": "Room: Periwinkle Wallpaper",
+        "canonical": "#c6d2f8",
+        "oklch": "oklch(86.7% 0.054 271.4)",
+        "tonalRamp": [
+          "#050822",
+          "#1b223e",
+          "#353e5d",
+          "#525c7d",
+          "#747fa1",
+          "#98a3c8",
+          "#bdc9ef",
+          "#e1edff"
+        ]
+      },
+      "room-wainscot": {
+        "role": "tertiary",
+        "displayName": "Room: Wainscot",
+        "canonical": "#7d95dc",
+        "oklch": "oklch(68.0% 0.109 269.1)",
+        "tonalRamp": [
+          "#030038",
+          "#101b58",
+          "#293a79",
+          "#45599b",
+          "#667cc1",
+          "#89a1e9",
+          "#aec8ff",
+          "#d1ecff"
+        ]
+      },
+      "room-wood": {
+        "role": "tertiary",
+        "displayName": "Room: Honey Wood",
+        "canonical": "#dc9b56",
+        "oklch": "oklch(73.9% 0.116 66.0)",
+        "tonalRamp": [
+          "#260000",
+          "#460f00",
+          "#672e00",
+          "#884d00",
+          "#ae7028",
+          "#d69550",
+          "#febb76",
+          "#ffdf99"
+        ]
+      },
+      "room-seam": {
+        "role": "tertiary",
+        "displayName": "Room: Plank Seam",
+        "canonical": "#a9692f",
+        "oklch": "oklch(58.0% 0.110 59.9)",
+        "tonalRamp": [
+          "#270000",
+          "#470d00",
+          "#672d00",
+          "#894c07",
+          "#af6f35",
+          "#d7945b",
+          "#ffb980",
+          "#ffdda3"
+        ]
+      },
+      "room-bed": {
+        "role": "tertiary",
+        "displayName": "Room: Bed Rim",
+        "canonical": "#3e52b0",
+        "oklch": "oklch(47.6% 0.151 270.6)",
+        "tonalRamp": [
+          "#040039",
+          "#100d6b",
+          "#25328e",
+          "#3f53b1",
+          "#5f78d9",
+          "#819dff",
+          "#a6c4ff",
+          "#c8e9ff"
+        ]
+      },
+      "room-door": {
+        "role": "tertiary",
+        "displayName": "Room: Door",
+        "canonical": "#b9713d",
+        "oklch": "oklch(61.7% 0.113 54.6)",
+        "tonalRamp": [
+          "#290000",
+          "#490700",
+          "#6b2900",
+          "#8d490d",
+          "#b46c38",
+          "#db915d",
+          "#ffb682",
+          "#ffdaa5"
+        ]
+      },
+      "room-gingham": {
+        "role": "tertiary",
+        "displayName": "Room: Gingham Blue",
+        "canonical": "#5c7ad6",
+        "oklch": "oklch(60.1% 0.144 268.3)",
+        "tonalRamp": [
+          "#030039",
+          "#0b1268",
+          "#21358a",
+          "#3c55ae",
+          "#5c7ad6",
+          "#7e9fff",
+          "#a3c6ff",
+          "#c5ebff"
+        ]
+      }
+    },
+    "careTypeMap": {
+      "source": "public/icons.js TYPES; typeColor(type) => var(--<token>)",
+      "map": {
+        "pee": "pee",
+        "poop": "poop",
+        "meal": "meal",
+        "nap": "sleep",
+        "slumber": "sleep",
+        "walk": "walk",
+        "outing": "walk",
+        "grooming": "groom",
+        "enrichment": "care",
+        "medication": "care",
+        "appointment": "care",
+        "travel": "care",
+        "covered_gap": "care",
+        "vomit": "sick",
+        "episode": "sick",
+        "note": "plain",
+        "moment": "photo"
+      }
+    },
+    "roomPalette": {
+      "source": "public/room.js C",
+      "values": {
+        "ink": "#22264a",
+        "wall1": "#c6d2f8",
+        "wall2": "#b6c5f3",
+        "wall3": "#a8b9ee",
+        "wain": "#7d95dc",
+        "wainHi": "#93a9e6",
+        "wainLo": "#6a82c9",
+        "rail": "#eef1ff",
+        "base": "#eef1ff",
+        "baseLo": "#c9d1f1",
+        "wood": "#dc9b56",
+        "woodLo": "#c6853f",
+        "woodHi": "#e8ae6f",
+        "seam": "#a9692f",
+        "white": "#f6f7ff",
+        "whiteLo": "#d3d9f2",
+        "note1": "#ffe066",
+        "note1Lo": "#e6c443",
+        "note2": "#ff9ec2",
+        "note2Lo": "#e57ea5",
+        "green": "#5cbb63",
+        "greenLo": "#3d9150",
+        "greenHi": "#8fdc7f",
+        "pot": "#3f4f9e",
+        "potHi": "#5a6cc0",
+        "red": "#e8505b",
+        "redHi": "#ff8a8f",
+        "frame": "#8a5a33",
+        "frameLo": "#6e4426",
+        "door": "#b9713d",
+        "doorLo": "#9a5a2d",
+        "doorHi": "#d08b53",
+        "knob": "#ffd84a",
+        "dark": "#11152e",
+        "bedRim": "#3e52b0",
+        "bedHi": "#5a70cf",
+        "bedLo": "#2b3a87",
+        "g1": "#f6f7ff",
+        "g2": "#9fb5f0",
+        "g3": "#5c7ad6",
+        "kib": "#7a4426",
+        "cat1": "#7fd07a",
+        "cat2": "#4fa85a",
+        "sconce": "#ffe9a8",
+        "sconceLo": "#e3bf55",
+        "mat": "#e8505b",
+        "matLo": "#b93d4c"
+      },
+      "sky": "SKY keyed by solar altitude (deg): -18 #070b26/#141c4c, -10 #0d1440/#28306e, -5 #1d2763/#5a4c98, -1.5 #34449a/#c46d98, 1 #4d68c6/#ff9b6a, 6 #5b8fe6/#ffcf8f, 16 #4a9af2/#b8e1ff, 60 #3d93f0/#a7dbff",
+      "tint": "TINT multiply keyed by solar altitude: -18 #3a417c, -9 #474f8f, -4 #7468aa, -0.5 #cf9aae, 3 #ffdcb8, 9 #fff3e6, 15 #ffffff",
+      "artGrid": "112 art px tall; W art px wide (about 180-260); integer device px per art px chosen near W=220; nearest-neighbour blit; 4x4 Bayer dither for light and sky",
+      "sprite": "public/photos/winnie-room-v1.png, 3x2 cells of 64 art px: sit, blink, sleep, walkA, walkB, happy",
+      "emotes": [
+        "z",
+        "!",
+        "?",
+        "~",
+        "nom",
+        "heart"
+      ]
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "View titles (Plans, History, Photos); join screen at 52px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Day heading in the Today log; sheet titles at 24px."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card heads, section heads, tile names, status line lead."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Last-time on the Pee and Poop tiles, tabular figures."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, chips, HUD pills, tab labels, form labels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text and row titles (600)."
+      },
+      "body-small": {
+        "displayName": "Body small",
+        "purpose": "Meta lines: elapsed, who, fine print, captions."
+      },
+      "input": {
+        "displayName": "Input",
+        "purpose": "All inputs, selects and textareas; 16px avoids iOS zoom."
+      }
+    },
+    "fonts": [
+      {
+        "family": "Pixelify Sans",
+        "src": "/fonts/pixelify-sans-latin.woff2",
+        "weights": "400 700",
+        "display": "swap",
+        "preload": true
+      },
+      {
+        "family": "Rubik",
+        "src": "/fonts/rubik-latin.woff2",
+        "weights": "300 800",
+        "display": "swap",
+        "preload": true
+      }
+    ],
+    "shadows": [
+      {
+        "name": "pixel-edge",
+        "value": "0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink)",
+        "purpose": "Notched 3px pixel outline on buttons, tiles, chips, the running-activity bar. 2px version on icon squares."
+      },
+      {
+        "name": "ledge",
+        "value": "0 7px 0 0 var(--drop)",
+        "purpose": "Rest depth under every pressable pixel button."
+      },
+      {
+        "name": "ledge-pressed",
+        "value": "0 4px 0 0 var(--drop)",
+        "purpose": "Pressed depth, paired with translateY(3px)."
+      },
+      {
+        "name": "bevel",
+        "value": "inset 0 -4px 0 0 rgb(34 38 74 / 0.15), inset 0 3px 0 0 rgb(255 255 255 / 0.5)",
+        "purpose": "Lit top and shaded bottom inside a pixel button; bottom shrinks to 2px when pressed."
+      },
+      {
+        "name": "paper-ledge",
+        "value": "0 3px 0 var(--drop)",
+        "purpose": "Sticky notes; photo memory cards use 0 4px 0."
+      },
+      {
+        "name": "sheet-lip",
+        "value": "0 -3px 0 0 var(--ink)",
+        "purpose": "Top edge of the bottom sheet."
+      },
+      {
+        "name": "tabbar-lip",
+        "value": "0 -3px 0 #0b0d24",
+        "purpose": "Top edge of the tab bar."
+      },
+      {
+        "name": "toast-rim",
+        "value": "0 -3px 0 0 #070818, 0 3px 0 0 #070818, -3px 0 0 0 #070818, 3px 0 0 0 #070818",
+        "purpose": "Pixel edge around the toast."
+      }
+    ],
+    "motion": [
+      {
+        "name": "press",
+        "value": "transform 60ms steps(2), box-shadow 60ms steps(2)",
+        "purpose": "Pixel button press down 3px."
+      },
+      {
+        "name": "pop",
+        "value": "420ms steps(6)",
+        "purpose": "Log tile after a log: down 3px, up 3px at 1.03, settle."
+      },
+      {
+        "name": "toast-in",
+        "value": "220ms steps(5)",
+        "purpose": "Toast rises from below."
+      },
+      {
+        "name": "sheet-up",
+        "value": "220ms steps(6)",
+        "purpose": "Bottom sheet rises."
+      },
+      {
+        "name": "fresh",
+        "value": "900ms steps(6)",
+        "purpose": "New timeline row fades from Sun Yellow at 60%."
+      },
+      {
+        "name": "stripes",
+        "value": "1.2s steps(8) infinite",
+        "purpose": "Running-activity bar stripes."
+      },
+      {
+        "name": "connect-blink",
+        "value": "4s steps(1) infinite",
+        "purpose": "Join-screen Winnie blinks."
+      },
+      {
+        "name": "room-tick",
+        "value": "33ms",
+        "purpose": "Room logic tick; whole art-pixel moves; walk frame swap every 4 ticks; hop arc 0,3,5,6,5,3,0; fades quantised to quarters."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "All CSS animation collapses; room settles to the final pose instantly; breathing and skyline walker off."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "narrow",
+        "value": "max-width: 370px",
+        "purpose": "Gutter 12px, tile numeral 26px, tighter chips."
+      },
+      {
+        "name": "photo-3col",
+        "value": "min-width: 520px"
+      },
+      {
+        "name": "desktop-frame",
+        "value": "min-width: 640px",
+        "purpose": "Gingham page backdrop and 3px ink rails on the 560px column."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Pixel Button",
+      "kind": "button",
+      "refersTo": "button-pixel",
+      "description": "Every pressable control: pixel-edged, on a 7px ledge, presses down 3px.",
+      "html": "<button class=\"ds-px\">Add plan</button>",
+      "css": ".ds-px { --c: var(--btn, #fff); appearance: none; border: 0; border-radius: 0; margin: 3px; background: var(--c); color: var(--ink, #22264a); font: 600 14px/1 var(--px, 'Pixelify Sans', monospace); padding: 9px 12px 8px; min-height: 36px; box-shadow: 0 -3px 0 0 var(--ink, #22264a), 0 3px 0 0 var(--ink, #22264a), -3px 0 0 0 var(--ink, #22264a), 3px 0 0 0 var(--ink, #22264a), 0 7px 0 0 var(--drop, rgb(34 38 74 / 0.26)), inset 0 -4px 0 0 rgb(34 38 74 / 0.15), inset 0 3px 0 0 rgb(255 255 255 / 0.5); transition: transform 60ms steps(2), box-shadow 60ms steps(2); cursor: pointer; } .ds-px:hover { filter: brightness(1.04) saturate(1.05); } .ds-px:focus-visible { outline: 3px solid #ff6fae; outline-offset: 2px; } .ds-px:active { transform: translateY(3px); box-shadow: 0 -3px 0 0 var(--ink, #22264a), 0 3px 0 0 var(--ink, #22264a), -3px 0 0 0 var(--ink, #22264a), 3px 0 0 0 var(--ink, #22264a), 0 4px 0 0 var(--drop, rgb(34 38 74 / 0.26)), inset 0 -2px 0 0 rgb(34 38 74 / 0.15), inset 0 3px 0 0 rgb(255 255 255 / 0.5); }"
+    },
+    {
+      "name": "Primary Pixel Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Save, Join: ink fill in light, Sun Yellow fill in dark.",
+      "html": "<button class=\"ds-px ds-px-primary\">Save entry</button>",
+      "css": ".ds-px { appearance: none; border: 0; border-radius: 0; margin: 3px; background: var(--c); color: var(--ink, #22264a); font: 600 14px/1 var(--px, 'Pixelify Sans', monospace); padding: 9px 12px 8px; min-height: 36px; box-shadow: 0 -3px 0 0 #22264a, 0 3px 0 0 #22264a, -3px 0 0 0 #22264a, 3px 0 0 0 #22264a, 0 7px 0 0 rgb(34 38 74 / 0.26), inset 0 -4px 0 0 rgb(34 38 74 / 0.15), inset 0 3px 0 0 rgb(255 255 255 / 0.5); transition: transform 60ms steps(2); cursor: pointer; } .ds-px-primary { --c: #22264a; color: #fff; } .ds-px:focus-visible { outline: 3px solid #ff6fae; outline-offset: 2px; } .ds-px:active { transform: translateY(3px); } @media (prefers-color-scheme: dark) { .ds-px-primary { --c: #ffd84a; color: #22264a; } }"
+    },
+    {
+      "name": "Log Tile",
+      "kind": "custom",
+      "refersTo": "log-tile-pee",
+      "description": "Big Pee or Poop button: care colour, last time, age and who.",
+      "html": "<button class=\"ds-tile\"><span class=\"ds-tile-top\"><svg viewBox=\"-1 -1 13 13\" width=\"22\" height=\"22\" shape-rendering=\"crispEdges\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M5 0h1v1h-1zM4 1h3v1h-3zM4 2h3v1h-3zM3 3h5v1h-5zM2 4h7v1h-7zM2 5h2v1h-2zM5 5h4v1h-4zM1 6h3v1h-3zM5 6h5v1h-5zM1 7h2v1h-2zM5 7h5v1h-5zM1 8h2v1h-2zM4 8h6v1h-6zM2 9h7v1h-7zM3 10h5v1h-5z\"/></svg><span class=\"ds-tile-nm\">Pee</span><span class=\"ds-tile-act\">+ Log</span></span><span class=\"ds-tile-tm\">4:00 PM</span><span class=\"ds-tile-meta\">4m ago · Brandon</span></button>",
+      "css": ".ds-tile { --c: var(--pee, #ffd84a); appearance: none; border: 0; border-radius: 0; margin: 3px; width: 180px; display: grid; gap: 3px; align-content: start; text-align: left; padding: 11px 12px 13px; min-height: 128px; background: var(--c); color: #22264a; box-shadow: 0 -3px 0 0 #22264a, 0 3px 0 0 #22264a, -3px 0 0 0 #22264a, 3px 0 0 0 #22264a, 0 7px 0 0 rgb(34 38 74 / 0.26), inset 0 -4px 0 0 rgb(34 38 74 / 0.15), inset 0 3px 0 0 rgb(255 255 255 / 0.5); transition: transform 60ms steps(2); cursor: pointer; } .ds-tile:active { transform: translateY(3px); } .ds-tile:focus-visible { outline: 3px solid #ff6fae; outline-offset: 2px; } .ds-tile-top { display: flex; align-items: center; gap: 7px; } .ds-tile-nm { font: 700 20px var(--px, 'Pixelify Sans', monospace); } .ds-tile-act { margin-left: auto; font: 600 12px/1.1 var(--px, 'Pixelify Sans', monospace); background: rgb(255 255 255 / 0.7); border: 2px solid #22264a; padding: 3px 6px 2px; } .ds-tile-tm { font: 700 30px/1.05 var(--px, 'Pixelify Sans', monospace); margin-top: 8px; font-variant-numeric: tabular-nums; } .ds-tile-meta { font: 400 13px/1.3 var(--ui, Rubik, sans-serif); color: rgb(34 38 74 / 0.86); }"
+    },
+    {
+      "name": "Log Chip",
+      "kind": "chip",
+      "refersTo": "log-chip-meal",
+      "description": "Compact log button in the Today row and the More sheet grid.",
+      "html": "<button class=\"ds-chip\"><svg viewBox=\"-1 -1 13 11\" width=\"22\" height=\"22\" shape-rendering=\"crispEdges\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M3 0h1v1h-1zM5 0h1v1h-1zM7 0h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM0 3h11v1h-11zM0 4h11v1h-11zM1 5h9v1h-9zM1 6h9v1h-9zM2 7h7v1h-7zM3 8h5v1h-5z\"/></svg>Meal<small>2:00 PM</small></button>",
+      "css": ".ds-chip { --c: var(--meal, #7fe0a6); appearance: none; border: 0; border-radius: 0; margin: 3px; width: 84px; display: grid; justify-items: center; align-content: center; gap: 4px; padding: 9px 2px 8px; min-height: 64px; background: var(--c); color: #22264a; font: 600 13px/1.1 var(--px, 'Pixelify Sans', monospace); box-shadow: 0 -3px 0 0 #22264a, 0 3px 0 0 #22264a, -3px 0 0 0 #22264a, 3px 0 0 0 #22264a, 0 7px 0 0 rgb(34 38 74 / 0.26), inset 0 -4px 0 0 rgb(34 38 74 / 0.15), inset 0 3px 0 0 rgb(255 255 255 / 0.5); transition: transform 60ms steps(2); cursor: pointer; } .ds-chip:active { transform: translateY(3px); } .ds-chip:focus-visible { outline: 3px solid #ff6fae; outline-offset: 2px; } .ds-chip small { font: 500 11px var(--ui, Rubik, sans-serif); color: rgb(34 38 74 / 0.8); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat container for Up next, Notes, Also today: 2px edge, no shadow.",
+      "html": "<section class=\"ds-card\"><div class=\"ds-card-head\"><h2>Up next</h2><button class=\"ds-textbtn\">All plans</button></div><p>Nothing planned</p></section>",
+      "css": ".ds-card { background: var(--surface, #fff); color: var(--text, #1d2146); border: 2px solid var(--edge, #22264a); padding: 12px 13px 13px; display: grid; gap: 10px; font: 400 15px/1.42 var(--ui, Rubik, sans-serif); } .ds-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; } .ds-card-head h2 { margin: 0; font: 700 18px var(--px, 'Pixelify Sans', monospace); } .ds-card p { margin: 0; } .ds-textbtn { appearance: none; background: none; border: 0; padding: 6px 2px; font: 600 13px var(--px, 'Pixelify Sans', monospace); color: inherit; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; cursor: pointer; } .ds-textbtn:focus-visible { outline: 3px solid #ff6fae; outline-offset: 2px; }"
+    },
+    {
+      "name": "Sticky Note",
+      "kind": "custom",
+      "refersTo": "sticky-note",
+      "description": "Fridge note: yellow or rose paper with a square magnet on top.",
+      "html": "<button class=\"ds-sticky\"><span>Vet at 3 on Friday</span><small>Kim · Oct 12</small></button>",
+      "css": ".ds-sticky { --c: var(--sticky-yellow, #ffe066); --m: #e8505b; position: relative; appearance: none; border: 0; border-radius: 0; width: 160px; text-align: left; background: var(--c); color: #22264a; padding: 15px 10px 9px; font: 400 14px/1.3 var(--ui, Rubik, sans-serif); display: grid; gap: 6px; align-content: start; min-height: 92px; box-shadow: 0 3px 0 rgb(34 38 74 / 0.26); cursor: pointer; } .ds-sticky::before { content: ''; position: absolute; top: -6px; left: calc(50% - 6px); width: 12px; height: 12px; background: var(--m); border: 2px solid #22264a; box-sizing: border-box; } .ds-sticky small { font-size: 12px; color: rgb(34 38 74 / 0.8); } .ds-sticky:focus-visible { outline: 3px solid #ff6fae; outline-offset: 2px; }"
+    },
+    {
+      "name": "HUD Pill",
+      "kind": "chip",
+      "refersTo": "hud-pill",
+      "description": "Square label over the room: name, SF time, sync state, person.",
+      "html": "<button class=\"ds-hud\"><span class=\"ds-hud-dot\"></span>Up to date</button>",
+      "css": ".ds-hud { appearance: none; font: 600 13px/1 var(--px, 'Pixelify Sans', monospace); color: #22264a; background: rgb(255 255 255 / 0.92); border: 2px solid #22264a; border-radius: 0; padding: 6px 9px 5px; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; cursor: pointer; } .ds-hud-dot { width: 8px; height: 8px; background: #3fbf6a; box-shadow: 0 0 0 1.5px #22264a; } .ds-hud:focus-visible { outline: 3px solid #ff6fae; outline-offset: 2px; }"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Receipt after every action with Undo and follow-ups.",
+      "html": "<div class=\"ds-toast\" role=\"status\"><span class=\"ds-toast-text\"><b>Pee logged</b> · 4:07 PM</span><button>+ Photo</button><button>+ Note</button><button class=\"ds-toast-undo\">Undo</button></div>",
+      "css": ".ds-toast { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; margin: 3px; background: #22264a; color: #fff; font: 400 14px/1.25 var(--ui, Rubik, sans-serif); box-shadow: 0 -3px 0 0 #070818, 0 3px 0 0 #070818, -3px 0 0 0 #070818, 3px 0 0 0 #070818; } .ds-toast-text { flex: 1; } .ds-toast-text b { font: 700 15px var(--px, 'Pixelify Sans', monospace); } .ds-toast button { appearance: none; border: 0; border-radius: 0; background: #fff; color: #22264a; font: 600 13px/1 var(--px, 'Pixelify Sans', monospace); padding: 8px 8px 7px; min-height: 40px; cursor: pointer; } .ds-toast .ds-toast-undo { background: #ffd84a; } .ds-toast button:focus-visible { outline: 3px solid #ff6fae; outline-offset: 2px; }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tabbar",
+      "description": "Fixed ink bar; active tab icon sits in a gingham square.",
+      "html": "<nav class=\"ds-tabbar\"><button aria-current=\"page\"><span class=\"ds-tab-ic\"><svg viewBox=\"-1 -1 13 13\" width=\"24\" height=\"24\" shape-rendering=\"crispEdges\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M5 0h1v1h-1zM4 1h3v1h-3zM3 2h5v1h-5zM2 3h7v1h-7zM1 4h9v1h-9zM0 5h11v1h-11zM1 6h2v1h-2zM8 6h2v1h-2zM1 7h2v1h-2zM4 7h3v1h-3zM8 7h2v1h-2zM1 8h2v1h-2zM4 8h1v1h-1zM6 8h1v1h-1zM8 8h2v1h-2zM1 9h2v1h-2zM4 9h1v1h-1zM6 9h1v1h-1zM8 9h2v1h-2zM1 10h9v1h-9z\"/></svg></span>Today</button><button><span class=\"ds-tab-ic\"><svg viewBox=\"-1 -1 13 9\" width=\"24\" height=\"24\" shape-rendering=\"crispEdges\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M0 0h2v1h-2zM3 0h8v1h-8zM0 2h2v1h-2zM3 2h8v1h-8zM0 4h2v1h-2zM3 4h8v1h-8zM0 6h2v1h-2zM3 6h8v1h-8z\"/></svg></span>History</button></nav>",
+      "css": ".ds-tabbar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 6px 10px 8px; background: #22264a; color: #c9d1ff; box-shadow: 0 -3px 0 #0b0d24; } .ds-tabbar button { appearance: none; background: none; border: 0; display: grid; justify-items: center; gap: 3px; padding: 6px 0 4px; font: 600 12.5px var(--px, 'Pixelify Sans', monospace); color: inherit; min-height: 52px; cursor: pointer; } .ds-tabbar button:hover { color: #fff; } .ds-tabbar button:focus-visible { outline: 3px solid #ff6fae; outline-offset: 2px; } .ds-tab-ic { display: block; padding: 3px; } .ds-tab-ic svg { display: block; } .ds-tabbar [aria-current='page'] { color: #fff; } .ds-tabbar [aria-current='page'] .ds-tab-ic { color: #22264a; background: repeating-linear-gradient(90deg, rgb(92 122 214 / 0.6) 0 4px, transparent 4px 8px), repeating-linear-gradient(0deg, rgb(92 122 214 / 0.6) 0 4px, transparent 4px 8px), #f6f7ff; box-shadow: 0 0 0 2px #fff; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Square field on ground, Pixelify label above, pink focus ring.",
+      "html": "<label class=\"ds-field\">Note<input placeholder=\"Optional\"></label>",
+      "css": ".ds-field { display: grid; gap: 5px; font: 600 14px var(--px, 'Pixelify Sans', monospace); color: var(--text, #1d2146); } .ds-field input { font: 400 16px var(--ui, Rubik, sans-serif); padding: 10px 11px; border: 2px solid var(--edge, #22264a); border-radius: 0; background: var(--ground, #eef1fb); color: var(--text, #1d2146); min-height: 44px; } .ds-field input::placeholder { color: var(--muted, #555c88); } .ds-field input:focus-visible { outline: 3px solid #ff6fae; outline-offset: 0; border-color: #22264a; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Winnie's Room",
+    "overview": "The app is a 16-bit game bedroom dressed in Winnie's bandana colours: blue gingham, apricot Winnie, navy ink outlines, honey-wood floor, periwinkle wallpaper. The top of Today is a living pixel diorama in which pixel Winnie acts out only what the shared log has recorded, under the real San Francisco sky. Everything below it is game UI from the same world: big pixel-edged buttons that press down, square HUD pills, cards drawn with a 2px ink line, sticky notes pinned with a square magnet. Nothing is rounded.\n\nDensity is phone-first and one-handed. The first viewport is room, one status line, two big log tiles, a row of four chips, and the start of Up next, inside a 560px column. Colour is loud but disciplined: each care type owns exactly one saturated colour and that colour means that type everywhere it appears (tile, chip, timeline square, strip tick, chart bar, sheet button). Neutrals are cool periwinkle-tinted paper and navy ink, never warm grey or brown.\n\nPersonality lives in the room, the motion, and the family's own words. The interface copy is a label maker. Winnie never speaks; he emotes in pixel bubbles. Rejected and retired: the pastel card-grid pet dashboard with a hero photo and serif headline, and warm taglines (\"our good boy\", \"His story\", \"A life worth remembering\").",
+    "keyCharacteristics": [
+      "One pixel diorama at the top of Today, drawn on an integer art-pixel grid, scaled nearest-neighbour.",
+      "One colour per care type, identical everywhere.",
+      "Square corners only; pixel edges drawn with four 3px ink box-shadow sides.",
+      "Pressable things sit on a 7px ledge and press down 3px; flat things (cards, lists) do not.",
+      "Pixelify Sans for short labels and numbers, Rubik for running UI text, both self-hosted.",
+      "Stepped motion (`steps()`) throughout; no eased tweens.",
+      "Light and dark schemes; the care colours and ink do not change between them."
+    ],
+    "rules": [
+      {
+        "name": "The One Colour Per Care Type Rule",
+        "body": "A care type has exactly one colour token and it appears wherever that type does. Never give a type a second colour, and never borrow a care colour for decoration unrelated to that type (Sun Yellow as the \"selected\" fill is the one established exception).",
+        "section": "colors"
+      },
+      {
+        "name": "The Navy Not Brown Rule",
+        "body": "Outlines and text on colour are navy ink (`ink`), in the UI and in the pixel art alike. No brown or black outlines.",
+        "section": "colors"
+      },
+      {
+        "name": "The Short Words Rule",
+        "body": "Pixelify Sans sets words and numbers, never sentences. If it wraps to a second line of prose, it should be Rubik.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "All UI text is sentence case. No all-caps labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Press Is The Depth Rule",
+        "body": "A ledge means \"this moves when touched\" (or is a paper object). Cards and lists never get one.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do colour every appearance of a care type with its one token from `TYPES` in `public/icons.js` (`typeColor(type)`), in tiles, chips, icon squares, strip ticks and charts.",
+      "Do draw pressable controls with the pixel edge, the 7px ledge and the 3px press; draw cards and lists flat with a 2px `edge` border.",
+      "Do keep every corner square.",
+      "Do set short labels, headings, times and counts in Pixelify Sans and sentences in Rubik; set inputs at 16px.",
+      "Do write copy like a label maker: nouns, verbs, times and names in sentence case (\"Pee logged · 4:07 PM\", \"Finish walk\", \"None yet\", \"Nothing planned\"). Buttons name exactly what they do.",
+      "Do let Winnie respond to a log with an action in the room while the toast offers Undo.",
+      "Do derive every room state from a recorded fact: an active sleep, an active walk, a logged meal, pending changes, notes on the fridge, a plan due.",
+      "Do use `steps()` timing and whole-pixel moves for any new motion, and give reduced motion a still, settled pose.",
+      "Do use gingham as Winnie's signature pattern on surfaces that belong to him (the bed, window curtains, the active tab square, the desktop backdrop).",
+      "Do use navy ink for outlines and for text on coloured surfaces, in the UI and in new pixel art."
+    ],
+    "donts": [
+      "Don't show Winnie sad, hungry, needy or waiting, or infer any state from gaps in the log. No streaks, scores or guilt.",
+      "Don't give Winnie words; he only emotes (`z ! ? ~ nom` and a heart).",
+      "Don't add a second colour for a care type or reuse a care colour for an unrelated meaning.",
+      "Don't round UI corners or use blurred shadows (pixel art draws its own curves on the grid).",
+      "Don't use eased or springy CSS curves; use stepped timing.",
+      "Don't use taglines, \"our / together / moments / story / little\", exclamation marks, em dashes or rhetorical questions in UI copy.",
+      "Don't set paragraphs in Pixelify Sans or use all-caps labels.",
+      "Don't smooth-scale pixel art or draw it off the art grid; scale by integers with `image-rendering: pixelated`.",
+      "Don't use brown or black outlines in the UI or the room.",
+      "Don't lead with a hero photo or a pastel card grid; the room is the top of Today."
+    ]
+  }
+}

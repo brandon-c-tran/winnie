@@ -120,7 +120,7 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
       })
       .join(
         "",
-      )}</div><div class="map-caption">${chosen ? esc(cityLabel(chosen)) : focus ? "A closer look" : "His places, together"}${chosen || focus ? '<button class="text-button" data-map-all>Show all</button>' : '<span class="fine">Tap a group to zoom</span>'}</div></div>`;
+      )}</div><div class="map-caption">${chosen ? esc(cityLabel(chosen)) : focus ? "A closer look" : "All places"}${chosen || focus ? '<button class="text-button" data-map-all>Show all</button>' : '<span class="fine">Tap a group to zoom</span>'}</div></div>`;
   }
 
   function render() {
@@ -155,7 +155,7 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
           `<option value="${v}" ${type === v ? "selected" : ""}>${n}</option>`,
       )
       .join("")}</select></label></div>
-      <div class="places-intro"><p class="eyebrow">Where he’s been</p><h2>${groups.length ? `${groups.length} ${groups.length === 1 ? "city" : "cities"}, remembered together.` : "His map starts with a saved location."}</h2><p class="fine">${mapped.toLocaleString()} ${mapped === 1 ? "entry" : "entries"} with a location${missing ? ` · ${missing.toLocaleString()} without a map location` : ""}</p></div>
+      <div class="places-intro"><h2>${groups.length ? `${groups.length} ${groups.length === 1 ? "city" : "cities"},.` : "No places yet."}</h2><p class="fine">${mapped.toLocaleString()} ${mapped === 1 ? "entry" : "entries"} with a location${missing ? ` · ${missing.toLocaleString()} without a map location` : ""}</p></div>
       ${
         groups.length
           ? `${map(groups, chosen)}<div class="places-cities" aria-label="Cities">${groups.map((g, i) => `<button class="place-city ${g.id === selected ? "selected" : ""}" data-city="${esc(g.id)}" aria-pressed="${g.id === selected}"><span class="place-number">${i + 1}</span><span><strong>${esc(cityLabel(g))}</strong><span class="fine">${esc(region(g))} · ${g.days.size} recorded ${g.days.size === 1 ? "day" : "days"} · ${g.events.length} ${g.events.length === 1 ? "entry" : "entries"}</span><span class="fine">First ${date(g.first)} · Latest ${date(g.last)}</span></span><span aria-hidden="true">↗</span></button>`).join("")}</div>${

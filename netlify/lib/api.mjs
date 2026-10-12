@@ -11,6 +11,7 @@ import {
   validId,
 } from "./core.mjs";
 import { pushKeys, dispatch } from "./push.mjs";
+import { randomInt } from "node:crypto";
 export const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -43,6 +44,57 @@ function mediaType(bytes) {
     return "image/webp";
   throw new Fault(415, "Choose a JPEG, PNG, or WebP photo.");
 }
+// Short-lived join codes: no 0/O/1/I/L so they read aloud and type cleanly.
+const JOIN_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789",
+  JOIN_TTL = 15 * 60000,
+  JOIN_FAILED = "That code didn't work. Codes last 15 minutes and work once.";
+export function normalizeJoinCode(code) {
+  if (typeof code !== "string" || code.length > 40) return null;
+  const normalized = code.toUpperCase().replace(/[\s-]/g, "");
+  return new RegExp(`^[${JOIN_ALPHABET}]{8}$`).test(normalized)
+    ? normalized
+    : null;
+}
+function checkDevice({ person, deviceId, secret }) {
+  assert(
+    ["brandon", "kim"].includes(person) &&
+      validId(deviceId) &&
+      typeof secret === "string" &&
+      /^[a-zA-Z0-9_-]{40,100}$/.test(secret),
+    "Choose who is using this device.",
+  );
+}
+// Registers a device on a home. A retry from the same deviceId + secret is idempotent.
+async function registerDevice(main, key, { person, deviceId, secret, name }) {
+  const result = await transact(main, key, (d) => {
+    const previous = d.devices[deviceId];
+    assert(
+      !previous || (previous.tokenHash === hash(secret) && !previous.revoked),
+      "This device needs a fresh connection.",
+      401,
+    );
+    assert(
+      previous ||
+        Object.values(d.devices).filter((x) => !x.revoked).length < 30,
+      "Remove an old device before connecting another.",
+    );
+    assert(
+      !previous || previous.person === person,
+      "Reconnect to change the person on this device.",
+      409,
+    );
+    d.devices[deviceId] = previous || {
+      id: deviceId,
+      person,
+      tokenHash: hash(secret),
+      name: String(name || "Phone").slice(0, 60),
+      created: Date.now(),
+    };
+    if (!previous) d.revision++;
+    return {};
+  });
+  return result.doc;
+}
 export function createHandler(getStores, { runDispatch = dispatch } = {}) {
   return async (req) => {
     try {
@@ -60,13 +112,7 @@ export function createHandler(getStores, { runDispatch = dispatch } = {}) {
           typeof code === "string" && /^[a-zA-Z0-9_-]{12,100}$/.test(code),
           "Enter your existing shared code.",
         );
-        assert(
-          ["brandon", "kim"].includes(person) &&
-            validId(deviceId) &&
-            typeof secret === "string" &&
-            /^[a-zA-Z0-9_-]{40,100}$/.test(secret),
-          "Choose who is using this device.",
-        );
+        checkDevice({ person, deviceId, secret });
         const home = hash(code),
           key = `home/${home}`;
         let doc = await main.get(key, { type: "json" });
@@ -111,39 +157,64 @@ export function createHandler(getStores, { runDispatch = dispatch } = {}) {
           );
           await main.setJSON(key, migrate(raw), { onlyIfNew: true });
         }
-        const result = await transact(main, key, (d) => {
-          const previous = d.devices[deviceId];
-          assert(
-            !previous ||
-              (previous.tokenHash === hash(secret) && !previous.revoked),
-            "This device needs a fresh connection.",
-            401,
-          );
-          assert(
-            previous ||
-              Object.values(d.devices).filter((x) => !x.revoked).length < 30,
-            "Remove an old device before connecting another.",
-          );
-          assert(
-            !previous || previous.person === person,
-            "Reconnect to change the person on this device.",
-            409,
-          );
-          d.devices[deviceId] = previous || {
-            id: deviceId,
-            person,
-            tokenHash: hash(secret),
-            name: String(name || "Phone").slice(0, 60),
-            created: Date.now(),
-          };
-          if (!previous) d.revision++;
-          return {};
+        const registered = await registerDevice(main, key, {
+          person,
+          deviceId,
+          secret,
+          name,
         });
         return json({
           home,
           token: `${deviceId}.${secret}`,
           person,
-          ...snapshot(result.doc),
+          ...snapshot(registered),
+        });
+      }
+      if (action === "join" && req.method === "POST") {
+        const { code, person, deviceId, secret, name } = await body(req);
+        const normalized = normalizeJoinCode(code);
+        assert(normalized, "Enter the 8-character join code.");
+        checkDevice({ person, deviceId, secret });
+        const inviteKey = `invite/${hash(normalized)}`;
+        // Claim the code for this device before registering, so two phones
+        // racing on one code cannot both join. The same device may retry.
+        let invite;
+        for (let i = 0; ; i++) {
+          const row = await main.getWithMetadata(inviteKey, { type: "json" });
+          invite = row?.data;
+          assert(
+            invite &&
+              /^[a-f0-9]{64}$/.test(invite.home) &&
+              (invite.usedBy
+                ? invite.usedBy === deviceId
+                : invite.expires > Date.now()),
+            JOIN_FAILED,
+            404,
+          );
+          if (invite.usedBy) break;
+          const write = await main.setJSON(
+            inviteKey,
+            { ...invite, usedBy: deviceId, usedAt: Date.now() },
+            { onlyIfMatch: row.etag },
+          );
+          if (write.modified) break;
+          assert(
+            i < 8,
+            "Still syncing. Your action is safe on this device; retry shortly.",
+            503,
+          );
+        }
+        const registered = await registerDevice(main, `home/${invite.home}`, {
+          person,
+          deviceId,
+          secret,
+          name,
+        });
+        return json({
+          home: invite.home,
+          token: `${deviceId}.${secret}`,
+          person,
+          ...snapshot(registered),
         });
       }
       const home = req.headers.get("X-Winnie-Home");
@@ -307,6 +378,20 @@ export function createHandler(getStores, { runDispatch = dispatch } = {}) {
           return {};
         });
         return json({ revoked: true });
+      }
+      if (action === "invite" && req.method === "POST") {
+        const code = Array.from(
+          { length: 8 },
+          () => JOIN_ALPHABET[randomInt(JOIN_ALPHABET.length)],
+        ).join("");
+        const expires = Date.now() + JOIN_TTL;
+        const write = await main.setJSON(
+          `invite/${hash(code)}`,
+          { home, expires, createdBy: device.id, createdAt: Date.now() },
+          { onlyIfNew: true },
+        );
+        assert(write.modified, "Could not create a code. Try again.", 503);
+        return json({ code: `${code.slice(0, 4)}-${code.slice(4)}`, expires });
       }
       if (action === "export" && req.method === "GET")
         return json({ ...snapshot(doc), exportedAt: new Date().toISOString() });

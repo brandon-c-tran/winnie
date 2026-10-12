@@ -1,7 +1,9 @@
 import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=3.10";
+import { icon } from "./icons.js?v=4.0";
 
 export function createFridge({
   root,
+  nextRoot,
   careDueHTML = () => "",
   sync,
   esc,
@@ -15,7 +17,7 @@ export function createFridge({
   safe,
 }) {
   let last = "",
-    entrance = true,
+    lastNext = "",
     selected = null;
   const $ = (id) => document.getElementById(id);
   const day = (t) =>
@@ -90,14 +92,27 @@ export function createFridge({
             e.who === "trainer" &&
             Math.abs(e.time - visits[0].start) < 1800000),
       );
-    const content = `<header class="fridge-heading"><div><span class="fridge-kicker">BRANDON + KIM + WINNIE</span><h2>Our fridge<span aria-hidden="true">♡</span></h2></div><button class="fridge-drawer" data-fridge="saved" aria-label="Saved notes">Saved <span>${saved.length}</span></button></header><div class="fridge-grid">${active.map((note, i) => `<article class="fridge-sticky ${note.color}" data-note-card="${esc(note.id)}" style="--tilt:${i % 2 ? 1.3 : -1.2}deg">${magnet(note.by)}<button class="sticky-body" data-fridge="note" data-id="${esc(note.id)}" aria-label="Read or edit note: ${esc(note.text.slice(0, 100))}"><span class="sticky-text">${esc(note.text)}</span><span class="sticky-by">${note.by ? esc(person(note.by)) : "Our saved note"}${note.createdAt ? " · " + day(note.createdAt) : ""}</span></button><footer><span>${note.until ? "For today" : "Until cleared"}</span><button data-fridge="archive" data-id="${esc(note.id)}" aria-label="Take down note: ${esc(note.text.slice(0, 80))}">Take down ↗</button></footer></article>`).join("")}${Array.from({ length: active.length === 0 ? 1 : Math.max(0, 2 - active.length) }, (_, i) => `<button class="fridge-add-note" data-fridge="new"><span aria-hidden="true">＋</span>${active.length || i ? "Add another note" : "Leave each other a note"}<small>Pin a sticky note</small></button>`).join("")}<article class="fridge-plan ${n ? "" : "fridge-plan-empty"}"><span class="paper-clip" aria-hidden="true"></span><div class="fridge-card-heading"><span class="fridge-kicker">NEXT TOGETHER</span><button data-act="next-care">${n ? "Edit" : "Add plan"}</button></div>${n ? `<h3>${esc(n.label)}</h3><p>${n.dueAt ? `${day(n.dueAt)} · ${time(n.dueAt)}` : "When we’re ready"}</p><div class="fridge-owner">${n.claimedBy ? `${magnet(n.claimedBy)}<span>${esc(person(n.claimedBy))} has this</span>` : '<button class="claim-magnet" data-fridge="claim">＋ I’ve got this</button>'}</div><button class="fridge-done" data-fridge="done">✓ Done / log care</button>` : '<h3>What’s next for him?</h3><p>A little plan you can share.</p><button class="claim-magnet" data-act="next-care">＋ Plan care</button>'}</article>${careDueHTML()}<figure class="fridge-polaroid">${magnet("")}<button class="polaroid-picture" ${photoEvent ? `data-open="${esc(photoEvent.id)}" aria-label="Open pinned Winnie photo"` : 'data-fridge="photo" aria-label="Choose a photo for the fridge"'}>${photoEvent ? `<img data-photo="${esc(b.photo.photoId)}" alt="Pinned photo of Winnie">` : `<img src="${esc(portrait)}" alt="Winnie in his yellow harness">`}</button><figcaption><span>${photoEvent ? day(photoEvent.time) : "our boy, Winnie"}</span><button data-fridge="photo" aria-label="Change fridge photo">Change ↗</button></figcaption></figure>${visits[0] ? `<button class="fridge-appointment" data-act="trainer-schedule"><span aria-hidden="true">▤</span><span><strong>${esc(visits[0].title)}</strong><small>${visitConfirmed ? "Confirmed" : "Planned"} · ${day(visits[0].start)} · ${time(visits[0].start)}</small></span><span aria-hidden="true">↗</span></button>` : ""}</div><div class="fridge-bottom"><span class="fridge-screw" aria-hidden="true"></span><span>Notes stay saved when you take them down.</span><span class="fridge-screw" aria-hidden="true"></span></div>`;
+    const due = careDueHTML();
+    const nextRow = n
+      ? `<div class="row"><span class="sq" style="--c:var(--pee)">${icon("plans", "ic sm")}</span><div><b>${esc(n.label)}</b><small>${n.dueAt ? `${day(n.dueAt)} · ${time(n.dueAt)}` : "No time set"} · <span class="owner">${n.claimedBy ? `${esc(person(n.claimedBy))} has it` : "Nobody yet"}</span></small></div><span class="button-row">${n.claimedBy ? "" : '<button class="px btn" data-fridge="claim">I\'ll do it</button>'}<button class="px btn" data-fridge="done">Done</button></span></div>`
+      : "";
+    const visitRow = visits[0]
+      ? `<div class="row"><span class="sq" style="--c:var(--care)">${icon("star", "ic sm")}</span><div><b>${esc(visits[0].title)}</b><small>${visitConfirmed ? "Confirmed" : "Planned"} · ${time(visits[0].start)}</small></div><button class="text-button" data-act="trainer-schedule">Open</button></div>`
+      : "";
+    const nextContent = `<div class="card-head"><h2 id="up-next-title">Up next</h2><button class="text-button small" data-care-nav="upcoming">All plans</button></div>${due}${nextRow}${visitRow}${!due && !nextRow && !visitRow ? '<div class="row"><span class="sq">' + icon("plans", "ic sm") + '</span><div><b>Nothing planned</b><small>Recurring care like baths shows up here when it\'s due.</small></div><button class="px btn" data-care-action="new">Add plan</button></div>' : ""}`;
+    if (nextRoot && nextContent !== lastNext) {
+      lastNext = nextContent;
+      nextRoot.innerHTML = nextContent;
+    }
+    const content = `<div class="card-head"><h2 id="notes-title">Notes</h2><button class="text-button small" data-fridge="saved">Saved (${saved.length})</button></div>${active.length ? "" : '<div class="notes-empty"><span>No notes on the fridge.</span><button class="px btn" data-fridge="new">Add note</button></div>'}<div class="notes" ${active.length ? "" : "hidden"}>${active
+      .map(
+        (note) =>
+          `<button class="sticky ${note.color === "rose" ? "rose" : ""}" data-fridge="note" data-id="${esc(note.id)}" data-note-card="${esc(note.id)}" aria-label="Edit note: ${esc(note.text.slice(0, 100))}"><span class="tx">${esc(note.text)}</span><small>${note.by ? esc(person(note.by)) : "Note"}${note.createdAt ? " · " + day(note.createdAt) : ""}${note.until ? " · today only" : ""}</small></button>`,
+      )
+      .join("")}${active.length < 2 ? `<button class="add-note" data-fridge="new">${icon("plus", "ic sm")}Add note</button>` : ""}</div>`;
     if (last === content) return;
     last = content;
     root.innerHTML = content;
-    if (entrance) {
-      root.classList.add("fridge-arrive");
-      entrance = false;
-    }
     hydratePhotos();
   }
   function edit(id) {
@@ -105,11 +120,11 @@ export function createFridge({
       b = fridgeState(p),
       note = b.notes.find((n) => n.id === id);
     if (!note && b.notes.filter((n) => onFridge(n)).length >= 2) {
-      toast("Take down a note to make room. It stays in Saved.");
+      toast("Two notes fit. Take one down first; it goes to Saved.");
       return;
     }
     openDialog(
-      `<h2 id="dialog-title">${note ? "Your sticky note" : "A note for each other"}</h2><form id="fridge-note-form" class="note-editor"><label>Your note<textarea name="text" maxlength="2000" required placeholder="Anything the other person should know?">${esc(note?.text || "")}</textarea></label><label>Keep it up<select name="until"><option value="">Until we take it down</option><option value="today" ${note?.until ? "selected" : ""}>Just for today</option></select></label><fieldset class="paper-colors"><legend>Paper</legend><label><input type="radio" name="color" value="yellow" ${note?.color !== "rose" ? "checked" : ""}>Butter yellow</label><label><input type="radio" name="color" value="rose" ${note?.color === "rose" ? "checked" : ""}>Blush pink</label></fieldset><p class="fine">Today ends at midnight in San Francisco. Notes then move to Saved.</p><div class="button-row"><button class="primary">Pin note</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
+      `<h2 id="dialog-title">${note ? "Note" : "New note"}</h2><form id="fridge-note-form" class="note-editor"><label>Your note<textarea name="text" maxlength="2000" required placeholder="Anything the other person should know?">${esc(note?.text || "")}</textarea></label><label>Keep it up<select name="until"><option value="">Until we take it down</option><option value="today" ${note?.until ? "selected" : ""}>Just for today</option></select></label><fieldset class="paper-colors"><legend>Paper</legend><label><input type="radio" name="color" value="yellow" ${note?.color !== "rose" ? "checked" : ""}>Butter yellow</label><label><input type="radio" name="color" value="rose" ${note?.color === "rose" ? "checked" : ""}>Blush pink</label></fieldset><p class="fine">Today ends at midnight in San Francisco. Notes then move to Saved.</p><div class="button-row"><button class="primary">Pin note</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
     );
     $("fridge-note-form").onsubmit = safe(async (ev) => {
       ev.preventDefault();
@@ -138,7 +153,7 @@ export function createFridge({
           root.querySelector(`[data-note-card="${next.id}"]`),
           "pin",
         );
-        toast("Pinned to your fridge.");
+        toast("Note added");
       } finally {
         button.disabled = false;
       }
@@ -154,7 +169,7 @@ export function createFridge({
     try {
       note.archivedAt = Date.now();
       await store(b, p.revision);
-      toast("Note tucked into Saved.", () => restore(id));
+      toast("Note taken down", () => restore(id));
     } finally {
       el.disabled = false;
     }
@@ -170,14 +185,14 @@ export function createFridge({
     note.until = null;
     await store(b, p.revision);
     closeDialog();
-    toast("Note pinned again.");
+    toast("Note put back");
   }
   function saved() {
     const list = notes()
       .notes.filter((n) => !onFridge(n))
       .reverse();
     openDialog(
-      `<h2 id="dialog-title">Saved from the fridge</h2><p class="fine">Your notes and past plans, kept together.</p><div class="fridge-saved">${list.map((n) => `<article class="saved-paper ${n.color}"><p class="detail-notes">${esc(n.text)}</p><small>${n.by ? esc(person(n.by)) + " · " : ""}${n.createdAt ? day(n.createdAt) : "Earlier note"}</small><button class="text-button" data-fridge="restore" data-id="${esc(n.id)}">Pin again ↗</button></article>`).join("") || "<p>No notes put away yet.</p>"}</div><p id="form-error" class="error" role="alert"></p>`,
+      `<h2 id="dialog-title">Saved notes</h2><p class="fine">Notes you took down and finished plans.</p><div class="fridge-saved">${list.map((n) => `<article class="saved-paper ${n.color}"><p class="detail-notes">${esc(n.text)}</p><small>${n.by ? esc(person(n.by)) + " · " : ""}${n.createdAt ? day(n.createdAt) : "Earlier note"}</small><button class="text-button" data-fridge="restore" data-id="${esc(n.id)}">Pin again ↗</button></article>`).join("") || "<p>No notes put away yet.</p>"}</div><p id="form-error" class="error" role="alert"></p>`,
     );
   }
   function photoPicker() {
@@ -189,7 +204,7 @@ export function createFridge({
       items = events.flatMap((e) => e.photos.map((photo) => ({ e, photo })));
     selected = { profile: p, items, shown: 0 };
     openDialog(
-      `<h2 id="dialog-title">A photo for the fridge</h2><p class="fine">Pick from your saved moments.</p><div id="fridge-photo-options" class="fridge-photo-options"></div><button class="text-button" data-fridge="more-photos" id="fridge-more-photos">More photos</button>${!items.length ? "<p>No saved photos yet. Add a photo to a moment or care entry first.</p>" : ""}<button class="secondary small" data-fridge="default-photo">Use Winnie’s portrait</button><p id="form-error" class="error" role="alert"></p>`,
+      `<h2 id="dialog-title">Photo on his wall</h2><p class="fine">It shows as pixel art in his room.</p><div id="fridge-photo-options" class="fridge-photo-options"></div><button class="text-button" data-fridge="more-photos" id="fridge-more-photos">More photos</button>${!items.length ? "<p>No saved photos yet. Add a photo to a moment or care entry first.</p>" : ""}<button class="secondary small" data-fridge="default-photo">Use Winnie’s portrait</button><p id="form-error" class="error" role="alert"></p>`,
     );
     morePhotos();
   }
@@ -215,7 +230,7 @@ export function createFridge({
       n = p.nextCare;
     if (!n) return;
     openDialog(
-      `<h2 id="dialog-title">${esc(n.label)} — all done?</h2><p>Put this plan in Saved. You can log what happened next.</p><form id="fridge-done-form"><label>Log care<select name="type"><option value="">Just put the plan away</option><option value="pee">Pee</option><option value="poop">Poop</option><option value="meal">Meal</option><option value="walk">Walk (enter times)</option><option value="covered_gap">Trainer visit (enter times)</option></select></label><p class="fine">Choose a care type only if it happened just now.</p><div class="button-row"><button class="primary">Done</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
+      `<h2 id="dialog-title">${esc(n.label)}: done</h2><p>The plan moves to Saved. You can log the care too.</p><form id="fridge-done-form"><label>Log care<select name="type"><option value="">Just put the plan away</option><option value="pee">Pee</option><option value="poop">Poop</option><option value="meal">Meal</option><option value="walk">Walk (enter times)</option><option value="covered_gap">Trainer visit (enter times)</option></select></label><p class="fine">Choose a care type only if it happened just now.</p><div class="button-row"><button class="primary">Done</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
     );
     $("fridge-done-form").onsubmit = safe(async (ev) => {
       ev.preventDefault();
@@ -227,7 +242,7 @@ export function createFridge({
         closeDialog();
         if (["walk", "covered_gap"].includes(type)) editCompletedCare(type);
         else if (type) await log(type);
-        else toast("Plan saved in the drawer.");
+        else toast("Plan moved to Saved");
       } finally {
         button.disabled = false;
       }
@@ -311,8 +326,8 @@ export function createFridge({
                 : { eventId: item.e.id, photoId: item.photo.id };
             await store(b, selected.profile.revision);
             closeDialog();
-            await motion(root.querySelector(".fridge-polaroid"), "pin");
-            toast("Photo pinned.");
+            
+            toast("Wall photo changed");
           } finally {
             button.disabled = false;
           }
@@ -321,5 +336,5 @@ export function createFridge({
       }
     }),
   );
-  return { render, edit, saved, putPlanAway };
+  return { render, edit, saved, putPlanAway, photoPicker };
 }

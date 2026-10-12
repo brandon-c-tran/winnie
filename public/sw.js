@@ -1,4 +1,4 @@
-const CACHE = "winnie-v3-20260914-r18";
+const CACHE = "winnie-v4-20261012-r1";
 const SHELL = [
   "/care-plans.js?v=3.10",
   "/care-view.js?v=3.10",
@@ -8,12 +8,17 @@ const SHELL = [
   "/geo/land.json",
   "/",
   "/index.html",
-  "/styles.css?v=3.10.2",
-  "/app.js?v=3.10.2",
+  "/styles.css?v=4.0.0",
+  "/app.js?v=4.0.0",
+  "/room.js?v=4.0",
+  "/icons.js?v=4.0",
+  "/fonts/pixelify-sans-latin.woff2",
+  "/fonts/rubik-latin.woff2",
+  "/photos/winnie-room-v1.png",
+  "/photos/winnie-smile.png",
   "/sync.js?v=3.10",
   "/insights.js?v=3.10",
   "/insight-view.js?v=3.10",
-  "/companion.js?v=3.10",
   "/selection.js?v=3.10",
   "/care-state.js?v=3.10",
   "/auto-place.js?v=3.10",
@@ -22,7 +27,7 @@ const SHELL = [
   "/photos/winnie-pixel-v2.png",
   "/everyday.js?v=3.10",
   "/vendor/suncalc.js",
-  "/manifest.json?v=3.10",
+  "/manifest.json?v=4.0",
   "/icons/winnie-v2-32.png",
   "/icons/winnie-v2-180.png",
   "/icons/winnie-v2-192.png",
@@ -98,8 +103,8 @@ self.addEventListener("push", (event) => {
         data = event.data.json();
       } catch {
         data = {
-          title: "Winnie’s shared day",
-          body: "There’s an update in your shared log.",
+          title: "Winnie",
+          body: "New entry in the shared log",
           url: "/",
         };
       }

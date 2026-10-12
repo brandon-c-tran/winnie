@@ -6,13 +6,24 @@
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <meta name="theme-color" content="#f7f5ee" />
+    <meta
+      name="theme-color"
+      content="#eef1fb"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#11143a"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Winnie" />
     <meta
       name="description"
-      content="A shared day and a little life worth remembering. Winnie's care, together."
+      content="Winnie's shared care log for Brandon and Kim."
     />
-    <title>Winnie · His day, together</title>
-    <link rel="manifest" href="/manifest.json?v=3.10" />
+    <title>Winnie</title>
+    <link rel="manifest" href="/manifest.json?v=4.0" />
     <link
       rel="icon"
       type="image/png"
@@ -24,189 +35,187 @@
       sizes="180x180"
       href="/icons/winnie-v2-180.png"
     />
-    <link rel="stylesheet" href="/styles.css?v=3.10.2" />
+    <link
+      rel="preload"
+      href="/fonts/pixelify-sans-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/rubik-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/styles.css?v=4.0.0" />
   </head>
   <body>
-    <a class="skip" href="#main">Skip to Winnie's day</a>
+    <a class="skip" href="#main">Skip to Today</a>
     <div class="shell">
-      <header class="topbar">
-        <div class="brand-home">
-          <a class="wordmark" href="/" aria-label="Winnie home">winnie</a>
-          <button
-            id="pixel-winnie"
-            class="pixel-winnie"
-            data-state="awake"
-            data-facing="right"
-            aria-label="Give pixel Winnie a pat"
-            hidden
-          >
-            <span class="pixel-sprite" aria-hidden="true"></span
-            ><span class="pixel-heart" aria-hidden="true">♥</span>
-          </button>
-        </div>
-        <button id="settings" class="person-button" aria-label="Open settings">
-          <span class="person-dot">♡</span><span id="person-name">Our boy</span
-          ><span aria-hidden="true">⌄</span>
-        </button>
-      </header>
       <main id="main" tabindex="-1">
-        <section id="connect" hidden class="connect card">
-          <img
-            class="welcome-photo"
-            src="/.netlify/images?url=/photos/winnie-smile.png&amp;w=480&amp;fm=webp&amp;q=85"
-            alt="Winnie, smiling in his yellow harness"
-          />
-          <p class="eyebrow">OUR LITTLE FAMILY</p>
-          <h1>His day, together.</h1>
-          <p>A familiar face. A shared day. Every little moment kept.</p>
+        <section id="connect" hidden class="connect">
+          <div class="connect-dog" aria-hidden="true"></div>
+          <h1>Winnie</h1>
+          <p class="connect-lede">
+            Enter a code from the other phone (Settings, Add a device), or
+            your shared code.
+          </p>
           <form id="connect-form">
             <label
-              >Your shared code<input
+              >Code<input
                 id="shared-code"
                 autocomplete="off"
+                autocapitalize="characters"
                 spellcheck="false"
                 required
-                minlength="12"
-                placeholder="The code you already use"
+                minlength="8"
+                placeholder="ABCD-EFGH"
             /></label>
             <fieldset>
-              <legend>Who’s using this device?</legend>
-              <label class="radio-person"
-                ><input type="radio" name="person" value="brandon" required />
-                Brandon</label
-              ><label class="radio-person"
-                ><input type="radio" name="person" value="kim" /> Kim</label
-              >
+              <legend>Who's using this phone?</legend>
+              <div class="seg">
+                <label class="radio-person"
+                  ><input
+                    type="radio"
+                    name="person"
+                    value="brandon"
+                    required
+                  /><span>Brandon</span></label
+                ><label class="radio-person"
+                  ><input type="radio" name="person" value="kim" /><span
+                    >Kim</span
+                  ></label
+                >
+              </div>
             </fieldset>
             <label
-              >Device name<input
+              >Phone name<input
                 id="device-name"
                 value="My phone"
                 maxlength="60"
                 required /></label
-            ><button type="submit" class="primary">
-              Open our shared day <span aria-hidden="true">→</span>
-            </button>
+            ><button type="submit" class="px primary">Join</button>
             <p id="connect-error" class="error" role="alert"></p>
           </form>
           <p class="fine">
-            Your existing history stays with Winnie. Each phone keeps a copy of
-            any older saved entries for review.
+            Older entries saved on this phone stay here for review after you
+            join.
           </p>
         </section>
+
         <div id="experience" hidden>
-          <div class="sync-line">
-            <span id="sync-status" role="status">Opening our shared day…</span
-            ><button id="retry" class="text-button">Refresh</button>
-          </div>
-          <div id="pending-banner" class="notice" hidden></div>
-          <nav class="tabs" aria-label="Main navigation">
-            <button class="selected" id="today-tab" aria-current="page">
-              Today</button
-            ><button id="care-tab">Care</button
-            ><button id="story-tab">
-              His story <span aria-hidden="true">♡</span>
-            </button>
-          </nav>
-          <section id="today-view">
-            <div class="hero">
-              <div>
-                <p id="today-date" class="eyebrow"></p>
-                <h1>Winnie,<br /><em>right now.</em></h1>
-                <p id="hero-caption">Latest care, in one place.</p>
-              </div>
-              <div class="portrait-wrap">
-                <img
-                  class="portrait"
-                  src="/.netlify/images?url=/photos/winnie-smile.png&amp;w=480&amp;fm=webp&amp;q=85"
-                  alt="Winnie smiling"
-                /><span class="portrait-label">our good boy ♡</span>
+          <section id="today-view" aria-labelledby="today-title">
+            <h1 id="today-title" class="sr-only">Today</h1>
+            <div class="room" id="room-wrap">
+              <canvas id="room" role="img" aria-label="Winnie's room"></canvas>
+              <div class="hud">
+                <span class="hud-pill hud-name">Winnie</span
+                ><span class="hud-pill" id="hud-time"></span>
+                <span class="hud-grow"></span>
+                <button class="hud-pill sync" id="sync-chip" data-s="ok">
+                  <span class="dot" aria-hidden="true"></span
+                  ><span id="sync-status" role="status">Opening</span>
+                </button>
+                <button
+                  class="hud-pill me"
+                  id="settings"
+                  aria-label="Settings"
+                >
+                  <span id="person-name">B</span>
+                </button>
               </div>
             </div>
-            <div class="section-heading">
-              <h2>Latest care</h2>
-              <button id="earlier" class="text-button">
-                Log earlier <span aria-hidden="true">↗</span>
-              </button>
-            </div>
-            <div id="care-actions" class="care-grid"></div>
-            <div class="more-actions">
-              <button id="more" class="quiet-button">＋ More care</button
-              ><button id="add-moment" class="quiet-button">
-                ▧ Add a moment
-              </button>
-            </div>
+            <p class="status" id="room-status" aria-live="polite"></p>
+            <div id="pending-banner" class="notice" hidden></div>
+            <div id="active-bar" hidden></div>
+            <div id="care-actions" class="log-big"></div>
+            <div id="log-row" class="log-row"></div>
+            <section
+              id="also-today"
+              class="card also"
+              aria-labelledby="also-title"
+              hidden
+            ></section>
+            <section
+              id="up-next"
+              class="card"
+              aria-labelledby="up-next-title"
+            ></section>
             <section
               id="fridge-board"
-              class="fridge-board"
-              aria-label="Our fridge"
+              class="card notes-card"
+              aria-labelledby="notes-title"
             ></section>
-
-            <section id="trainer-card" class="card plan-card" hidden></section>
-            <section id="walk-card" class="card walk-card" hidden></section>
-            <section id="plan-card" class="card plan-card" hidden></section>
-            <div class="section-heading">
-              <h2>Our shared day</h2>
-              <button class="text-button small" data-act="all-history">
-                History ↗
-              </button>
-              <label class="date-label"
-                ><span class="sr-only">Choose day</span
-                ><input id="day-picker" type="date"
-              /></label>
-            </div>
-            <div id="day-summary" class="day-summary"></div>
-            <div id="timeline" class="timeline"></div>
-          </section>
-          <section id="care-view" hidden>
-            <div class="section-heading care-heading"><h1>Care</h1></div>
-            <div class="filters" aria-label="Care sections">
-              <button data-care-section="upcoming" class="selected">
-                Upcoming
-              </button>
-              <button data-care-section="patterns">Trends</button>
-              <button data-care-section="care">History</button>
-            </div>
-            <div id="care-upcoming"></div>
-            <div id="care-library" hidden></div>
-          </section>
-          <section id="story-view" hidden>
-            <div class="story-cover">
-              <img
-                src="/.netlify/images?url=/photos/winnie-story.png&amp;w=1000&amp;fm=webp&amp;q=85"
-                alt="Winnie in his blue gingham bandana"
-                loading="lazy"
-              />
-              <div>
-                <p class="eyebrow">WINNIE BERNARD</p>
-                <h1>A life worth<br /><em>remembering.</em></h1>
+            <section class="daylog" aria-labelledby="day-title">
+              <div class="day-head">
+                <h2 id="day-title">Today</h2>
+                <span id="day-label" class="muted"></span>
+                <span class="day-nav">
+                  <button class="px btn" id="day-prev" aria-label="Previous day">
+                    <span data-icon="left"></span></button
+                  ><button class="px btn" id="day-next" aria-label="Next day">
+                    <span data-icon="right"></span></button
+                  ><label class="date-label px btn"
+                    ><span data-icon="calendar"></span
+                    ><span id="day-picker-text">Pick day</span
+                    ><input id="day-picker" type="date" aria-label="Choose day"
+                  /></label>
+                </span>
               </div>
-            </div>
-            <div class="section-heading">
-              <h2 id="story-heading">His photos</h2>
-              <button id="story-add" class="text-button">
-                ＋ Add a moment
+              <div id="day-strip" class="strip"></div>
+              <p id="day-summary" class="day-summary"></p>
+              <div id="timeline" class="timeline"></div>
+            </section>
+          </section>
+
+          <section id="plans-view" hidden aria-labelledby="plans-title">
+            <header class="view-head">
+              <h1 id="plans-title">Plans</h1>
+              <button class="px btn ink" data-care-action="new">
+                Add plan
               </button>
+            </header>
+            <div id="care-upcoming"></div>
+          </section>
+
+          <section id="history-view" hidden aria-labelledby="history-title">
+            <header class="view-head">
+              <h1 id="history-title">History</h1>
+              <div class="seg" role="group" aria-label="History view">
+                <button class="px btn" data-history="care">Log</button
+                ><button class="px btn" data-history="patterns">Trends</button>
+              </div>
+            </header>
+            <div id="last-times" class="last-times"></div>
+            <div id="history-library"></div>
+          </section>
+
+          <section id="photos-view" hidden aria-labelledby="photos-title">
+            <header class="view-head">
+              <h1 id="photos-title">Photos</h1>
+              <button id="story-add" class="px btn ink">Add photo</button>
+            </header>
+            <div class="seg view-seg" role="group" aria-label="Photos view">
+              <button class="px btn" data-filter="moments">Photos</button
+              ><button class="px btn" data-filter="places">Places</button>
             </div>
-            <div class="filters" role="group" aria-label="His story sections">
-              <button data-filter="moments" class="selected">Photos</button
-              ><button data-filter="places">Places</button>
-            </div>
-            <div id="story-library">
+            <div id="photos-library">
               <div id="story-tools">
                 <label id="album-label"
                   >Collection<select id="photo-album">
-                    <option value="all">All moments</option>
+                    <option value="all">All photos</option>
                     <option value="poop">Poop photos</option>
                     <option value="meal">Meal photos</option>
                   </select></label
                 >
                 <label class="search-box"
-                  ><span aria-hidden="true">⌕</span
+                  ><span class="sr-only">Search</span
                   ><input
                     id="story-search"
                     type="search"
-                    placeholder="Find a memory or entry"
+                    placeholder="Search notes, foods, places"
                     aria-label="Search history"
                 /></label>
                 <div class="history-filters">
@@ -214,29 +223,51 @@
                     >Type<select id="history-type">
                       <option value="">All types</option>
                     </select></label
-                  ><label>From<input type="date" id="history-from" /></label
-                  ><label>To<input type="date" id="history-to" /></label>
+                  ><label class="date-label px btn"
+                    ><span data-icon="calendar"></span
+                    ><span data-date-text="history-from">From: any day</span
+                    ><input type="date" id="history-from" aria-label="From date"
+                  /></label
+                  ><label class="date-label px btn"
+                    ><span data-icon="calendar"></span
+                    ><span data-date-text="history-to">To: any day</span
+                    ><input type="date" id="history-to" aria-label="To date"
+                  /></label>
                 </div>
               </div>
               <p id="story-count" class="fine"></p>
               <div id="story-items"></div>
-              <button id="load-more" class="secondary" hidden>Show more</button>
+              <button id="load-more" class="px btn" hidden>Show more</button>
             </div>
             <div id="places-view" hidden></div>
           </section>
         </div>
       </main>
-      <footer class="footer"><span>Winnie · v3.10.2</span></footer>
+      <nav class="tabbar" id="tabbar" aria-label="Main" hidden>
+        <button id="today-tab" data-tab="today" aria-current="page">
+          <span class="tab-ic" data-icon="home"></span>Today</button
+        ><button id="plans-tab" data-tab="plans">
+          <span class="tab-ic" data-icon="plans"></span>Plans</button
+        ><button id="history-tab" data-tab="history">
+          <span class="tab-ic" data-icon="history"></span>History</button
+        ><button id="photos-tab" data-tab="photos">
+          <span class="tab-ic" data-icon="photos"></span>Photos
+        </button>
+      </nav>
     </div>
 
     <div id="toast" class="toast" hidden role="status">
-      <span id="toast-text"></span><button id="undo">Undo</button
-      ><button id="toast-close" aria-label="Dismiss confirmation">×</button>
+      <span id="toast-text" class="toast-text"></span
+      ><span id="toast-actions" class="toast-actions"></span
+      ><button id="undo" class="toast-undo">Undo</button
+      ><button id="toast-close" class="toast-close" aria-label="Dismiss">
+        <span data-icon="close"></span>
+      </button>
     </div>
     <dialog id="dialog" aria-labelledby="dialog-title">
       <div class="dialog-top">
-        <p class="eyebrow">WINNIE · OUR SHARED DAY</p>
-        <button id="dialog-close" class="close" aria-label="Close">×</button>
+        <span class="grab" aria-hidden="true"></span>
+        <button id="dialog-close" class="text-button close">Close</button>
       </div>
       <div id="dialog-content"></div>
     </dialog>
@@ -253,6 +284,6 @@
       accept="application/json,.json"
       hidden
     />
-    <script type="module" src="/app.js?v=3.10.2"></script>
+    <script type="module" src="/app.js?v=4.0.0"></script>
   </body>
 </html>

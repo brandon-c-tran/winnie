@@ -88,7 +88,9 @@ export function validateCarePlans(value) {
       !Number.isInteger(p.every) ||
       p.every < 1 ||
       p.every > 365 ||
-      !["medication", "appointment", "enrichment", "note"].includes(p.type) ||
+      !["medication", "appointment", "enrichment", "note", "grooming"].includes(
+        p.type,
+      ) ||
       typeof p.paused !== "boolean" ||
       !(
         p.claim === null ||
