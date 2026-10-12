@@ -1,11 +1,11 @@
 {
-  "name": "Winnie 🐶",
+  "name": "Winnie",
   "short_name": "Winnie",
-  "description": "Winnie's shared care, photos, and little moments",
+  "description": "Winnie's shared care log",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#f7f5ee",
-  "theme_color": "#f7f5ee",
+  "background_color": "#eef1fb",
+  "theme_color": "#eef1fb",
   "orientation": "portrait",
   "icons": [
     {

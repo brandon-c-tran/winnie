@@ -237,6 +237,46 @@ export class WinnieSync extends EventTarget {
     navigator.storage?.persist?.().catch(() => {});
     this.flush();
   }
+  // A short-lived code another phone can enter with join(). Returns { code: "XXXX-XXXX", expires }.
+  async createJoinCode() {
+    const { code, expires } = await this.request("invite", {
+      method: "POST",
+      value: {},
+    });
+    return { code, expires };
+  }
+  async join(code, person, name) {
+    // The code itself is never stored; only this device's identity is kept so a
+    // retry after a lost response reuses it and the server accepts it again.
+    let pending;
+    try {
+      pending = JSON.parse(localStorage.getItem("winnie:v4:join"));
+    } catch {}
+    if (!pending || pending.person !== person) {
+      pending = {
+        person,
+        name,
+        deviceId: uid(),
+        secret: Array.from(crypto.getRandomValues(new Uint8Array(32)), (x) =>
+          x.toString(16).padStart(2, "0"),
+        ).join(""),
+      };
+      localStorage.setItem("winnie:v4:join", JSON.stringify(pending));
+    }
+    const data = await this.request("join", {
+      method: "POST",
+      value: { ...pending, name: name ?? pending.name, code },
+    });
+    this.session = { home: data.home, token: data.token, person };
+    localStorage.setItem("winnie:v4:session", JSON.stringify(this.session));
+    localStorage.removeItem("winnie:v4:join");
+    await this.change((d) => {
+      const { home, token, person, ...publicData } = data;
+      d.snapshot = publicData;
+    });
+    navigator.storage?.persist?.().catch(() => {});
+    this.flush();
+  }
   view() {
     return project(this.data);
   }

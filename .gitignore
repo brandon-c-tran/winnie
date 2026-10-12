@@ -21,3 +21,11 @@ build/
 
 # Logs
 *.log
+
+# Impeccable working files (mockups, review captures, local state)
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/questions/
+.impeccable/live/
+.impeccable/hook.cache.json
+.impeccable/config.local.json

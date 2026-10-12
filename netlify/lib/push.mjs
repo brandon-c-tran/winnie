@@ -24,6 +24,17 @@ export function notification(job) {
     photo: "a photo",
     moment: "a moment",
   };
+  if (job.type === "grooming") {
+    // "Kim logged a bath"; plural or uncountable titles read without an article.
+    const title = String(job.careTitle || "")
+      .trim()
+      .toLowerCase();
+    labels.grooming = !title
+      ? "grooming"
+      : /s$|^teeth\b/.test(title)
+        ? title
+        : `${/^[aeiou]/.test(title) ? "an" : "a"} ${title}`;
+  }
   const date = new Date(job.time).toLocaleString("en-US", {
     timeZone: "America/Los_Angeles",
     month: "short",
@@ -38,7 +49,7 @@ export function notification(job) {
         : `${person} ${job.action} ${labels[job.type] || job.type}`,
     body:
       job.kind === "react"
-        ? `To Winnie's ${job.type === "moment" ? "moment" : labels[job.type]?.replace(/^a /, "") || job.type} · ${date}`
+        ? `To Winnie's ${job.type === "moment" ? "moment" : labels[job.type]?.replace(/^an? /, "") || job.type} · ${date}`
         : date,
     tag: `winnie-${job.kind === "react" ? "reaction-" : ""}${job.eventId}`,
     eventId: job.eventId,

@@ -1,0 +1,43 @@
+{
+  "buildPath": "comp",
+  "hook": {
+    "enabled": true,
+    "limits": {
+      "maxFindings": 5,
+      "maxChars": 8000
+    }
+  },
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "repeating-stripes-gradient",
+        "value": "*",
+        "files": [
+          "public/index.html"
+        ],
+        "createdAt": "2026-10-12T23:01:20.834Z",
+        "reason": "Claude: blue gingham is Winnie's bandana, the signature pattern in the direction contract (.impeccable/surfaces/public-index-html.md); diagonal stripes mark an in-progress walk/sleep"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "public/styles.css"
+        ],
+        "createdAt": "2026-10-12T23:08:04.913Z",
+        "reason": "Claude: .px pixel border is four equal 3px ink box-shadows (top, bottom, left, right) forming stepped pixel corners per the direction contract; not a one-sided accent"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "public/index.html"
+        ],
+        "createdAt": "2026-10-12T23:08:05.042Z",
+        "reason": "Claude: same four-sided .px pixel border rendered in index.html; not a one-sided accent"
+      }
+    ]
+  }
+}

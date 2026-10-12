@@ -33,6 +33,7 @@ export const TYPES = [
   "covered_gap",
   "note",
   "moment",
+  "grooming",
 ];
 const SLEEP = ["nap", "slumber"];
 export class Fault extends Error {
@@ -226,6 +227,18 @@ function eventFields(input, old = {}) {
     if (Object.hasOwn(fields, key))
       assert(typeof fields[key] === "string", "Invalid event text.");
   assert(TYPES.includes(event.type), "Choose an event type.");
+  if (event.type === "grooming") {
+    // Grooming names what was done. Free text up to 60 characters; a care-plan
+    // completion keeps the plan title, which the plan rules already cap at 200.
+    if (typeof fields.careTitle === "string")
+      fields.careTitle = event.careTitle = fields.careTitle.trim();
+    assert(
+      typeof event.careTitle === "string" &&
+        event.careTitle.length > 0 &&
+        (event.carePlanId || event.careTitle.length <= 60),
+      "Name the grooming in 60 characters or fewer.",
+    );
+  }
   if (Object.hasOwn(fields, "foods")) {
     assert(
       Array.isArray(fields.foods) &&
@@ -530,6 +543,9 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         recipient: target.id,
         kind,
         ...(kind === "react" ? { emoji: payload.emoji } : {}),
+        ...(event.type === "grooming" && kind !== "attach"
+          ? { careTitle: event.careTitle }
+          : {}),
         action:
           kind === "attach"
             ? "added"

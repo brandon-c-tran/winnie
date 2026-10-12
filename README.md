@@ -8,7 +8,9 @@ Run `npm ci`, then `npm run dev`. Open http://localhost:4173 and use the isolate
 
 ## Project
 
-- `public/`: Today, His story, photo collection, recorded patterns, offline client, and service worker.
+- `public/`: Today (with Winnie's Room, `room.js`), Plans, History, Photos, the pixel icon set (`icons.js`), offline client, and service worker.
+- Adding a device: Settings, Add a device shows an 8-character join code that works once for 15 minutes. The long shared code still works.
+- `docs/pixel-winnie-poses.md`: how to make and clean new pixel Winnie poses.
 - `netlify/lib/`: server-validated commands, conditional storage adapter, authentication, uploads, and push delivery.
 - `netlify/functions/`: API, read-only legacy compatibility, scheduled notifications, and backups.
 - `tests/`: deterministic store, API, IndexedDB, and history-pattern tests.

@@ -1,4 +1,6 @@
 import { createCare } from "./care-view.js?v=3.10";
+import { careStates, careDay } from "./care-plans.js?v=3.10";
+import { fridgeState, onFridge } from "./fridge-model.js?v=3.10";
 import {
   eventPosition,
   placeName,
@@ -17,7 +19,9 @@ import {
   capturePlace,
 } from "./care-state.js?v=3.10";
 import { protectAppSelection } from "./selection.js?v=3.10";
-import { createWinnieCompanion } from "./companion.js?v=3.10";
+import { createRoom, sfEpoch } from "./room.js?v=4.0";
+import { icon, TYPES as TYPE_META, GROOMING, typeIcon, typeColor } from "./icons.js?v=4.0";
+import { getTimes } from "./vendor/suncalc.js";
 import {
   rhythmInsights,
   clockMinute,
@@ -39,24 +43,7 @@ if (["localhost", "127.0.0.1"].includes(location.hostname))
   });
 const $ = (id) => document.getElementById(id),
   sync = new WinnieSync();
-const TYPES = {
-  pee: ["💧", "Pee"],
-  poop: ["💩", "Poop"],
-  meal: ["🍽", "Meal"],
-  nap: ["☾", "Nap"],
-  slumber: ["☾", "Night sleep"],
-  walk: ["🐾", "Walk"],
-  outing: ["☀", "Outing"],
-  enrichment: ["🦴", "Enrichment"],
-  medication: ["💊", "Medication"],
-  vomit: ["◌", "Vomit"],
-  episode: ["⚑", "Episode"],
-  appointment: ["▤", "Appointment"],
-  travel: ["✈", "Travel"],
-  covered_gap: ["♡", "Care cover"],
-  note: ["✎", "Note"],
-  moment: ["▧", "Moment"],
-};
+const TYPES = TYPE_META;
 const esc = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -65,8 +52,8 @@ const esc = (value) =>
         c
       ],
   );
-const person = (id) =>
-  ({ brandon: "Brandon", kim: "Kim" })[id] || "Shared history";
+const person = (id) => ({ brandon: "Brandon", kim: "Kim" })[id] || "";
+const by = (id) => (person(id) ? " · " + person(id) : "");
 const dayKey = (time) => {
   const d = new Date(time);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -105,7 +92,6 @@ const places = createPlacesView({
   entry,
   hydratePhotos,
 });
-const companion = createWinnieCompanion($("pixel-winnie"));
 const care = createCare({
   root: $("care-upcoming"),
   sync,
@@ -129,9 +115,9 @@ const care = createCare({
       )
       .sort((a, b) => b.time - a.time)
       .slice(0, 3);
-    return `<section class="care-overview-section"><div class="section-heading"><h3>Trainer visits</h3><button class="text-button" data-act="trainer-schedule">Schedule ↗</button></div>${visits.map((v) => visitRow(v)).join("") || '<p class="fine">No upcoming visits in the saved calendar. Open Schedule to import visits or log one.</p>'}</section><section class="care-overview-section"><div class="section-heading"><h3>Recent care</h3><button class="text-button" data-care-nav="care">History ↗</button></div>${recent.map((e) => entry(e)).join("") || '<p class="fine">Training, medication and appointments will appear here as you log them.</p>'}<button class="secondary small" data-act="more">Log care</button></section>`;
+    return `<section class="care-overview-section"><div class="section-heading"><h3>Trainer visits</h3><button class="text-button" data-act="trainer-schedule">Schedule</button></div>${visits.map((v) => visitRow(v)).join("") || '<p class="fine">No visits coming up. Import them from Schedule.</p>'}</section><section class="care-overview-section"><div class="section-heading"><h3>Recent care</h3><button class="text-button" data-care-nav="care">History</button></div>${recent.map((e) => entry(e)).join("") || '<p class="fine">Grooming, medication, training, and appointments show up here.</p>'}<button class="px btn" data-act="more">Log care</button></section>`;
   },
-  celebrate: reactWinnie,
+  celebrate: () => room.react("done"),
   attachLocation: (id) => {
     void autoPlace.attach(id);
   },
@@ -139,6 +125,7 @@ const care = createCare({
 const fridge = createFridge({
   careDueHTML: care.fridgeHTML,
   root: $("fridge-board"),
+  nextRoot: $("up-next"),
   sync,
   esc,
   person,
@@ -186,16 +173,33 @@ let toastTimer;
 let mealSubmitting = false;
 $("day-picker").value = dayKey(Date.now());
 protectAppSelection();
-function toast(message, undo = null) {
-  $("toast-text").textContent = message;
+function toast(message, undo = null, actions = []) {
+  $("toast-text").textContent = message.replace(" · ", "\n");
+  $("toast-text").style.whiteSpace = "pre-line";
   $("toast").hidden = false;
   $("undo").hidden = !undo;
   lastUndo = undo;
+  const box = $("toast-actions");
+  box.replaceChildren(
+    ...actions.map(([label, fn]) => {
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.onclick = () => {
+        $("toast").hidden = true;
+        lastUndo = null;
+        safe(fn)();
+      };
+      return b;
+    }),
+  );
   clearTimeout(toastTimer);
-  if (!undo)
-    toastTimer = setTimeout(() => {
+  toastTimer = setTimeout(
+    () => {
       $("toast").hidden = true;
-    }, 7000);
+      lastUndo = null;
+    },
+    undo || actions.length ? 8000 : 5000,
+  );
 }
 function error(err) {
   const box = $("form-error");
@@ -241,20 +245,24 @@ $("undo").onclick = safe(async () => {
   $("undo").disabled = true;
   try {
     await undo();
-    toast("Undo saved on this device.");
+    toast("Undone");
   } finally {
     $("undo").disabled = false;
   }
 });
-let careSection = "upcoming",
-  storySection = "moments";
-const libraryFilters = { care: {}, story: {} };
+let historySection = "care",
+  photosSection = "moments";
+const libraryFilters = { history: {}, photos: {} };
 const libraryFields = [
   "story-search",
   "history-type",
   "history-from",
   "history-to",
 ];
+const TAB_IDS = ["today", "plans", "history", "photos"];
+document
+  .querySelectorAll(".tab-ic, [data-icon]")
+  .forEach((s) => (s.innerHTML = icon(s.dataset.icon)));
 function setTab(next) {
   if (tab !== next) {
     if (libraryFilters[tab])
@@ -265,52 +273,61 @@ function setTab(next) {
     limit = 60;
   }
   tab = next;
-  $("today-view").hidden = tab !== "today";
-  $("story-view").hidden = tab !== "story";
-  $("care-view").hidden = tab !== "care";
-  if (tab === "care") filter = careSection;
-  if (tab === "story") filter = storySection;
-  const library = $(tab === "care" ? "care-library" : "story-library");
+  for (const t of TAB_IDS) {
+    $(`${t}-view`).hidden = t !== tab;
+    if (t === tab) $(`${t}-tab`).setAttribute("aria-current", "page");
+    else $(`${t}-tab`).removeAttribute("aria-current");
+  }
+  if (tab === "history") filter = historySection;
+  if (tab === "photos") filter = photosSection;
+  // One search/filter/list library, moved into whichever tab shows it.
+  const library = $(tab === "history" ? "history-library" : "photos-library");
   for (const id of ["story-tools", "story-count", "story-items", "load-more"])
     library.append($(id));
-  $("care-upcoming").hidden = careSection !== "upcoming";
-  $("care-library").hidden = careSection === "upcoming";
   document
-    .querySelectorAll("[data-care-section]")
+    .querySelectorAll("[data-history]")
     .forEach((b) =>
-      b.classList.toggle("selected", b.dataset.careSection === careSection),
+      b.setAttribute("aria-pressed", String(b.dataset.history === historySection)),
     );
   document
     .querySelectorAll("[data-filter]")
     .forEach((b) =>
-      b.classList.toggle("selected", b.dataset.filter === storySection),
+      b.setAttribute("aria-pressed", String(b.dataset.filter === photosSection)),
     );
-  for (const t of ["today", "care", "story"]) {
-    $(`${t}-tab`).classList.toggle("selected", t === tab);
-    if (t === tab) $(`${t}-tab`).setAttribute("aria-current", "page");
-    else $(`${t}-tab`).removeAttribute("aria-current");
-  }
+  window.scrollTo(0, 0);
   render();
 }
-$("today-tab").onclick = () => setTab("today");
-$("story-tab").onclick = () => setTab("story");
-$("care-tab").onclick = () => setTab("care");
-document.querySelectorAll("[data-care-section]").forEach(
+document
+  .querySelectorAll("[data-tab]")
+  .forEach((b) => (b.onclick = () => setTab(b.dataset.tab)));
+document.querySelectorAll("[data-history]").forEach(
   (b) =>
     (b.onclick = () => {
-      careSection = b.dataset.careSection;
-      setTab("care");
+      historySection = b.dataset.history;
+      $("history-type").value = "";
+      setTab("history");
     }),
 );
 document.addEventListener("click", (ev) => {
   const b = ev.target.closest("[data-care-nav]");
-  if (b) {
-    careSection = b.dataset.careNav;
-    setTab("care");
+  if (!b) return;
+  if (b.dataset.careNav === "upcoming") setTab("plans");
+  else {
+    historySection = b.dataset.careNav === "patterns" ? "patterns" : "care";
+    setTab("history");
   }
 });
 $("day-picker").onchange = render;
-$("retry").onclick = () => sync.flush();
+const shiftDay = (n) => {
+  const d = new Date(($("day-picker").value || dayKey(Date.now())) + "T12:00");
+  d.setDate(d.getDate() + n);
+  const key = dayKey(d.getTime());
+  if (key > dayKey(Date.now())) return;
+  $("day-picker").value = key;
+  render();
+};
+$("day-prev").onclick = () => shiftDay(-1);
+$("day-next").onclick = () => shiftDay(1);
 const renderedHTML = new Map();
 function html(id, value) {
   if (renderedHTML.get(id) !== value) {
@@ -324,113 +341,379 @@ function facts() {
     .events.filter((e) => !e.deletedAt)
     .sort((a, b) => b.time - a.time);
 }
+
+// ---------- the room ----------
+const roomSprite = new Image();
+roomSprite.src = "/photos/winnie-room-v1.png";
+const room = createRoom($("room"), {
+  sprite: roomSprite,
+  onObject: (what) => safe(roomObject)(what),
+});
+let roomReady = false,
+  wallKey = null;
+function roomObject(what) {
+  const events = facts();
+  if (what === "winnie") return room.react("pat");
+  if (what === "fridge") return fridge.edit();
+  if (what === "calendar") return setTab("plans");
+  if (what === "photo") return fridge.photoPicker();
+  if (what === "bowl") return log("meal");
+  if (what === "bed") return log("sleep");
+  if (what === "door")
+    return events.some((e) => e.type === "walk" && active(e))
+      ? finishWalk()
+      : log("walk");
+  if (what === "window") {
+    const t = getTimes(new Date(), 37.7749, -122.4194);
+    toast(
+      `Sunrise ${clock(+t.sunrise)}, sunset ${clock(+t.sunset)}. Sleep logs as a nap between them and as night sleep outside them.`,
+    );
+  }
+}
+function updateWall(profile) {
+  const p = fridgeState(profile).photo,
+    key = p ? p.photoId : "default";
+  if (key === wallKey) return;
+  wallKey = key;
+  const img = new Image();
+  img.onload = () => room.setPhoto(img);
+  if (p)
+    sync
+      .photo(p.photoId)
+      .then((blob) => (img.src = URL.createObjectURL(blob)))
+      .catch(() => (img.src = "/photos/winnie-smile.png"));
+  else img.src = "/photos/winnie-smile.png";
+}
+const dueToday = (view) =>
+  careStates(view.profile, view.events).some(
+    (s) => !s.paused && s.due && s.due <= careDay(),
+  );
+
+// ---------- partner catch-up ----------
+let seenIds = null;
+function rememberSeen(events) {
+  const t = Math.max(0, ...events.map((e) => e.created || 0));
+  try {
+    if (t) localStorage.setItem("winnie:seen", String(t));
+  } catch {}
+}
+function greetPartner(events) {
+  const me = sync.session.person;
+  let fresh;
+  if (!seenIds) {
+    let since = 0;
+    try {
+      since = Number(localStorage.getItem("winnie:seen")) || 0;
+    } catch {}
+    seenIds = new Set(events.map((e) => e.id));
+    fresh = since
+      ? events.filter((e) => (e.created || 0) > since && e.time <= Date.now())
+      : [];
+  } else {
+    fresh = events.filter((e) => !seenIds.has(e.id));
+    fresh.forEach((e) => seenIds.add(e.id));
+  }
+  rememberSeen(events);
+  const theirs = fresh.filter((e) => e.loggedBy && e.loggedBy !== me);
+  if (!theirs.length) return;
+  const newest = theirs[0];
+  room.react(newest.type === "meal" ? "partnerMeal" : "partner");
+  if (lastUndo) return;
+  const list = theirs
+    .slice(0, 3)
+    .map((e) => `${eventLabel(e).toLowerCase()} ${clock(e.time)}`)
+    .join(", ");
+  toast(
+    `${person(newest.loggedBy) || "Someone"} logged ${list}${theirs.length > 3 ? ` and ${theirs.length - 3} more` : ""}`,
+    null,
+    [["View", () => detail(newest.id)]],
+  );
+}
+
+// ---------- render ----------
+let insightCache = { key: "", data: null };
+function poopHint(events) {
+  const key = events.length + ":" + (events[0]?.id || "");
+  if (insightCache.key !== key)
+    insightCache = { key, data: rhythmInsights(events, 28) };
+  const a = insightCache.data?.afterMeals,
+    now = Date.now(),
+    meal = events.find((e) => e.type === "meal" && e.time <= now),
+    poop = events.find((e) => e.type === "poop" && e.time <= now);
+  if (
+    !a?.enough ||
+    !a.representative ||
+    !meal ||
+    (poop && poop.time > meal.time) ||
+    now - meal.time > 6 * 3600000
+  )
+    return "";
+  return `<span class="hint">After meals, often ${durationLabel(a.low)} to ${durationLabel(a.high)} later</span>`;
+}
 function render() {
   const paired = !!sync.session;
   $("connect").hidden = paired;
   $("experience").hidden = !paired;
-  if (!paired) {
-    companion.refresh();
-    return;
-  }
+  $("tabbar").hidden = !paired;
+  if (!paired) return;
   const view = sync.view(),
     events = facts(),
     pending = sync.data.queue.length,
     errors = sync.data.queue.filter((q) => q.error),
     oldCount = legacyDiff().length;
-  $("person-name").textContent = person(sync.session.person);
+  const me = person(sync.session.person);
+  $("person-name").textContent = me[0];
+  $("settings").setAttribute("aria-label", `Settings. This phone is ${me}'s`);
+  const s = sync.lastError
+    ? "offline"
+    : errors.length
+      ? "review"
+      : pending
+        ? "pending"
+        : "ok";
+  $("sync-chip").dataset.s = s;
   $("sync-status").textContent =
-    sync.lastError ||
-    (pending
-      ? `${pending} ${pending === 1 ? "action" : "actions"} saved on this device · ${errors.length ? "review needed" : sync.busy ? "sharing…" : "waiting to share"}`
-      : sync.lastChecked
-        ? `Shared log checked ${when(sync.lastChecked)}`
-        : "Opening our shared day…");
-  document
-    .querySelector(".sync-line")
-    .classList.toggle("offline", !!sync.lastError || !!pending);
-  $("pending-banner").hidden = !errors.length && !oldCount;
-  if (errors.length || oldCount)
+    s === "offline"
+      ? "Offline"
+      : s === "review"
+        ? `${errors.length} to review`
+        : s === "pending"
+          ? sync.busy
+            ? "Sending"
+            : `${pending} not sent`
+          : sync.lastChecked
+            ? "Up to date"
+            : "Opening";
+  $("pending-banner").hidden = !oldCount;
+  if (oldCount)
     $("pending-banner").innerHTML =
-      `${errors.length ? `${errors.length} saved changes need review. ` : ""}${oldCount ? `${oldCount} older phone entries to review. ` : ""}<button data-act="review">Review saved changes</button>`;
-  $("today-date").textContent = new Date()
-    .toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })
-    .toUpperCase();
-  const sleeping = events.find(
-    (e) =>
-      ["nap", "slumber"].includes(e.type) && active(e) && e.time <= Date.now(),
+      `${oldCount} older ${oldCount === 1 ? "entry" : "entries"} from this phone to review. <button data-act="review">Review</button>`;
+  $("hud-time").textContent = clock(Date.now());
+  const now = Date.now(),
+    sleeping = events.find(
+      (e) => ["nap", "slumber"].includes(e.type) && active(e) && e.time <= now,
+    ),
+    walk = events.find((e) => e.type === "walk" && active(e) && e.time <= now);
+  if (tab === "today") renderToday(events, sleeping, walk);
+  updateWall(view.profile);
+  room.set(
+    {
+      epoch: now,
+      sleep: sleeping?.type || null,
+      walk: !!walk,
+      notes: fridgeState(view.profile).notes.filter((n) => onFridge(n)).length,
+      pending,
+      error: errors.length > 0,
+      due: dueToday(view),
+    },
+    { instant: !roomReady },
   );
-  companion.setSleeping(!!sleeping);
-  $("hero-caption").textContent = sleeping
-    ? `Sleep started at ${clock(sleeping.time)}.`
-    : "Latest care, in one place.";
+  roomReady = true;
+  greetPartner(events);
+  hydratePhotos();
+  if (tab === "plans") care.render();
+  if (tab === "history") {
+    renderLastTimes(events);
+    renderStory();
+  }
+  if (tab === "photos") renderStory();
+}
+function renderToday(events, sleeping, walk) {
+  const now = Date.now(),
+    last = events.find(
+      (e) => e.time <= now && !["nap", "slumber", "walk"].includes(e.type),
+    );
+  const run = walk || sleeping;
+  // Something running: the status line says so and finishing it is one tap.
+  $("room-status").classList.toggle("running", !!run);
+  $("room-status").innerHTML = run
+    ? `<span class="sq run-ic" style="--c:${typeColor(run.type)}" aria-hidden="true">${icon(typeIcon(run.type), "ic sm")}</span><span class="grow"><b>${run.type === "walk" ? "Out on a walk" : run.type === "nap" ? "Napping" : "Asleep for the night"}</b> <span>${durationLabel(Math.max(1, Math.round((now - run.time) / 60000)))}${esc(by(run.loggedBy))}</span></span><button class="px btn" data-act="${run.type === "walk" ? "finish-walk" : "end-sleep"}">${run.type === "walk" ? "Finish walk" : run.type === "nap" ? "End nap" : "End sleep"}</button>`
+    : `<b>Awake</b>${last ? `<span>last log ${when(last.time)}${esc(by(last.loggedBy))}</span>` : ""}`;
+  $("room").setAttribute(
+    "aria-label",
+    run
+      ? `${run.type === "walk" ? "Out on a walk" : "Asleep"} since ${clock(run.time)}`
+      : "Winnie is awake in his room",
+  );
+  $("active-bar").hidden = true;
   const latest = latestCare(events);
-  const icons = {
-    pee: '<svg viewBox="0 0 24 24"><path d="M12 3C10 7 5 11 5 15a7 7 0 0 0 14 0c0-4-5-8-7-12Z"/><path d="M8 15c0 2 1 3 3 3"/></svg>',
-    poop: "💩",
-    meal: '<svg viewBox="0 0 24 24"><path d="M3 10h18c0 6-3 9-9 9s-9-3-9-9Z"/><path d="M8 6V3m4 3V2m4 4V3M5 21h14"/></svg>',
-    sleep:
-      '<svg viewBox="0 0 24 24"><path d="M19 15A8 8 0 0 1 9 5a8 8 0 1 0 10 10Z"/><path d="M17 2v4m-2-2h4"/></svg>',
+  const tile = (type) => {
+    const l = latest[type],
+      t = l?.time,
+      today = t && dayKey(t) === dayKey(now),
+      tm = !l
+        ? "None yet"
+        : today
+          ? clock(t)
+          : new Date(t).toLocaleDateString([], {
+              month: "short",
+              day: "numeric",
+            }),
+      meta = l
+        ? `${elapsed(t)}${esc(by(l.loggedBy))}${l.pending ? " · not sent" : ""}`
+        : "";
+    return `<button class="px tile" style="--c:var(--${type})" data-log="${type}" aria-label="Log ${type}. Last ${esc(tm)}"><span class="top">${icon(type)}<span class="nm">${TYPES[type][1]}</span><span class="act">+ Log</span></span><span class="tm">${tm}</span><span class="meta">${meta}</span>${type === "poop" ? poopHint(events) : ""}</button>`;
   };
+  html("care-actions", tile("pee") + tile("poop"));
+  const meal = latest.meal;
   html(
-    "care-actions",
-    ["pee", "poop", "meal", "sleep"]
-      .map((type) => {
-        const last = latest[type];
-        const label =
-          type === "sleep"
-            ? sleeping
-              ? sleeping.type === "nap"
-                ? "End nap"
-                : "End night sleep"
-              : sleepContext().type === "nap"
-                ? "Start nap"
-                : "Start night sleep"
-            : `Log ${type}`;
-        const time =
-          type === "sleep" && last?.end_time != null
-            ? last.end_time
-            : last?.time;
-        const stamp = last ? elapsed(time) : "Not logged yet";
-        const stateLabel =
-          type === "sleep"
-            ? last?.end_time == null && last
-              ? "Sleeping since"
-              : "Sleep ended"
-            : "Last " + type;
-        return `<div class="care-cell ${type}"><button class="care-tile ${type}" data-log="${type}" aria-label="${label}"><span class="tile-icon" aria-hidden="true">${icons[type]}</span><span class="tile-plus" aria-hidden="true">${type === "sleep" && sleeping ? "↗" : "＋"}</span><span class="mini-label">${last ? stateLabel : TYPES[type]?.[1] || "Sleep"}</span><strong class="care-elapsed">${esc(stamp)}</strong><span class="tile-label">${label}</span></button>${last ? `<button class="care-context" data-open="${esc(last.id)}" aria-label="View last ${type} entry"><span>${dateLabel(time)} · ${clock(time)} · ${last.loggedBy ? esc(person(last.loggedBy)) : "Shared history"}${last.pending ? " · Waiting to share" : ""}</span>${last.foods?.length ? `<span>${esc(last.foods.join(" + "))}</span>` : ""}${placeLabel(last) ? `<span>⌖ ${esc(placeLabel(last))}</span>` : ""}<span class="care-detail-link">View entry ↗</span></button>` : ""}</div>`;
-      })
-      .join(""),
+    "log-row",
+    [
+      `<button class="px chip" style="--c:var(--meal)" data-log="meal" aria-label="Log meal">${icon("meal")}Meal${meal ? `<small>${dayKey(meal.time) === dayKey(now) ? clock(meal.time) : elapsed(meal.time)}</small><small>${dayKey(meal.time) === dayKey(now) ? elapsed(meal.time) : ""}${meal.loggedBy ? (dayKey(meal.time) === dayKey(now) ? " · " : "") + esc(person(meal.loggedBy)) : ""}</small>` : ""}</button>`,
+      `<button class="px chip" style="--c:var(--photo)" data-act="photo">${icon("photo")}Photo</button>`,
+      `<button class="px chip" data-act="earlier">${icon("earlier")}Earlier</button>`,
+      `<button class="px chip" data-act="more">${icon("more")}More</button>`,
+    ].join(""),
   );
-  const walk = events.find((e) => e.type === "walk" && active(e)),
-    showWalk = !!walk;
-  $("walk-card").hidden = !showWalk;
-  if (showWalk)
-    $("walk-card").innerHTML =
-      `<div class="section-heading"><h2>${walk ? "Out for a walk" : "A walk, together"}</h2><span aria-hidden="true">🐾</span></div><p class="fine">${walk ? `Started ${clock(walk.time)} · ${esc(person(walk.loggedBy))}` : "An optional way to let each other know you’re out."}</p><div class="button-row"><button class="secondary small" data-act="${walk ? "finish-walk" : "start-walk"}">${walk ? "Finish walk" : "Start walk"}</button>${walk ? '<button class="text-button" data-log="pee">Log pee</button><button class="text-button" data-log="poop">Log poop</button>' : ""}</div>`;
-  renderHandoff(view.profile);
-  const day = events.filter((e) => dayKey(e.time) === $("day-picker").value);
-  $("day-summary").textContent = ["pee", "poop", "meal"]
-    .map(
-      (t) =>
-        `${day.filter((e) => e.type === t).length} ${t}${day.filter((e) => e.type === t).length === 1 ? "" : "s"}`,
-    )
-    .join(" · ");
+  renderAlso(events);
+  fridge.render();
+  renderDay(events);
+}
+function renderAlso(events) {
+  const key = dayKey(Date.now());
+  let dismissed = false;
+  try {
+    dismissed = localStorage.getItem("winnie:also-done") === key;
+  } catch {}
+  const show = new Date().getHours() >= 17 && !dismissed;
+  $("also-today").hidden = !show;
+  if (!show) return;
+  const today = events.filter((e) => dayKey(e.time) === key);
+  const items = [
+    ...GROOMING.slice(0, 3).map(([t, i]) => ["grooming", t, i]),
+    ["medication", "Meds", "pill"],
+    ["enrichment", "Training", "star"],
+  ];
+  html(
+    "also-today",
+    `<div class="card-head"><h2 id="also-title">Also today</h2><button class="text-button small" data-act="also-done">Nothing else</button></div><div class="chips">${items
+      .map(([type, t, i]) => {
+        const did = today.some(
+          (e) =>
+            e.type === type &&
+            (type !== "grooming" ||
+              (e.careTitle || "").toLowerCase() === t.toLowerCase()),
+        );
+        return `<button class="px" data-also="${type}" data-title="${t}" aria-pressed="${did}">${icon(did ? "check" : i, "ic sm")}${t}</button>`;
+      })
+      .join(
+        "",
+      )}</div><p class="fine">One tap logs it for today with an approximate time.</p>`,
+  );
+}
+function renderDay(events) {
+  const key = $("day-picker").value || dayKey(Date.now()),
+    isToday = key === dayKey(Date.now()),
+    mid = new Date(key + "T12:00");
+  $("day-title").textContent = isToday
+    ? "Today"
+    : mid.toLocaleDateString([], { weekday: "long" });
+  $("day-label").textContent = mid.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
+  $("day-next").disabled = isToday;
+  $("day-picker-text").textContent = isToday ? "Pick day" : mid.toLocaleDateString([], { month: "short", day: "numeric" });
+  const start = new Date(key + "T00:00").getTime(),
+    end = start + 86400000,
+    now = Date.now(),
+    SPAN = ["nap", "slumber", "walk", "outing"];
+  const day = events.filter((e) => dayKey(e.time) === key);
+  const spans = events.filter(
+    (e) =>
+      SPAN.includes(e.type) &&
+      e.time < end &&
+      (e.end_time ?? Math.min(now, end)) > start &&
+      !(e.end_time == null && now - e.time > 36 * 3600000),
+  );
+  const pct = (t) =>
+    (Math.max(0, Math.min(1, (t - start) / 86400000)) * 100).toFixed(2);
+  let strip = '<div class="lane">';
+  for (const e of spans) {
+    const stop = e.end_time ?? Math.min(now, end);
+    strip += `<span class="span" style="--c:${typeColor(e.type)};left:${pct(e.time)}%;width:${Math.max(0.8, pct(stop) - pct(e.time))}%"></span>`;
+  }
+  for (const e of day)
+    if (!SPAN.includes(e.type))
+      strip += `<span class="tick" style="--c:${typeColor(e.type)};left:${pct(e.time)}%"></span>`;
+  if (isToday) strip += `<span class="now" style="left:${pct(now)}%"></span>`;
+  strip +=
+    '</div><div class="hrs" aria-hidden="true"><span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>12a</span></div>';
+  html("day-strip", strip);
+  const count = (t) => day.filter((e) => e.type === t).length;
+  $("day-strip").setAttribute("role", "img");
+  $("day-strip").setAttribute(
+    "aria-label",
+    `${day.length} ${day.length === 1 ? "entry" : "entries"} across the day`,
+  );
+  $("day-summary").textContent =
+    `${count("pee")} pee · ${count("poop")} poop · ${count("meal")} ${count("meal") === 1 ? "meal" : "meals"}`;
   html(
     "timeline",
     day.length
       ? day.map(entry).join("")
-      : '<div class="empty"><p>No entries for this day yet.</p></div>',
+      : `<div class="empty"><p>Nothing logged ${isToday ? "yet today" : "this day"}.</p></div>`,
   );
-  hydratePhotos();
-  renderTrainer(events);
-  if (tab === "story") renderStory();
-  if (tab === "care") {
-    care.render();
-    if (careSection !== "upcoming") renderStory();
-  }
+}
+function renderLastTimes(events) {
+  const now = Date.now(),
+    title = (t) => (e) =>
+      e.type === "grooming" &&
+      (e.careTitle || "").toLowerCase() === t.toLowerCase();
+  const items = [
+    ["Bath", title("Bath"), "bath", "groom"],
+    ["Nails", title("Nails"), "nails", "groom"],
+    ["Brush", title("Brush"), "brush", "groom"],
+    ["Vet", (e) => e.type === "appointment", "vet", "care"],
+    ["Meds", (e) => e.type === "medication", "pill", "care"],
+    ["Training", (e) => e.type === "enrichment", "star", "care"],
+  ];
+  html(
+    "last-times",
+    items
+      .map(([label, pred, ic, col]) => {
+        const e = events.find((x) => x.time <= now && pred(x));
+        return e
+          ? `<button class="last" data-open="${esc(e.id)}" aria-label="Last ${label.toLowerCase()} ${elapsed(e.time)}"><span class="sq" style="--c:var(--${col})">${icon(ic, "ic sm")}</span><b>${label}</b><small>${elapsed(e.time)}</small></button>`
+          : "";
+      })
+      .join(""),
+  );
 }
 let reactionPickerId = null;
 const reactionEmojis = ["❤️", "😂", "👏"];
+let freshEntry = null,
+  longPressed = false,
+  pressTimer = 0;
+document.addEventListener("pointerdown", (ev) => {
+  const b = ev.target.closest("#care-actions [data-log], #log-row [data-log]");
+  if (!b) return;
+  longPressed = false;
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(() => {
+    longPressed = true;
+    earlierSheet({ type: b.dataset.log });
+  }, 480);
+});
+for (const name of ["pointerup", "pointercancel", "pointerleave"])
+  document.addEventListener(name, () => clearTimeout(pressTimer));
+document.addEventListener("contextmenu", (ev) => {
+  if (ev.target.closest("[data-log]")) ev.preventDefault();
+});
+function syncSheet() {
+  const pending = sync.data.queue.length,
+    errors = sync.data.queue.filter((q) => q.error).length;
+  const [title, msg] = sync.lastError
+    ? ["Offline", `This phone can't reach the shared log: ${sync.lastError} New logs keep saving here and send when it's back.`]
+    : errors
+      ? ["Needs review", `${errors} ${errors === 1 ? "change conflicts" : "changes conflict"} with an edit from the other phone. Pick which version to keep. Nothing is lost until you choose.`]
+      : pending
+        ? ["Not sent yet", `${pending} ${pending === 1 ? "change is" : "changes are"} saved on this phone and not in the shared log yet.`]
+        : ["Up to date", `Everything on this phone is in the shared log. Checked ${sync.lastChecked ? when(sync.lastChecked) : "just now"}.`];
+  openDialog(
+    `<h2 id="dialog-title">${title}</h2><p>${esc(msg)}</p><div class="button-row"><button class="px btn ink" data-act="sync-now">Check now</button>${errors ? '<button class="px btn" data-act="review">Review changes</button>' : ""}</div>`,
+  );
+}
 function reactions(e) {
   if (e.deletedAt) return "";
   const mine = e.reactions?.[sync.session?.person]?.emoji;
@@ -446,7 +729,7 @@ function reactions(e) {
   const description = groups
     .map((g) => g.emoji + " " + g.people.join(" and "))
     .join(", ");
-  return `<div class="entry-reactions" data-reactions-for="${esc(e.id)}"><button class="reaction-trigger ${groups.length ? "has-reactions" : ""}" data-reaction-picker="${esc(e.id)}" aria-expanded="${expanded}" aria-label="${esc(description ? description + ". Add or change your reaction" : "React to this entry")}">${groups.length ? groups.map((g) => `<span class="reaction-total"><span aria-hidden="true">${g.emoji}</span><span>${g.people.length}</span></span>`).join("") : '<span aria-hidden="true">♡</span><span>React</span>'}</button>${expanded ? `<div class="reaction-picker" role="group" aria-label="Choose your reaction">${reactionEmojis.map((emoji) => `<button class="reaction-chip" data-react="${emoji}" data-event="${esc(e.id)}" aria-label="${mine === emoji ? "Remove your" : "React with"} ${emoji} reaction" aria-pressed="${mine === emoji}">${emoji}</button>`).join("")}</div>` : ""}</div>`;
+  return `<div class="entry-reactions" data-reactions-for="${esc(e.id)}"><button class="reaction-trigger ${groups.length ? "has-reactions" : ""}" data-reaction-picker="${esc(e.id)}" aria-expanded="${expanded}" aria-label="${esc(description ? description + ". Add or change your reaction" : "React to this entry")}">${groups.length ? groups.map((g) => `<span class="reaction-total"><span aria-hidden="true">${g.emoji}</span><span>${g.people.length}</span></span>`).join("") : '<span aria-hidden="true">' + icon("heartOpen") + '</span><span class="sr-only">React</span>'}</button>${expanded ? `<div class="reaction-picker" role="group" aria-label="Choose your reaction">${reactionEmojis.map((emoji) => `<button class="reaction-chip" data-react="${emoji}" data-event="${esc(e.id)}" aria-label="${mine === emoji ? "Remove your" : "React with"} ${emoji} reaction" aria-pressed="${mine === emoji}">${emoji}</button>`).join("")}</div>` : ""}</div>`;
 }
 document.addEventListener(
   "click",
@@ -480,7 +763,7 @@ document.addEventListener(
       target
         ?.querySelector("[data-reaction-picker]")
         ?.focus({ preventScroll: true });
-      if (emoji) reactWinnie();
+      if (emoji) room.react("heart");
       return;
     }
     if (reactionPickerId && !ev.target.closest(".entry-reactions")) {
@@ -534,30 +817,16 @@ function entry(e) {
   const detail = [
     e.foods?.join(" + "),
     placeLabel(e),
-    e.loggedBy ? person(e.loggedBy) : "Shared history",
+    person(e.loggedBy),
     duration,
     e.note !== eventLabel(e) ? e.note : "",
     ...(e.tags || []),
   ]
     .filter(Boolean)
     .join(" · ");
-  return `<div class="feed-entry"><button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol" aria-hidden="true">${TYPES[e.type]?.[0] || "•"}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Pending</span>' : ""}</span></button>${e.photos?.length ? `<div class="feed-photos">${e.photos.map((p) => `<button data-open="${esc(e.id)}" aria-label="Open photo from ${esc(eventLabel(e))}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"></button>`).join("")}</div>` : ""}${reactions(e)}</div>`;
+  return `<div class="feed-entry${e.id === freshEntry ? " fresh" : ""}"><button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol sq" style="--c:${typeColor(e.type)}" aria-hidden="true">${icon(typeIcon(e.type, e.careTitle), "ic sm")}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span><span class="entry-note">${esc(detail)}</span></span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Not sent</span>' : ""}</span></button>${e.photos?.length ? `<div class="feed-photos">${e.photos.map((p) => `<button data-open="${esc(e.id)}" aria-label="Open photo from ${esc(eventLabel(e))}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"></button>`).join("")}</div>` : ""}${reactions(e)}</div>`;
 }
 function renderStory() {
-  companion.refresh();
-  $("story-view").classList.toggle(
-    "showing-insights",
-    ["patterns", "places"].includes(filter),
-  );
-  $("story-heading").textContent =
-    filter === "patterns"
-      ? "His rhythm"
-      : filter === "care"
-        ? "Every entry"
-        : filter === "places"
-          ? "His places"
-          : "His photos";
-  $("story-add").hidden = filter !== "moments";
   $("story-tools").hidden = ["patterns", "places"].includes(filter);
   $("places-view").hidden = filter !== "places";
   $("story-items").hidden = filter === "places";
@@ -609,17 +878,12 @@ function renderStory() {
     filter === "care"
       ? count.toLocaleString() + " " + (count === 1 ? "entry" : "entries")
       : photos +
-        " " +
-        (photos === 1 ? "photo" : "photos") +
-        " · " +
-        count +
-        " " +
-        (count === 1 ? "moment" : "moments");
+        " " + (photos === 1 ? "photo" : "photos");
   $("load-more").hidden = count <= limit;
   if (!count) {
     html(
       "story-items",
-      `<div class="empty card"><h3>Nothing here yet</h3><p>${query || $("history-from").value || $("history-to").value ? "Try another search or date range." : filter === "care" ? "Care you log will appear here." : "Photos you add to care entries appear here, together with your moments."}</p>${filter === "moments" ? '<button class="secondary" data-act="moment">Add a moment</button>' : ""}</div>`,
+      `<div class="empty"><h3>${query || $("history-from").value || $("history-to").value ? "No matches." : filter === "care" ? "Nothing logged yet." : "No photos yet."}</h3>${query || $("history-from").value || $("history-to").value ? "<p>Try another search or date range.</p>" : filter === "moments" ? '<button class="px btn ink" data-act="moment">Add photo</button>' : ""}</div>`,
     );
     return;
   }
@@ -678,6 +942,14 @@ for (const [type, [, label]] of Object.entries(TYPES))
     "beforeend",
     `<option value="${type}">${label}</option>`,
   );
+for (const id of ["history-from", "history-to"])
+  $(id).addEventListener("change", () => {
+    const v = $(id).value,
+      label = id === "history-from" ? "From" : "To";
+    document.querySelector(`[data-date-text="${id}"]`).textContent = v
+      ? `${label}: ${new Date(v + "T12:00").toLocaleDateString([], { month: "short", day: "numeric" })}`
+      : `${label}: any day`;
+  });
 for (const id of ["story-search", "history-type", "history-from", "history-to"])
   $(id).addEventListener(id === "story-search" ? "input" : "change", () => {
     limit = 60;
@@ -713,15 +985,11 @@ async function log(type, extra = {}) {
     const sleeping = facts().find(
       (e) => ["nap", "slumber"].includes(e.type) && active(e),
     );
-    if (sleeping) {
-      openDialog(
-        `<h2 id="dialog-title">Finished sleeping?</h2><p class="fine">Started ${dateLabel(sleeping.time)} at ${clock(sleeping.time)}.</p><div class="button-row"><button class="primary" data-end="${esc(sleeping.id)}">End sleep now</button><button class="secondary" data-act="close">Keep sleeping</button></div><p id="form-error" class="error" role="alert"></p>`,
-      );
-      return;
-    }
+    if (sleeping) return endSleep(sleeping);
     if (type === "sleep") type = sleepContext().type;
   }
   const eventId = uid();
+  freshEntry = eventId;
   await sync.enqueue("create", eventId, {
     type,
     time: Date.now(),
@@ -733,32 +1001,123 @@ async function log(type, extra = {}) {
     time_precision: "exact",
     ...extra,
   });
-  reactWinnie();
-  toast(`${TYPES[type][1]} saved on this device.`, () =>
-    sync.enqueue("delete", eventId),
+  room.react(["pee", "poop", "meal"].includes(type) ? type : "heart");
+  const label = TYPES[type][1];
+  toast(
+    `${["nap", "slumber", "walk"].includes(type) ? label + " started" : label + " logged"} · ${clock(Date.now())}`,
+    () => sync.enqueue("delete", eventId).then(() => room.react("undo")),
+    ["nap", "slumber", "walk"].includes(type)
+      ? []
+      : [
+          ["+ Photo", () => pottyPhoto(eventId, type)],
+          ...(type === "poop" ? [] : [["+ Note", () => editForm(null, eventId)]]),
+        ],
   );
-  if (type === "poop") pottyPhoto(eventId, type);
+  flashTile(type);
   void autoPlace.attach(eventId);
   return eventId;
+}
+function flashTile(type) {
+  const b = document.querySelector(`#care-actions [data-log="${type}"], #log-row [data-log="${type}"]`);
+  if (!b) return;
+  b.classList.remove("logged");
+  void b.offsetWidth;
+  b.classList.add("logged");
+  const act = b.querySelector(".act");
+  if (act) act.textContent = "Logged";
+  setTimeout(() => {
+    renderedHTML.delete("care-actions");
+    render();
+  }, 1400);
+}
+async function endSleep(e) {
+  await sync.enqueue("edit", e.id, { end_time: Date.now() });
+  toast(
+    `${TYPES[e.type][1]} ended · ${durationLabel(Math.max(1, Math.round((Date.now() - e.time) / 60000)))}`,
+    () => sync.enqueue("edit", e.id, { end_time: null }),
+  );
+}
+async function finishWalk() {
+  const e = facts().find((e) => e.type === "walk" && active(e));
+  if (!e) return;
+  await sync.enqueue("edit", e.id, { end_time: Date.now() });
+  toast(
+    `Walk finished · ${durationLabel(Math.max(1, Math.round((Date.now() - e.time) / 60000)))}`,
+    () => sync.enqueue("edit", e.id, { end_time: null }),
+  );
+}
+async function logCare(type, title, approx = false) {
+  const eventId = uid();
+  await sync.enqueue("create", eventId, {
+    type,
+    time: Date.now(),
+    end_time: null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    who: "us",
+    tags: [],
+    note: "",
+    time_precision: approx ? "approx" : "exact",
+    ...(type === "grooming" ? { careTitle: title } : {}),
+  });
+  room.react("heart");
+  toast(
+    `${type === "grooming" ? title : TYPES[type][1]} logged${approx ? " for today" : " · " + clock(Date.now())}`,
+    () => sync.enqueue("delete", eventId),
+    [["+ Photo", () => pottyPhoto(eventId, type)]],
+  );
+  if (!approx) void autoPlace.attach(eventId);
+}
+let early = { type: "pee", ago: 15 };
+function earlierSheet(next = {}) {
+  early = { ...early, ...next };
+  const types = ["pee", "poop", "meal", "walk", "sleep", "grooming"],
+    name = (t) => (t === "sleep" ? "Sleep" : t === "grooming" ? "Bath" : TYPES[t][1]);
+  openDialog(
+    `<h2 id="dialog-title">Log earlier</h2><section class="sheet-section"><h3>What</h3><div class="offsets">${types.map((t) => `<button class="px" style="--c:${t === "sleep" ? "var(--sleep)" : typeColor(t)}" aria-pressed="${t === early.type}" data-early-type="${t}">${name(t)}</button>`).join("")}</div></section><section class="sheet-section"><h3>When</h3><div class="offsets">${[5, 15, 30, 60, 120, 180].map((m) => `<button class="px" aria-pressed="${m === early.ago}" data-early-ago="${m}">${m < 60 ? m + " min" : m / 60 + (m === 60 ? " hour" : " hours")} ago</button>`).join("")}</div></section><div class="button-row"><button class="px btn ink" data-early-save>Log ${name(early.type).toLowerCase()} at ${clock(Date.now() - early.ago * 60000)}</button><button class="text-button" data-early-form>Pick an exact time</button></div><p id="form-error" class="error" role="alert"></p>`,
+  );
+}
+async function saveEarlier() {
+  const time = Date.now() - early.ago * 60000,
+    eventId = uid(),
+    type = early.type === "sleep" ? sleepContext(time).type : early.type;
+  await sync.enqueue("create", eventId, {
+    type,
+    time,
+    end_time: null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    who: "us",
+    tags: [],
+    note: "",
+    time_precision: "approx",
+    retroactive: true,
+    ...(type === "grooming" ? { careTitle: "Bath" } : {}),
+    ...(type === "meal" ? { foods: [] } : {}),
+  });
+  closeDialog();
+  room.react("heart");
+  toast(
+    `${type === "grooming" ? "Bath" : TYPES[type][1]} logged for ${clock(time)}`,
+    () => sync.enqueue("delete", eventId),
+  );
 }
 function pottyPhoto(id, type) {
   quickPhotoId = id;
   openDialog(
-    `<h2 id="dialog-title">${TYPES[type][1]} saved</h2><p class="fine">Add his photo?</p><p class="fine" id="auto-place-status" data-event="${esc(id)}" role="status">${autoPlaceEnabled() ? "Location is added automatically when available." : "Automatic location is off on this device."}</p><div class="photo-choice"><button class="primary" data-photo-camera="${id}">Take photo</button><button class="secondary" data-photo-library="${id}">Choose photo</button><button class="text-button" data-act="close">No photo</button></div><p id="form-error" class="error" role="alert"></p>`,
+    `<h2 id="dialog-title">${type === "grooming" ? "Photo" : TYPES[type][1] + " photo"}</h2><p class="fine" id="auto-place-status" data-event="${esc(id)}" role="status">${autoPlaceEnabled() ? "Location is added when this phone allows it." : "Automatic location is off on this phone."}</p><div class="photo-choice"><button class="px" data-photo-camera="${id}">${icon("photo", "ic lg")}Take photo</button><button class="px" data-photo-library="${id}">${icon("photos", "ic lg")}Choose photo</button><button class="text-button" data-act="close">Not now</button></div><p id="form-error" class="error" role="alert"></p>`,
   );
 }
 function mealPicker() {
   openDialog(
-    `<h2 id="dialog-title">What did he eat?</h2><div class="food-grid">${foodChoices(
+    `<h2 id="dialog-title">Meal</h2><div class="food-grid">${foodChoices(
       facts(),
     )
       .map(
         (food) =>
-          `<button class="secondary" data-food="${esc(food)}">${esc(food)}</button>`,
+          `<button class="px" style="--c:var(--meal)" data-food="${esc(food)}">${esc(food)}</button>`,
       )
       .join(
         "",
-      )}</div><form id="custom-food"><label>Add another food<input name="food" maxlength="40" required placeholder="e.g. Turkey" autocomplete="off"></label><button class="secondary small" type="submit">Add & log meal</button></form><button class="text-button" data-food-unknown>Log without food details</button><p id="form-error" class="error" role="alert"></p>`,
+      )}</div><form id="custom-food"><label>Other food<input name="food" maxlength="40" required placeholder="Turkey" autocomplete="off"></label><div class="button-row"><button class="px btn ink" type="submit">Log meal</button><button class="text-button" type="button" data-food-unknown>Log without a food</button></div></form><p id="form-error" class="error" role="alert"></p>`,
   );
   $("custom-food").onsubmit = safe(async (ev) => {
     ev.preventDefault();
@@ -797,7 +1156,7 @@ function detail(id) {
     return;
   }
   openDialog(
-    `<h2 id="dialog-title">${TYPES[e.type]?.[0] || "•"} ${esc(eventLabel(e))}</h2><p class="fine">${dateLabel(e.time)} · ${clock(e.time)}${e.end_time != null ? ` → ${dateLabel(e.end_time)} ${clock(e.end_time)}` : ""}</p><p class="fine">${e.loggedBy ? `Logged by ${esc(person(e.loggedBy))}` : "Original shared history · person not recorded"}${e.pending ? " · Waiting to share" : ""}</p>${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}${reactions(e)}<div class="detail-meta">${(e.tags || []).map((t) => `<span class="pill">${esc(t)}</span>`).join("")}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.foods?.length ? `<p class="detail-notes">Ate ${esc(e.foods.join(" + "))}</p>` : ""}${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${placeSummary(e)}<button class="text-button" data-place="${esc(id)}">⌖ ${placeLabel(e) ? "Edit place" : "Add place"}</button><div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${["pee", "poop"].includes(e.type) ? `<h3>Who initiated the trip?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
+    `<div class="detail-head"><span class="sq" style="--c:${typeColor(e.type)}">${icon(typeIcon(e.type, e.careTitle), "ic sm")}</span><h2 id="dialog-title">${esc(eventLabel(e))}</h2></div><p class="fine">${dateLabel(e.time)} · ${clock(e.time)}${e.end_time != null ? ` → ${dateLabel(e.end_time)} ${clock(e.end_time)}` : ""}</p><p class="fine">${e.loggedBy ? `Logged by ${esc(person(e.loggedBy))}` : "From the original log · person not recorded"}${e.pending ? " · not sent yet" : ""}</p>${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}${reactions(e)}<div class="detail-meta">${(e.tags || []).map((t) => `<span class="pill">${esc(t)}</span>`).join("")}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.foods?.length ? `<p class="detail-notes">Ate ${esc(e.foods.join(" + "))}</p>` : ""}${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${placeSummary(e)}<button class="text-button" data-place="${esc(id)}">⌖ ${placeLabel(e) ? "Edit place" : "Add place"}</button><div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${["pee", "poop"].includes(e.type) ? `<h3>Who started it?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
   );
   detailId = id;
   hydratePhotos();
@@ -822,7 +1181,7 @@ function editForm(type = "note", id = null, defaults = {}) {
   formPhotos = [];
   formType = e.type;
   openDialog(
-    `<h2 id="dialog-title">${id ? "Edit entry" : e.type === "moment" ? "Keep a little moment" : "Log an earlier entry"}</h2><form id="event-form"><label>What happened?<select name="type">${Object.entries(
+    `<h2 id="dialog-title">${id ? "Edit entry" : e.type === "moment" ? "Add photo" : "New entry"}</h2><form id="event-form"><label>What happened?<select name="type">${Object.entries(
       TYPES,
     )
       .map(
@@ -831,11 +1190,14 @@ function editForm(type = "note", id = null, defaults = {}) {
       )
       .join(
         "",
-      )}</select></label><label id="foods-label" ${e.type === "meal" ? "" : "hidden"}>What he ate<input name="foods" maxlength="500" value="${esc((e.foods || []).join(", "))}" placeholder="Chicken, sardine…"></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>End time <span class="fine">(leave empty if in progress)</span><input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="A little detail to remember…">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags <span class="fine">(separate with commas)</span><input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(placeName(e))}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+      )}</select></label><label id="title-label" ${e.type === "grooming" ? "" : "hidden"}>What was done<input name="careTitle" maxlength="60" value="${esc(e.careTitle || "")}" placeholder="Bath" list="groom-titles"><datalist id="groom-titles">${GROOMING.map(([t]) => `<option value="${t}"></option>`).join("")}</datalist></label><label id="foods-label" ${e.type === "meal" ? "" : "hidden"}>What he ate<input name="foods" maxlength="500" value="${esc((e.foods || []).join(", "))}" placeholder="Chicken, sardine…"></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>End time <span class="fine">(leave empty if in progress)</span><input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Optional">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags <span class="fine">(separate with commas)</span><input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(placeName(e))}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
   );
   const f = $("event-form");
   f.elements.type.addEventListener("change", () => {
     $("foods-label").hidden = f.elements.type.value !== "meal";
+  });
+  f.elements.type.addEventListener("change", () => {
+    $("title-label").hidden = f.elements.type.value !== "grooming";
   });
   f.elements.type.onchange = () => {
     $("end-label").hidden = ![
@@ -883,6 +1245,9 @@ function editForm(type = "note", id = null, defaults = {}) {
               : input.get("location"),
           ...(input.get("location") !== placeName(e) ? { placePin: null } : {}),
           time_precision: input.get("time_precision"),
+          ...(input.get("type") === "grooming"
+            ? { careTitle: String(input.get("careTitle") || "").trim() }
+            : {}),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           retroactive: true,
         };
@@ -921,7 +1286,7 @@ function editForm(type = "note", id = null, defaults = {}) {
       }
       closeDialog();
       toast(
-        "Entry saved on this device.",
+        "Saved",
         id ? null : () => sync.enqueue("delete", eventId),
       );
       if (["pee", "poop"].includes(payload.type) && !id && !formPhotos.length)
@@ -932,16 +1297,15 @@ function editForm(type = "note", id = null, defaults = {}) {
   });
 }
 function moreCare() {
+  const events = facts(),
+    sleeping = events.find((e) => ["nap", "slumber"].includes(e.type) && active(e)),
+    walk = events.find((e) => e.type === "walk" && active(e)),
+    lastOf = (pred) => {
+      const e = events.find((x) => x.time <= Date.now() && pred(x));
+      return e ? elapsed(e.time) : "Not yet";
+    };
   openDialog(
-    `<h2 id="dialog-title">A little more care</h2><div class="type-grid"><button data-act="trainer">Trainer visit</button><button data-log="nap">☾ Start nap</button><button data-log="slumber">☾ Start night sleep</button>${Object.entries(
-      TYPES,
-    )
-      .filter(
-        ([t]) =>
-          !["pee", "poop", "meal", "nap", "slumber", "moment"].includes(t),
-      )
-      .map(([t, [i, l]]) => `<button data-new-type="${t}">${i} ${l}</button>`)
-      .join("")}</div>`,
+    `<h2 id="dialog-title">More</h2><section class="sheet-section"><h3>Grooming</h3><div class="type-grid">${GROOMING.map(([t, i]) => `<button class="px" style="--c:var(--groom)" data-groom="${t}">${icon(i)}${t}<small>${lastOf((x) => x.type === "grooming" && (x.careTitle || "").toLowerCase() === t.toLowerCase())}</small></button>`).join("")}</div></section><section class="sheet-section"><h3>Walks and sleep</h3><div class="type-grid"><button class="px" style="--c:var(--walk)" data-act="${walk ? "finish-walk" : "start-walk"}">${icon("walk")}${walk ? "Finish walk" : "Start walk"}</button><button class="px" style="--c:var(--sleep)" data-act="${sleeping ? "end-sleep" : "start-sleep"}">${icon("sleep")}${sleeping ? (sleeping.type === "nap" ? "End nap" : "End sleep") : sleepContext().type === "nap" ? "Start nap" : "Start night sleep"}</button><button class="px" style="--c:var(--walk)" data-new-type="outing">${icon("walk")}Outing</button></div></section><section class="sheet-section"><h3>Health and training</h3><div class="type-grid">${["medication", "enrichment", "appointment", "vomit", "episode", "travel", "covered_gap", "note"].map((t) => `<button class="px" style="--c:${typeColor(t)}" data-new-type="${t}">${icon(typeIcon(t))}${TYPES[t][1]}</button>`).join("")}<button class="px" style="--c:var(--care)" data-act="trainer">${icon("whistle")}Trainer visit</button></div></section>`,
   );
 }
 function plan() {
@@ -954,7 +1318,7 @@ function nextCareForm() {
   const p = sync.view().profile,
     n = p.nextCare;
   openDialog(
-    `<h2 id="dialog-title">What’s next for Winnie?</h2><form id="next-care-form"><label>Next step<input name="label" maxlength="200" required placeholder="e.g. Evening walk" value="${esc(n?.label || "")}"></label><label>When <span class="fine">(optional)</span><input name="due" type="datetime-local" value="${n?.dueAt ? dateTime(n.dueAt) : ""}"></label><label>Who’s doing it?<select name="person"><option value="">Not decided</option><option value="brandon" ${n?.claimedBy === "brandon" ? "selected" : ""}>Brandon</option><option value="kim" ${n?.claimedBy === "kim" ? "selected" : ""}>Kim</option></select></label><p class="fine">A shared plan, not a reminder notification. Log the care when it happens.</p><div class="button-row"><button class="primary">Save plan</button><button type="button" class="secondary" data-act="close">Cancel</button>${n ? '<button type="button" class="text-button" id="clear-care-plan">Clear plan</button>' : ""}</div><p id="form-error" class="error" role="alert"></p></form>`,
+    `<h2 id="dialog-title">Shared plan</h2><form id="next-care-form"><label>Next step<input name="label" maxlength="200" required placeholder="e.g. Evening walk" value="${esc(n?.label || "")}"></label><label>When <span class="fine">(optional)</span><input name="due" type="datetime-local" value="${n?.dueAt ? dateTime(n.dueAt) : ""}"></label><label>Who’s doing it?<select name="person"><option value="">Not decided</option><option value="brandon" ${n?.claimedBy === "brandon" ? "selected" : ""}>Brandon</option><option value="kim" ${n?.claimedBy === "kim" ? "selected" : ""}>Kim</option></select></label><p class="fine">A shared plan, not a reminder notification. Log the care when it happens.</p><div class="button-row"><button class="primary">Save plan</button><button type="button" class="secondary" data-act="close">Cancel</button>${n ? '<button type="button" class="text-button" id="clear-care-plan">Clear plan</button>' : ""}</div><p id="form-error" class="error" role="alert"></p></form>`,
   );
   $("next-care-form").onsubmit = safe(async (ev) => {
     ev.preventDefault();
@@ -971,7 +1335,7 @@ function nextCareForm() {
       throw Error("Choose a next step and a valid time.");
     await sync.enqueue("profile", null, { nextCare }, p.revision);
     closeDialog();
-    toast("Shared plan saved.");
+    toast("Plan saved");
   });
   if (n)
     $("clear-care-plan").onclick = safe(async () => {
@@ -998,7 +1362,7 @@ function placePicker(id) {
     12,
   );
   openDialog(
-    `<h2 id="dialog-title">Where were you with Winnie?</h2><p class="fine">${esc(eventLabel(e))} · ${dateLabel(e.time)} · ${clock(e.time)}</p><form id="place-form"><label>Place name<input name="place" maxlength="500" list="recent-places" placeholder="e.g. Home, our park, the beach" value="${esc(placeName(e))}"></label><datalist id="recent-places">${recent.map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist>${canCaptureHere(e) ? '<button type="button" class="secondary small" id="capture-place">Use current location</button><p class="fine">Only if you’re still where this happened. Saved with this entry and shared with each other.</p>' : '<p class="fine">Name the original place for this older entry. Your current location won’t be attached.</p>'}<p id="pin-status" class="fine" role="status">${pin ? `${placeLabel(e)}${Number.isFinite(pin.accuracy) ? ` · accuracy about ${Math.round(pin.accuracy)} m` : ""}` : "No map pin attached."}</p><button type="button" class="text-button" id="remove-pin" ${pin ? "" : "hidden"}>Remove map pin</button><div class="button-row"><button class="primary" id="save-place">Save place</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
+    `<h2 id="dialog-title">Place</h2><p class="fine">${esc(eventLabel(e))} · ${dateLabel(e.time)} · ${clock(e.time)}</p><form id="place-form"><label>Place name<input name="place" maxlength="500" list="recent-places" placeholder="Home, the park, the beach" value="${esc(placeName(e))}"></label><datalist id="recent-places">${recent.map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist>${canCaptureHere(e) ? '<button type="button" class="secondary small" id="capture-place">Use current location</button><p class="fine">Only if you’re still where this happened. Saved with this entry and shared with each other.</p>' : '<p class="fine">Name the original place for this older entry. Your current location won’t be attached.</p>'}<p id="pin-status" class="fine" role="status">${pin ? `${placeLabel(e)}${Number.isFinite(pin.accuracy) ? ` · accuracy about ${Math.round(pin.accuracy)} m` : ""}` : "No map pin attached."}</p><button type="button" class="text-button" id="remove-pin" ${pin ? "" : "hidden"}>Remove map pin</button><div class="button-row"><button class="primary" id="save-place">Save place</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
   );
   const form = $("place-form"),
     status = $("pin-status"),
@@ -1056,7 +1420,7 @@ function placePicker(id) {
         e.revision,
       );
       detail(id);
-      toast("Place saved with this entry.");
+      toast("Place saved");
     } finally {
       save.disabled = false;
     }
@@ -1069,18 +1433,16 @@ function settings() {
     return;
   }
   const devices = sync.data.snapshot.devices || [],
-    me = sync.session.token.split(".")[0];
+    me = sync.session.token.split(".")[0],
+    entries = sync.data.snapshot.events.filter((e) => !e.deletedAt).length;
   openDialog(
-    `<h2 id="dialog-title">Our little family</h2><div class="setting-block"><p>Using this device as <strong>${person(sync.session.person)}</strong></p><button class="secondary small" id="push-toggle" data-act="push" disabled>Checking notifications…</button><p id="push-status" role="status"></p></div><div class="setting-block"><button class="secondary small" data-act="auto-place">Automatic location: ${autoPlaceEnabled() ? "on" : "off"}</button><p class="fine">Saves this phone’s location with new logs when permitted. No location tracking between logs. Each phone controls its own permission.</p></div><div class="setting-block"><button class="secondary small" data-act="plan">Shared handoff note</button><button class="secondary small" data-act="trainer-schedule">Trainer visits</button><p class="fine">Sleep switches between nap and night sleep at San Francisco sunrise and sunset.</p></div>
-<div class="setting-block"><h3>Our history</h3><p>${sync.data.snapshot.events.filter((e) => !e.deletedAt).length.toLocaleString()} shared entries. Original records keep their original attribution.</p><p>New entries: Brandon ${sync.data.snapshot.usage?.brandon || 0} · Kim ${sync.data.snapshot.usage?.kim || 0}</p><div class="button-row"><button class="secondary small" data-act="export">Export history & pending actions</button><button class="text-button" data-act="review">Review saved phone history</button></div><p>Photos can be saved from each entry. History exports include photo references.</p></div><div class="setting-block"><h3>Connected devices</h3>${devices
+    `<h2 id="dialog-title">Settings</h2><div class="setting-block"><h3>${person(sync.session.person)}</h3><p class="fine">This phone logs as ${person(sync.session.person)}.</p><button class="px btn" id="push-toggle" data-act="push" disabled>Checking notifications</button><p id="push-status" class="fine" role="status"></p></div><div class="setting-block"><h3>Location</h3><button class="px btn" data-act="auto-place">Automatic location: ${autoPlaceEnabled() ? "on" : "off"}</button><p class="fine">Adds this phone's location to new logs when allowed. Nothing is tracked between logs. Each phone has its own setting.</p></div><div class="setting-block"><h3>Plans</h3><div class="button-row"><button class="px btn" data-act="plan">Shared plan</button><button class="px btn" data-act="trainer-schedule">Trainer visits</button></div><p class="fine">Sleep logs as a nap between San Francisco sunrise and sunset, and as night sleep outside them.</p></div><div class="setting-block"><h3>History</h3><p>${entries.toLocaleString()} entries. Old entries keep who logged them.</p><p class="fine">Logged in the app: Brandon ${sync.data.snapshot.usage?.brandon || 0}, Kim ${sync.data.snapshot.usage?.kim || 0}</p><div class="button-row"><button class="px btn" data-act="export">Export history</button><button class="text-button" data-act="review">Review changes</button></div><p class="fine">Save photos from each entry. Exports include photo references.</p></div><div class="setting-block"><h3>Devices</h3>${devices
       .filter((d) => !d.revoked)
       .map(
         (d) =>
-          `<div class="device"><span>${esc(d.name)} · ${person(d.person)}${d.id === me ? " · this device" : ""}</span>${d.id !== me ? `<button class="text-button danger" data-revoke="${esc(d.id)}">Remove</button>` : ""}</div>`,
+          `<div class="device"><span>${esc(d.name)} · ${person(d.person)}${d.id === me ? " · this phone" : ""}</span>${d.id !== me ? `<button class="text-button danger" data-revoke="${esc(d.id)}">Remove</button>` : ""}</div>`,
       )
-      .join(
-        "",
-      )}<button class="text-button" data-act="invite">Show shared code for another device</button></div><div class="setting-block"><button class="text-button" data-act="reconnect">Reconnect as another person</button><p>Pending actions stay with their original shared log.</p></div><p id="form-error" class="error" role="alert"></p>`,
+      .join("")}<div class="button-row"><button class="px btn ink" data-act="join-code">Add a device</button>${sync.session.code ? '<button class="text-button" data-act="invite">Show shared code</button>' : ""}</div></div><div class="setting-block"><button class="text-button" data-act="reconnect">Switch person on this phone</button><p class="fine">Changes not sent yet stay with this shared log.</p></div><p id="form-error" class="error" role="alert"></p>`,
   );
   updatePushStatus();
 }
@@ -1091,25 +1453,25 @@ async function updatePushStatus() {
     const state = await sync.pushState();
     if ($("push-toggle") !== button) return;
     const labels = {
-      on: "Turn off partner notifications",
-      off: "Enable partner notifications",
+      on: "Turn off notifications",
+      off: "Turn on notifications",
       repair: "Reconnect notifications",
-      blocked: "Notifications blocked in phone settings",
-      unsupported: "Open from your Home Screen to enable",
+      blocked: "Notifications blocked in iPhone Settings",
+      unsupported: "Open from the Home Screen to turn on",
     };
     button.textContent = labels[state];
     button.dataset.act = state === "on" ? "push-off" : "push";
     button.disabled = ["blocked", "unsupported"].includes(state);
     $("push-status").textContent =
       state === "on"
-        ? "Partner notifications are on for this device."
+        ? "On. You get one when the other person logs something."
         : state === "repair"
-          ? "This phone and the shared log need to reconnect notifications."
+          ? "Notifications need to reconnect on this phone."
           : state === "blocked"
-            ? "Allow notifications for Winnie in your phone’s settings, then reopen this menu."
+            ? "Allow notifications for Winnie in iPhone Settings, then reopen Settings here."
             : state === "unsupported"
-              ? "On iPhone, add Winnie to your Home Screen in Safari and open it there."
-              : "Get an update when the other person logs care.";
+              ? "On iPhone, add Winnie to the Home Screen from Safari and open it there."
+              : "Get a notification when the other person logs something.";
   } catch {
     if ($("push-toggle") === button) {
       button.textContent = "Retry notification check";
@@ -1174,7 +1536,7 @@ function review() {
   const conflicts = sync.data.queue.filter((q) => q.error),
     older = legacyDiff();
   openDialog(
-    `<h2 id="dialog-title">Keep every change</h2><p class="fine">Your older phone history is preserved. Choose which differences belong in the shared log.</p>${conflicts.map((q) => `<div class="recovery"><h3>${esc(q.error)}</h3><p class="fine">${esc(q.command.kind)} · ${esc(q.command.payload.note || q.command.payload.type || q.command.eventId)}</p><details><summary>Compare saved changes</summary><p class="fine">Your pending change</p><pre>${esc(compareEntry(q.command.payload))}</pre><p class="fine">Latest shared entry</p><pre>${esc(compareEntry(q.current))}</pre></details><div class="button-row">${!["create", "recover"].includes(q.command.kind) && q.current && !q.current.deletedAt ? `<button class="secondary small" data-resolve="${q.command.operationId}" data-mine="yes">Use my changes</button>` : ""}<button class="text-button" data-resolve="${q.command.operationId}">Keep shared version</button></div></div>`).join("")}${older
+    `<h2 id="dialog-title">Review changes</h2><p class="fine">Nothing is deleted. Pick which version belongs in the shared log.</p>${conflicts.map((q) => `<div class="recovery"><h3>${esc(q.error)}</h3><p class="fine">${esc(q.command.kind)} · ${esc(q.command.payload.note || q.command.payload.type || q.command.eventId)}</p><details><summary>Compare saved changes</summary><p class="fine">Your pending change</p><pre>${esc(compareEntry(q.command.payload))}</pre><p class="fine">Latest shared entry</p><pre>${esc(compareEntry(q.current))}</pre></details><div class="button-row">${!["create", "recover"].includes(q.command.kind) && q.current && !q.current.deletedAt ? `<button class="secondary small" data-resolve="${q.command.operationId}" data-mine="yes">Use my changes</button>` : ""}<button class="text-button" data-resolve="${q.command.operationId}">Keep shared version</button></div></div>`).join("")}${older
       .slice(0, 25)
       .map((e) => {
         const shared = sync.data.snapshot.events.find((x) => x.id === e.id);
@@ -1182,7 +1544,7 @@ function review() {
       })
       .join(
         "",
-      )}${!conflicts.length && !older.length ? '<div class="empty"><h3>All accounted for.</h3><p>No differences need your attention.</p></div>' : ""}${older.length > 25 ? '<p class="fine">More entries will appear as these are reviewed.</p>' : ""}<p id="form-error" class="error" role="alert"></p>`,
+      )}${!conflicts.length && !older.length ? '<div class="empty"><h3>Nothing to review.</h3></div>' : ""}${older.length > 25 ? '<p class="fine">More entries will appear as these are reviewed.</p>' : ""}<p id="form-error" class="error" role="alert"></p>`,
   );
 }
 async function photoFile(file) {
@@ -1235,7 +1597,7 @@ for (const id of ["camera-input", "library-input"])
     const files = Array.from(e.target.files || []).slice(0, 20),
       target = photoTarget;
     if (!files.length) return;
-    toast("Preparing your photo…");
+    toast("Preparing photo");
     for (const file of files) {
       const blob = await photoFile(file);
       if (target === "form") {
@@ -1252,7 +1614,7 @@ for (const id of ["camera-input", "library-input"])
         closeDialog();
       } else if ($("dialog").open && detailId === target) detail(target);
       render();
-    } else toast("Photo ready. Save the entry to keep it.");
+    } else toast("Photo attached. Save to keep it.");
   });
 function download(value, name, type = "application/json") {
   const blob =
@@ -1266,9 +1628,7 @@ function download(value, name, type = "application/json") {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
-$("earlier").onclick = () => editForm("pee");
-$("more").onclick = moreCare;
-$("add-moment").onclick = () => editForm("moment");
+$("sync-chip").onclick = () => syncSheet();
 $("story-add").onclick = () => editForm("moment");
 $("settings").onclick = settings;
 $("connect-form").onsubmit = safe(async (e) => {
@@ -1277,11 +1637,12 @@ $("connect-form").onsubmit = safe(async (e) => {
   const button = e.target.querySelector("[type=submit]");
   button.disabled = true;
   try {
-    await sync.pair(
-      $("shared-code").value.trim(),
-      new FormData(e.target).get("person"),
-      $("device-name").value.trim(),
-    );
+    const code = $("shared-code").value.trim(),
+      who = new FormData(e.target).get("person"),
+      name = $("device-name").value.trim();
+    if (/^[A-Za-z0-9]{4}[-\s]?[A-Za-z0-9]{4}$/.test(code))
+      await sync.join(code, who, name);
+    else await sync.pair(code, who, name);
     render();
   } catch (err) {
     $("connect-error").textContent = err.message;
@@ -1289,16 +1650,34 @@ $("connect-form").onsubmit = safe(async (e) => {
     button.disabled = false;
   }
 });
-$("shared-code").value = localStorage.getItem("winnie:bin") || "";
+
 document.addEventListener(
   "click",
   safe(async (ev) => {
     const b = ev.target.closest("button");
     if (!b) return;
     if (b.dataset.log) {
+      if (longPressed) return (longPressed = false);
       if ($("dialog").open) closeDialog();
       return log(b.dataset.log);
     }
+    if (b.dataset.groom) {
+      closeDialog();
+      return logCare("grooming", b.dataset.groom);
+    }
+    if (b.dataset.also) {
+      if (b.getAttribute("aria-pressed") === "true") return;
+      return logCare(b.dataset.also, b.dataset.title, true);
+    }
+    if (b.dataset.earlyType) return earlierSheet({ type: b.dataset.earlyType });
+    if (b.dataset.earlyAgo) return earlierSheet({ ago: Number(b.dataset.earlyAgo) });
+    if (b.hasAttribute("data-early-save")) return saveEarlier();
+    if (b.hasAttribute("data-early-form"))
+      return editForm(
+        early.type === "sleep" ? sleepContext().type : early.type,
+        null,
+        early.type === "grooming" ? { careTitle: "Bath" } : {},
+      );
     if (b.dataset.food || b.hasAttribute("data-food-unknown")) {
       b.disabled = true;
       try {
@@ -1341,8 +1720,8 @@ document.addEventListener(
       try {
         await sync.enqueue("edit", b.dataset.end, { end_time: Date.now() });
         closeDialog();
-        reactWinnie();
-        toast("Sleep end saved on this device.");
+        room.react("heart");
+        toast("Sleep ended");
       } finally {
         b.disabled = false;
       }
@@ -1369,7 +1748,7 @@ document.addEventListener(
         photoId: b.dataset.removePhoto,
       });
       detail(b.dataset.id);
-      toast("Photo removed from this entry.", () =>
+      toast("Photo removed", () =>
         sync.enqueue("attach", b.dataset.id, {
           photoId: b.dataset.removePhoto,
         }),
@@ -1379,7 +1758,7 @@ document.addEventListener(
     if (b.dataset.delete) {
       const id = b.dataset.delete;
       openDialog(
-        `<h2 id="dialog-title">Remove this entry?</h2><p class="fine">You can undo this after removing it.</p><div class="button-row"><button class="primary" data-confirm-delete="${esc(id)}">Remove entry</button><button class="secondary" data-open="${esc(id)}">Keep it</button></div><p id="form-error" class="error"></p>`,
+        `<h2 id="dialog-title">Remove this entry?</h2><p class="fine">You can undo this right after.</p><div class="button-row"><button class="primary" data-confirm-delete="${esc(id)}">Remove entry</button><button class="secondary" data-open="${esc(id)}">Keep it</button></div><p id="form-error" class="error"></p>`,
       );
       return;
     }
@@ -1387,7 +1766,7 @@ document.addEventListener(
       const id = b.dataset.confirmDelete;
       await sync.enqueue("delete", id);
       closeDialog();
-      toast("Entry removal saved on this device.", () =>
+      toast("Entry removed", () =>
         sync.enqueue("restore", id),
       );
       return;
@@ -1489,13 +1868,50 @@ document.addEventListener(
         trainerSchedule();
         break;
       case "start-walk":
+        closeDialog();
         await log("walk");
         break;
-      case "finish-walk": {
-        const e = facts().find((e) => e.type === "walk" && active(e));
-        if (e) {
-          await sync.enqueue("edit", e.id, { end_time: Date.now() });
-          toast("Walk finish saved on this device.");
+      case "finish-walk":
+        closeDialog();
+        await finishWalk();
+        break;
+      case "start-sleep":
+        closeDialog();
+        await log("sleep");
+        break;
+      case "end-sleep": {
+        closeDialog();
+        const e = facts().find(
+          (e) => ["nap", "slumber"].includes(e.type) && active(e),
+        );
+        if (e) await endSleep(e);
+        break;
+      }
+      case "photo":
+        editForm("moment");
+        break;
+      case "earlier":
+        earlierSheet();
+        break;
+      case "also-done":
+        try {
+          localStorage.setItem("winnie:also-done", dayKey(Date.now()));
+        } catch {}
+        render();
+        break;
+      case "sync-now":
+        closeDialog();
+        await sync.flush();
+        break;
+      case "join-code": {
+        b.disabled = true;
+        try {
+          const { code, expires } = await sync.createJoinCode();
+          openDialog(
+            `<h2 id="dialog-title">Add a device</h2><p>On the new phone, open Winnie and enter this code.</p><p class="join-code">${esc(code)}</p><p class="fine">Works once, until ${clock(expires)}.</p><button class="px btn" data-act="close">Done</button>`,
+          );
+        } finally {
+          b.disabled = false;
         }
         break;
       }
@@ -1552,7 +1968,7 @@ document.addEventListener(
       }
       case "invite":
         openDialog(
-          `<h2 id="dialog-title">Connect another device</h2><p class="fine">Open Winnie on the other device and enter this shared code. Choose the person using that device.</p><input readonly aria-label="Shared code" value="${esc(sync.session.code)}"><p class="fine">Keep this code within your family.</p>`,
+          `<h2 id="dialog-title">Shared code</h2><p class="fine">The long code still works for joining. A join code from Add a device is shorter and expires.</p><input readonly aria-label="Shared code" value="${esc(sync.session.code)}"><p class="fine">Anyone with this code can join your log. Only share it with people who should see the log.</p>`,
         );
         break;
       case "reconnect":
@@ -1690,19 +2106,44 @@ $("trainer-import").onchange = safe(async (ev) => {
   });
 });
 
-function reactWinnie() {
-  companion.celebrate();
-}
+
 function renderPatterns() {
   insightData = rhythmInsights(facts(), patternDays);
   $("story-count").textContent = "";
   $("load-more").hidden = true;
-  html("story-items", insightsView(insightData, insightTopic));
+  html("story-items", countsHTML(facts()) + insightsView(insightData, insightTopic));
   $("pattern-window").onchange = (e) => {
     patternDays = Number(e.target.value);
     renderPatterns();
     $("pattern-window").focus();
   };
+}
+function countsHTML(events) {
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - 13 + i);
+    return dayKey(d.getTime());
+  });
+  const rows = days.map((k) => {
+    const day = events.filter((e) => dayKey(e.time) === k);
+    return [
+      k,
+      day.filter((e) => e.type === "pee").length,
+      day.filter((e) => e.type === "poop").length,
+    ];
+  });
+  const max = Math.max(1, ...rows.map(([, p, q]) => p + q)),
+    logged = rows.filter(([, p, q]) => p + q),
+    avg = (n) =>
+      logged.length
+        ? (logged.reduce((s, r) => s + r[n], 0) / logged.length).toFixed(1)
+        : "0";
+  const short = (k) =>
+    new Date(k + "T12:00").toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+    });
+  return `<section class="rhythm-answer"><h3>Pee and poop, last 14 days</h3><div class="counts" role="img" aria-label="${rows.map(([k, p, q]) => `${short(k)}: ${p} pee, ${q} poop`).join("; ")}">${rows.map(([, p, q]) => `<span class="day">${p ? `<span class="seg-pee" style="height:${(p / max) * 100}%"></span>` : ""}${q ? `<span class="seg-poop" style="height:${(q / max) * 100}%"></span>` : ""}</span>`).join("")}</div><div class="rhythm-axis"><span>${short(days[0])}</span><span>Today</span></div><div class="legend"><span><i style="background:var(--pee)"></i>Pee</span><span><i style="background:var(--poop)"></i>Poop</span><span>On days with logs: ${avg(1)} pee, ${avg(2)} poop</span></div></section>`;
 }
 function showEvidence(key, more = false) {
   evidenceKey = key;
