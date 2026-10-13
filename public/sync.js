@@ -31,19 +31,41 @@ export function legacyMatches(old, shared) {
     )
   );
 }
+// The shared snapshot with this device's pending changes applied. Copy-on-write: only
+// events touched by a pending change are cloned, so the input is never mutated.
 export function project(data) {
-  const snap = structuredClone(data.snapshot);
+  const base = data.snapshot;
+  const snap = {
+    ...base,
+    events: base.events.slice(),
+    profile: structuredClone(base.profile),
+  };
+  const index = new Map(snap.events.map((e, i) => [e.id, i]));
+  const owned = new Set();
+  const writable = (id) => {
+    const i = index.get(id);
+    if (i === undefined) return undefined;
+    if (!owned.has(i)) {
+      snap.events[i] = structuredClone(snap.events[i]);
+      owned.add(i);
+    }
+    return snap.events[i];
+  };
   for (const item of data.queue) {
-    const c = item.command,
-      e = snap.events.find((e) => e.id === c.eventId);
+    const c = item.command;
     if (item.error) continue;
+    const e = ["create", "recover", "profile"].includes(c.kind)
+      ? index.has(c.eventId)
+      : writable(c.eventId);
     if (c.kind === "profile") {
       Object.assign(snap.profile, c.payload);
       snap.profile.revision++;
       continue;
     }
     if (["create", "recover"].includes(c.kind)) {
-      if (!e)
+      if (!e) {
+        index.set(c.eventId, snap.events.length);
+        owned.add(snap.events.length);
         snap.events.push({
           ...c.payload,
           id: c.eventId,
@@ -52,6 +74,7 @@ export function project(data) {
           photos: [],
           pending: true,
         });
+      }
     } else if (e) {
       if (c.kind === "react") {
         e.reactions ||= {};
@@ -277,8 +300,13 @@ export class WinnieSync extends EventTarget {
     navigator.storage?.persist?.().catch(() => {});
     this.flush();
   }
+  // Cached until the data changes; every write replaces this.data with a new object.
   view() {
-    return project(this.data);
+    if (this.viewOf !== this.data) {
+      this.viewOf = this.data;
+      this.viewCache = project(this.data);
+    }
+    return this.viewCache;
   }
   async enqueue(kind, eventId, payload = {}, baseRevision) {
     let id;

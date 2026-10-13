@@ -7,7 +7,7 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "dev": "node scripts/dev.mjs",
-    "check": "node --check public/app.js && node --check public/sync.js && node --check public/sw.js",
+    "check": "node scripts/check.mjs",
     "test:e2e": "playwright test",
     "dev:large": "WINNIE_DEV_SEED=large node scripts/dev.mjs"
   },

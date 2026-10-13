@@ -1,0 +1,20 @@
+// Mutable state shared across modules.
+export const state = {
+  insightTopic: "poop",
+  evidenceKey: null,
+  tab: "today",
+  filter: "moments",
+  limit: 60,
+  quickPhotoId: null,
+  photoTarget: null,
+  lastUndo: null,
+  actionLock: 0,
+  lastLogType: null,
+  formPhotos: [],
+  formType: null,
+  detailId: null,
+  dialogReturn: null,
+  freshEntry: null,
+  longPressed: false,
+  early: { type: "pee", ago: 15 },
+};

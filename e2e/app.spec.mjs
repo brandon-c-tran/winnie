@@ -133,6 +133,15 @@ test("History searches and Trends draws the 14-day chart", async ({
   );
 });
 
+test("All entries in Trends opens the full History log", async ({ page }, info) => {
+  await join(page, code(info));
+  await page.locator("#history-tab").click();
+  await page.locator('[data-history="patterns"]').click();
+  await page.locator('[data-act="all-history"]').click();
+  await expect(page.locator('[data-history="care"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#story-count")).toContainText("entries");
+});
+
 test("sheets close by tapping outside them", async ({ page }, info) => {
   await join(page, code(info));
   await page.locator('[data-act="more"]').click();
