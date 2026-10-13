@@ -1235,7 +1235,7 @@ details > summary {
 }
 .care-repeat {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 .saved-notes {
@@ -1776,13 +1776,227 @@ form {
   gap: 14px;
 }
 label {
+  min-width: 0;
   display: grid;
   gap: 5px;
   font: 600 14px var(--px);
 }
+
+/* Persistent care and the practical Plans lists share one quiet row rhythm. */
+.routine-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 20px;
+}
+.routine-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 0;
+  border-top: 1px solid var(--line);
+}
+.routine-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  font-size: 14px;
+}
+.routine-copy > span,
+.routine-last {
+  font: 400 12px/1.3 var(--ui);
+  color: var(--muted);
+}
+.routine-last {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 26px;
+}
+.routine-done {
+  appearance: none;
+  min-height: 44px;
+  padding: 6px 4px;
+  background: none;
+  border: 0;
+  color: var(--text);
+  font: 600 14px var(--px);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.plans-section {
+  margin: 28px 0;
+}
+#plans-view > .plans-section {
+  padding: 0 var(--gut);
+}
+.supply-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.supply-row h3 {
+  font: 600 17px var(--ui);
+  margin: 0 0 5px;
+}
+.stock-status {
+  display: block;
+  font-size: 14px;
+  color: var(--muted);
+}
+.stock-status.low {
+  color: var(--text);
+  font-weight: 600;
+}
+.supply-dose {
+  display: block;
+  text-align: left;
+  margin-top: 7px;
+}
+.supply-actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+.stock-options {
+  margin: 22px 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.stock-options legend {
+  margin-bottom: 10px;
+  font: 600 16px var(--px);
+}
+.stock-options label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 48px;
+  padding: 10px;
+  border: 2px solid var(--line);
+  font: 400 14px var(--ui);
+}
+.stock-options label:has(:checked) {
+  border-color: var(--edge);
+  background: var(--sunk);
+}
+.stock-options input {
+  accent-color: var(--ink);
+}
+#plans-view .pantry {
+  border: 0;
+  padding: 0;
+  margin-top: 24px;
+  background: none;
+}
+#plans-view .pantry .card-head h2 {
+  font: 600 17px var(--ui);
+}
+.training-date {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  width: 44px;
+  text-align: center;
+  color: var(--muted);
+  font: 600 14px var(--px);
+}
+.training-date b {
+  font-size: 26px;
+  color: var(--text);
+}
+.scheduled-visit {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 16px;
+  padding: 18px 0;
+}
+.visit-main {
+  display: grid;
+  gap: 5px;
+  justify-items: start;
+}
+.visit-main p {
+  margin: 0;
+}
+.visit-state {
+  font-size: 12px;
+  color: var(--muted);
+}
+.plan-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 22px 3px;
+}
+.plan-presets button {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  padding: 14px;
+  min-height: 56px;
+}
+.care-plan-list {
+  gap: 0;
+}
+.care-plan-row {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+  background: none;
+}
+.care-plan-body p {
+  margin-top: 4px;
+}
+.care-plan-cadence {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.plan-date {
+  min-height: 48px;
+}
+input[type="date"],
+input[type="datetime-local"] {
+  display: block;
+  min-inline-size: 0;
+}
+input::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.25em;
+}
+@media (max-width: 370px) {
+  .routine-list {
+    column-gap: 12px;
+  }
+  .routine-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px;
+  }
+  .routine-row > .ic {
+    display: none;
+  }
+  .routine-done {
+    font-size: 13px;
+  }
+}
 input:not([type="radio"]):not([type="checkbox"]),
 select,
 textarea {
+  min-width: 0;
+  max-width: 100%;
   font: 400 16px var(--ui);
   width: 100%;
   padding: 10px 11px;

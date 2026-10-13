@@ -9,7 +9,7 @@ test("concise records preserve full notes, place, tags and separate care attribu
     "After the afternoon walk. " +
     "An extra detail from the original record. ".repeat(8);
   await page.evaluate(async (note) => {
-    const { sync } = await import("/app/services.js?v=4.8");
+    const { sync } = await import("/app/services.js?v=4.9");
     await sync.enqueue("create", crypto.randomUUID(), {
       type: "poop",
       time: Date.now() - 60000,

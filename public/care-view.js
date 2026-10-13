@@ -4,7 +4,8 @@ import {
   planState,
   completionId,
   validateCarePlans,
-} from "./care-plans.js?v=4.8";
+} from "./care-plans.js?v=4.9";
+import { ROUTINE } from "./routine.js?v=4.9";
 import { icon } from "./icons.js?v=4.0";
 
 export function createCare({
@@ -18,7 +19,6 @@ export function createCare({
   safe,
   detail,
   celebrate,
-  contextHTML = () => "",
   attachLocation = () => {},
 }) {
   const $ = (id) => document.getElementById(id);
@@ -38,17 +38,17 @@ export function createCare({
       ? "Completed"
       : s.today
         ? "Due today"
-        : `${s.overdue ? "Overdue · " : ""}${date(s.due)}`;
+        : `${s.overdue ? "Due " : ""}${date(s.due)}`;
   function row(s, compact = false) {
     const p = s.plan;
-    return `<article class="care-plan-row ${s.overdue ? "overdue" : ""} ${compact ? "compact" : ""}"><span class="care-plan-icon" aria-hidden="true">${icon(p.type === "medication" ? "pill" : p.type === "appointment" ? "vet" : p.type === "grooming" ? "bath" : p.type === "enrichment" ? "star" : "check", "ic sm")}</span><div class="care-plan-body"><button class="care-plan-title" data-care-action="open" data-plan="${esc(p.id)}">${esc(p.title)}</button><p>${s.paused ? "Paused" : dueText(s)}${!compact ? " · " + cadence(p) : ""}</p>${s.claimedBy && !s.paused ? `<span class="care-owner"><img class="face xs" src="/photos/${s.claimedBy}-pixel.png" alt="" aria-hidden="true">${esc(person(s.claimedBy))} has it</span>` : ""}</div>${!p.paused && s.due ? `<button class="${compact ? "fridge-done" : "secondary small"}" data-care-action="complete" data-plan="${esc(p.id)}">Done</button>` : ""}</article>`;
+    return `<article class="care-plan-row ${s.overdue ? "overdue" : ""} ${compact ? "compact" : ""}"><span class="care-plan-icon" aria-hidden="true">${icon(p.type === "medication" ? "pill" : p.type === "appointment" ? "vet" : p.type === "grooming" ? "bath" : p.type === "enrichment" ? "star" : "check", "ic sm")}</span><div class="care-plan-body"><button class="care-plan-title" data-care-action="open" data-plan="${esc(p.id)}">${esc(p.title)}</button><p>${s.paused ? "Paused" : dueText(s)}</p>${!compact ? `<span class="care-plan-cadence">${cadence(p)}</span>` : ""}${s.claimedBy && !s.paused ? `<span class="care-owner"><img class="face xs" src="/photos/${s.claimedBy}-pixel.png" alt="" aria-hidden="true">${esc(person(s.claimedBy))} has it</span>` : ""}</div>${!p.paused && s.due ? `<button class="${compact ? "fridge-done" : "secondary small"}" data-care-action="complete" data-plan="${esc(p.id)}">Done</button>` : ""}</article>`;
   }
   let lastContent = "";
   function render() {
     const all = states(),
       active = all.filter((s) => !s.paused && s.due),
       inactive = all.filter((s) => s.paused || !s.due);
-    const content = `<div class="section-heading"><h2>Upcoming</h2></div>${active.length ? `<div class="care-plan-list">${active.map((s) => row(s)).join("")}</div>` : '<div class="care-plan-empty"><h3>Nothing planned.</h3><p>A plan like Bath every 3 weeks shows up on Today when it is due. Tap Done to log it.</p><button class="px btn ink" data-care-action="new">Add plan</button></div>'}${contextHTML()}${inactive.length ? `<details class="care-inactive"><summary>Paused and finished (${inactive.length})</summary>${inactive.map((s) => row(s)).join("")}</details>` : ""}<div class="section-heading saved-notes"><h2>Notes</h2><button class="text-button" data-fridge="saved">Saved notes</button></div>`;
+    const content = `<section class="plans-section"><div class="section-heading"><h2>Reminders</h2><button class="text-button" data-care-action="new">Add reminder</button></div>${active.length ? `<div class="care-plan-list">${active.map((s) => row(s)).join("")}</div>` : '<p class="fine">No reminders set.</p>'}${inactive.length ? `<details class="care-inactive"><summary>Paused and finished (${inactive.length})</summary>${inactive.map((s) => row(s)).join("")}</details>` : ""}</section>`;
     if (content !== lastContent) {
       const expanded = root.querySelector(".care-inactive")?.open;
       lastContent = content;
@@ -70,37 +70,57 @@ export function createCare({
         "",
       )}${due.length > 2 ? `<button class="text-button" data-care-nav="upcoming">${due.length - 2} more due</button>` : ""}</div>`;
   }
-  function edit(id) {
+  function choosePlan() {
+    openDialog(
+      `<h2 id="dialog-title">Set a reminder</h2><div class="plan-presets"><button class="px" data-care-template="heartgard">${icon("pill")}Heartgard</button>${ROUTINE.map(([title, glyph]) => `<button class="px" data-care-template="${title}">${icon(glyph)}${title}</button>`).join("")}<button class="px" data-care-template="other">${icon("calendar")}Other reminder</button></div>`,
+    );
+  }
+  function edit(id, template = "other") {
     const profile = sync.view().profile,
       plans = structuredClone(profile.carePlans || []),
       old = plans.find((p) => p.id === id);
     const p = old || {
       id: crypto.randomUUID(),
-      title: "",
+      title:
+        template === "heartgard"
+          ? "Heartgard"
+          : template === "other"
+            ? ""
+            : template,
       instructions: "",
       start: careDay(),
       every: 1,
-      unit: "month",
-      type: "appointment",
+      unit: template === "heartgard" ? "month" : "once",
+      type:
+        template === "heartgard"
+          ? "medication"
+          : template === "other"
+            ? "appointment"
+            : "grooming",
       paused: false,
       claim: null,
     };
+    const custom =
+      !ROUTINE.some(([title]) => title === p.title) &&
+      !/^heartgard$/i.test(p.title);
     openDialog(
-      `<h2 id="dialog-title">${old ? "Edit plan" : "New plan"}</h2><form id="care-plan-form"><label>Name<input name="title" maxlength="200" required value="${esc(p.title)}" placeholder="Bath"></label><label>Logs as<select name="type">${[
-        ["grooming", "Grooming"],
-        ["appointment", "Appointment"],
-        ["medication", "Medication"],
-        ["enrichment", "Training"],
-        ["note", "Other care"],
-      ]
-        .map(
-          ([v, n]) =>
-            `<option value="${v}" ${p.type === v ? "selected" : ""}>${n}</option>`,
-        )
-        .join(
-          "",
-        )}</select></label><label>First due date<input name="start" type="date" value="${p.start}" required></label><div class="care-repeat"><label>Repeat every<input type="number" name="every" min="1" max="365" value="${p.every}" required></label><label>Frequency<select name="unit">${[
-        ["once", "Once"],
+      `<h2 id="dialog-title">${old ? "Edit reminder" : p.title || "New reminder"}</h2><form id="care-plan-form"><label>Name<input name="title" maxlength="200" required value="${esc(p.title)}" placeholder="Reminder name"></label>${
+        custom
+          ? `<label>Kind<select name="type">${[
+              ["grooming", "Grooming"],
+              ["appointment", "Appointment"],
+              ["medication", "Medication"],
+              ["enrichment", "Training"],
+              ["note", "Other care"],
+            ]
+              .map(
+                ([v, n]) =>
+                  `<option value="${v}" ${p.type === v ? "selected" : ""}>${n}</option>`,
+              )
+              .join("")}</select></label>`
+          : `<input type="hidden" name="type" value="${p.type}">`
+      }<label>${old ? "First scheduled date" : "Next due"}<input class="plan-date" name="start" type="date" value="${p.start}" required></label><div class="care-repeat"><label>Repeat<select name="unit">${[
+        ["once", "Does not repeat"],
         ["day", "Days"],
         ["week", "Weeks"],
         ["month", "Months"],
@@ -111,21 +131,17 @@ export function createCare({
         )
         .join(
           "",
-        )}</select></label></div><label>Details <span class="fine">(optional)</span><textarea name="instructions" maxlength="2000" placeholder="Optional">${esc(p.instructions)}</textarea></label><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary">Save care</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+        )}</select></label><label id="repeat-every">Every<input type="number" inputmode="numeric" name="every" min="1" max="365" value="${p.every}" required></label></div><label>Notes <span class="fine">Optional</span><textarea name="instructions" maxlength="2000">${esc(p.instructions)}</textarea></label><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary">Save reminder</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
     );
     const form = $("care-plan-form"),
       state = old && planState(old, sync.view().events);
     if (state?.done) {
       form.elements.start.disabled = true;
-      form.elements.start
-        .closest("label")
-        .insertAdjacentHTML(
-          "beforeend",
-          "",
-        );
+      form.elements.start.closest("label").insertAdjacentHTML("beforeend", "");
     }
     const repeat = () => {
       form.elements.every.disabled = form.elements.unit.value === "once";
+      $("repeat-every").hidden = form.elements.unit.value === "once";
     };
     repeat();
     form.elements.unit.onchange = repeat;
@@ -154,7 +170,7 @@ export function createCare({
           profile.revision,
         );
         closeDialog();
-        toast("Plan saved");
+        toast("Reminder saved");
       } finally {
         button.disabled = false;
       }
@@ -165,7 +181,7 @@ export function createCare({
     if (!s) return;
     const p = s.plan;
     openDialog(
-      `<h2 id="dialog-title">${esc(p.title)}</h2><p class="care-detail-due">${s.paused ? "Paused" : dueText(s)}</p><p class="fine">${cadence(p)} · San Francisco dates</p>${p.instructions ? `<p class="detail-notes">${esc(p.instructions)}</p>` : ""}${s.done ? `<button class="care-last-done" data-open="${esc(s.done.id)}">Last done ${date(careDay(s.done.time))} · ${esc(person(s.done.loggedBy))}</button>` : ""}${s.claimedBy ? `<p>${esc(person(s.claimedBy))} has it this time.</p>` : ""}<div class="button-row">${!s.paused && s.due ? `<button class="primary" data-care-action="complete" data-plan="${esc(id)}">Done</button>${!s.claimedBy ? `<button class="secondary" data-care-action="claim" data-plan="${esc(id)}">I'll do it</button>` : s.claimedBy === sync.session.person ? `<button class="secondary" data-care-action="release" data-plan="${esc(id)}">Unclaim</button>` : ""}` : ""}<button class="text-button" data-care-action="edit" data-plan="${esc(id)}">Edit</button><button class="text-button" data-care-action="pause" data-plan="${esc(id)}">${s.paused ? "Resume" : "Pause"}</button></div><p id="form-error" class="error" role="alert"></p>`,
+      `<h2 id="dialog-title">${esc(p.title)}</h2><p class="care-detail-due">${s.paused ? "Paused" : dueText(s)}</p><p class="fine">${cadence(p)}</p>${p.instructions ? `<p class="detail-notes">${esc(p.instructions)}</p>` : ""}${s.done ? `<button class="care-last-done" data-open="${esc(s.done.id)}">Last done ${date(careDay(s.done.time))}</button><p class="fine">${esc(person(s.done.loggedBy))}</p>` : ""}${s.claimedBy ? `<p>${esc(person(s.claimedBy))} has it this time.</p>` : ""}<div class="button-row">${!s.paused && s.due ? `<button class="primary" data-care-action="complete" data-plan="${esc(id)}">Done</button>${!s.claimedBy ? `<button class="secondary" data-care-action="claim" data-plan="${esc(id)}">I'll do it</button>` : s.claimedBy === sync.session.person ? `<button class="secondary" data-care-action="release" data-plan="${esc(id)}">Unclaim</button>` : ""}` : ""}<button class="text-button" data-care-action="edit" data-plan="${esc(id)}">Edit</button><button class="text-button" data-care-action="pause" data-plan="${esc(id)}">${s.paused ? "Resume" : "Pause"}</button></div><p id="form-error" class="error" role="alert"></p>`,
     );
   }
   async function update(id, action) {
@@ -230,13 +246,17 @@ export function createCare({
     });
   }
   document.addEventListener("click", (ev) => {
+    const preset = ev.target.closest("[data-care-template]");
+    if (preset) return edit(null, preset.dataset.careTemplate);
     const b = ev.target.closest("[data-care-action]");
     if (!b) return;
     safe(async () => {
       const action = b.dataset.careAction,
         id = b.dataset.plan;
-      if (action === "new") edit();
-      else if (action === "edit") edit(id);
+      if (action === "new") {
+        if (b.dataset.template) edit(null, b.dataset.template);
+        else choosePlan();
+      } else if (action === "edit") edit(id);
       else if (action === "open") open(id);
       else if (action === "complete") complete(id);
       else {

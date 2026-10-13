@@ -1,18 +1,17 @@
 // Long-lived services: the shared log, the room, plans, notes, places, location.
-import { createCare } from "../care-view.js?v=4.8";
-import { createPlacesView } from "../places-view.js?v=4.8";
-import { createFridge } from "../fridge.js?v=4.8";
-import { createAutoPlace } from "../auto-place.js?v=4.8";
-import { createRoom } from "../room.js?v=4.8";
-import { WinnieSync } from "../sync.js?v=4.8";
-import { $, esc, person } from "./format.js?v=4.8";
-import { detail, entry, hydratePhotos } from "./entries.js?v=4.8";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.8";
-import { visitRow } from "./trainer.js?v=4.8";
-import { editForm } from "./forms.js?v=4.8";
-import { log } from "./logging.js?v=4.8";
-import { roomObject } from "./today.js?v=4.8";
-import { pantryNextHTML } from "./pantry-view.js?v=4.8";
+import { createCare } from "../care-view.js?v=4.9";
+import { createPlacesView } from "../places-view.js?v=4.9";
+import { createFridge } from "../fridge.js?v=4.9";
+import { createAutoPlace } from "../auto-place.js?v=4.9";
+import { createRoom } from "../room.js?v=4.9";
+import { WinnieSync } from "../sync.js?v=4.9";
+import { $, esc, person } from "./format.js?v=4.9";
+import { detail, entry, hydratePhotos } from "./entries.js?v=4.9";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.9";
+import { editForm } from "./forms.js?v=4.9";
+import { log } from "./logging.js?v=4.9";
+import { roomObject } from "./today.js?v=4.9";
+import { pantryNextHTML } from "./pantry-view.js?v=4.9";
 
 export const sync = new WinnieSync();
 export const places = createPlacesView({
@@ -31,21 +30,6 @@ export const care = createCare({
   toast,
   safe,
   detail,
-  contextHTML: () => {
-    const visits = (sync.view().profile.trainerSchedule?.visits || [])
-      .filter((v) => v.end >= Date.now() - 86400000)
-      .sort((a, b) => a.start - b.start)
-      .slice(0, 3);
-    const recent = facts()
-      .filter((e) =>
-        ["medication", "appointment", "enrichment", "covered_gap"].includes(
-          e.type,
-        ),
-      )
-      .sort((a, b) => b.time - a.time)
-      .slice(0, 3);
-    return `<section class="care-overview-section"><div class="section-heading"><h3>Trainer visits</h3><button class="text-button" data-act="trainer-schedule">Schedule</button></div>${visits.map((v) => visitRow(v)).join("") || '<p class="fine">No visits coming up.</p>'}</section><section class="care-overview-section"><div class="section-heading"><h3>Recent care</h3><button class="text-button" data-care-nav="care">History</button></div>${recent.map((e) => entry(e)).join("") || '<p class="fine">Nothing yet.</p>'}<button class="px btn" data-act="more">Log care</button></section>`;
-  },
   celebrate: () => room.react("done"),
   attachLocation: (id) => {
     void autoPlace.attach(id);

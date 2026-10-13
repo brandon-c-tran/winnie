@@ -1,10 +1,10 @@
 // Food on hand: the Food section in Plans, "Order food" in Up next, restocking and editing.
-import { pantryState, emptyPantry, lastEaten } from "../pantry.js?v=4.8";
+import { pantryState, emptyPantry, lastEaten } from "../pantry.js?v=4.9";
 import { icon } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.8";
-import { $, esc, face, person } from "./format.js?v=4.8";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.8";
-import { render } from "./today.js?v=4.8";
+import { facts, sync } from "./services.js?v=4.9";
+import { $, esc, face, person } from "./format.js?v=4.9";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.9";
+import { render } from "./today.js?v=4.9";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -37,7 +37,7 @@ export function pantryHTML() {
   const rows = s.foods
     .map((f) => {
       const pct = Math.min(100, (f.left / Math.max(f.perPackage, f.left || 1)) * 100);
-      return `<div class="food-row"><span class="sq" style="--c:var(--meal)">${icon("meal", "ic sm")}</span><div class="food-main"><b>${esc(f.name)}</b><small>${meals(f.left)} · ${ago(lastEaten(f.name, facts()))}</small><span class="meter${s.low && f.left < f.perPackage ? " low" : ""}" aria-hidden="true"><i style="width:${pct.toFixed(0)}%"></i></span></div><span class="food-acts">${f.link ? `<a class="px btn" href="${esc(f.link)}" target="_blank" rel="noopener">Reorder</a>` : ""}<button class="px btn" data-pantry="restock" data-id="${esc(f.id)}" aria-label="Add a bag of ${esc(f.name)}">+ Bag</button><button class="text-button" data-pantry="edit" data-id="${esc(f.id)}">Edit</button></span></div>`;
+      return `<div class="food-row"><span class="sq" style="--c:var(--meal)">${icon("meal", "ic sm")}</span><div class="food-main"><b>${esc(f.name)}</b><small>${meals(f.left)} left</small><small>${ago(lastEaten(f.name, facts()))}</small><span class="meter${s.low && f.left < f.perPackage ? " low" : ""}" aria-hidden="true"><i style="width:${pct.toFixed(0)}%"></i></span></div><span class="food-acts">${f.link ? `<a class="px btn" href="${esc(f.link)}" target="_blank" rel="noopener">Reorder</a>` : ""}<button class="px btn" data-pantry="restock" data-id="${esc(f.id)}" aria-label="Add a bag of ${esc(f.name)}">+ Bag</button><button class="text-button" data-pantry="edit" data-id="${esc(f.id)}">Edit</button></span></div>`;
     })
     .join("");
   return `<section class="card pantry" aria-labelledby="pantry-title"><div class="card-head"><h2 id="pantry-title">Food</h2><span class="muted">${s.daysLeft === null ? "" : days(s.daysLeft) + " left"}</span></div>${rows}<div class="button-row"><button class="px btn" data-pantry="new">Add food</button><button class="text-button" data-pantry="lead">Delivery: ${s.leadDays} ${s.leadDays === 1 ? "day" : "days"}</button></div></section>`;
