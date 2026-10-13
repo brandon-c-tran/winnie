@@ -1,4 +1,4 @@
-import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=3.10";
+import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=4.3";
 import { icon } from "./icons.js?v=4.0";
 
 export function createFridge({
@@ -24,12 +24,7 @@ export function createFridge({
     new Date(t).toLocaleDateString([], { month: "short", day: "numeric" });
   const time = (t) =>
     new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  const magnet = (who) =>
-    `<span class="fridge-magnet ${who || "heart"}" aria-hidden="true">${who ? (who === "kim" ? "K" : "B") : "♥"}</span>`;
   const notes = () => fridgeState(sync.view().profile);
-  const portrait = ["localhost", "127.0.0.1"].includes(location.hostname)
-    ? "/photos/winnie-smile.png"
-    : "/.netlify/images?url=/photos/winnie-smile.png&w=480&fm=webp&q=85";
   const store = async (fridge, revision, extra = {}) => {
     if (fridge.notes.length > 200)
       throw Error(
@@ -68,13 +63,6 @@ export function createFridge({
       saved = b.notes.filter((n) => !onFridge(n)),
       n = p.nextCare;
     const events = sync.view().events.filter((e) => !e.deletedAt);
-    const photoEvent =
-      b.photo &&
-      events.find(
-        (e) =>
-          e.id === b.photo.eventId &&
-          e.photos?.some((x) => x.id === b.photo.photoId),
-      );
     const visits =
       p.trainerSchedule?.visits
         .filter(
@@ -99,7 +87,7 @@ export function createFridge({
     const visitRow = visits[0]
       ? `<div class="row"><span class="sq" style="--c:var(--care)">${icon("star", "ic sm")}</span><div><b>${esc(visits[0].title)}</b><small>${visitConfirmed ? "Confirmed" : "Planned"} · ${time(visits[0].start)}</small></div><button class="text-button" data-act="trainer-schedule">Open</button></div>`
       : "";
-    const nextContent = `<div class="card-head"><h2 id="up-next-title">Up next</h2><button class="text-button small" data-care-nav="upcoming">All plans</button></div>${due}${nextRow}${visitRow}${!due && !nextRow && !visitRow ? '<div class="row"><span class="sq">' + icon("plans", "ic sm") + '</span><div><b>Nothing planned</b><small>Recurring care like baths shows up here when it\'s due.</small></div><button class="px btn" data-care-action="new">Add plan</button></div>' : ""}`;
+    const nextContent = `<div class="card-head"><h2 id="up-next-title">Up next</h2><button class="text-button small" data-care-nav="upcoming">All plans</button></div>${due}${nextRow}${visitRow}${!due && !nextRow && !visitRow ? '<div class="row"><span class="sq">' + icon("plans", "ic sm") + '</span><div><b>Nothing planned</b></div><button class="px btn" data-care-action="new">Add plan</button></div>' : ""}`;
     if (nextRoot && nextContent !== lastNext) {
       lastNext = nextContent;
       nextRoot.innerHTML = nextContent;
@@ -124,7 +112,7 @@ export function createFridge({
       return;
     }
     openDialog(
-      `<h2 id="dialog-title">${note ? "Note" : "New note"}</h2><form id="fridge-note-form" class="note-editor"><label>Your note<textarea name="text" maxlength="2000" required placeholder="Anything the other person should know?">${esc(note?.text || "")}</textarea></label><label>Keep it up<select name="until"><option value="">Until we take it down</option><option value="today" ${note?.until ? "selected" : ""}>Just for today</option></select></label><fieldset class="paper-colors"><legend>Paper</legend><label><input type="radio" name="color" value="yellow" ${note?.color !== "rose" ? "checked" : ""}>Butter yellow</label><label><input type="radio" name="color" value="rose" ${note?.color === "rose" ? "checked" : ""}>Blush pink</label></fieldset><p class="fine">Today ends at midnight in San Francisco. Notes then move to Saved.</p><div class="button-row"><button class="primary">Pin note</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
+      `<h2 id="dialog-title">${note ? "Note" : "New note"}</h2><form id="fridge-note-form" class="note-editor"><label>Your note<textarea name="text" maxlength="2000" required placeholder="Anything the other person should know?">${esc(note?.text || "")}</textarea></label><label>Keep it up<select name="until"><option value="">Until we take it down</option><option value="today" ${note?.until ? "selected" : ""}>Just for today</option></select></label><fieldset class="paper-colors"><legend>Paper</legend><label><input type="radio" name="color" value="yellow" ${note?.color !== "rose" ? "checked" : ""}>Butter yellow</label><label><input type="radio" name="color" value="rose" ${note?.color === "rose" ? "checked" : ""}>Blush pink</label></fieldset><div class="button-row"><button class="primary">Pin note</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
     );
     $("fridge-note-form").onsubmit = safe(async (ev) => {
       ev.preventDefault();
@@ -192,7 +180,7 @@ export function createFridge({
       .notes.filter((n) => !onFridge(n))
       .reverse();
     openDialog(
-      `<h2 id="dialog-title">Saved notes</h2><p class="fine">Notes you took down and finished plans.</p><div class="fridge-saved">${list.map((n) => `<article class="saved-paper ${n.color}"><p class="detail-notes">${esc(n.text)}</p><small>${n.by ? esc(person(n.by)) + " · " : ""}${n.createdAt ? day(n.createdAt) : "Earlier note"}</small><button class="text-button" data-fridge="restore" data-id="${esc(n.id)}">Pin again ↗</button></article>`).join("") || "<p>No notes put away yet.</p>"}</div><p id="form-error" class="error" role="alert"></p>`,
+      `<h2 id="dialog-title">Saved notes</h2><div class="fridge-saved">${list.map((n) => `<article class="saved-paper ${n.color}"><p class="detail-notes">${esc(n.text)}</p><small>${n.by ? esc(person(n.by)) + " · " : ""}${n.createdAt ? day(n.createdAt) : "Earlier note"}</small><button class="text-button" data-fridge="restore" data-id="${esc(n.id)}">Pin again ↗</button></article>`).join("") || "<p>No notes put away yet.</p>"}</div><p id="form-error" class="error" role="alert"></p>`,
     );
   }
   function photoPicker() {
@@ -204,7 +192,7 @@ export function createFridge({
       items = events.flatMap((e) => e.photos.map((photo) => ({ e, photo })));
     selected = { profile: p, items, shown: 0 };
     openDialog(
-      `<h2 id="dialog-title">Photo on his wall</h2><p class="fine">It shows as pixel art in his room.</p><div id="fridge-photo-options" class="fridge-photo-options"></div><button class="text-button" data-fridge="more-photos" id="fridge-more-photos">More photos</button>${!items.length ? "<p>No saved photos yet. Add a photo to a moment or care entry first.</p>" : ""}<button class="secondary small" data-fridge="default-photo">Use Winnie’s portrait</button><p id="form-error" class="error" role="alert"></p>`,
+      `<h2 id="dialog-title">Photo on his wall</h2><div id="fridge-photo-options" class="fridge-photo-options"></div><button class="text-button" data-fridge="more-photos" id="fridge-more-photos">More photos</button>${!items.length ? "<p>No saved photos yet. Add a photo to a moment or care entry first.</p>" : ""}<button class="secondary small" data-fridge="default-photo">Use Winnie’s portrait</button><p id="form-error" class="error" role="alert"></p>`,
     );
     morePhotos();
   }
@@ -230,7 +218,7 @@ export function createFridge({
       n = p.nextCare;
     if (!n) return;
     openDialog(
-      `<h2 id="dialog-title">${esc(n.label)}: done</h2><p>The plan moves to Saved. You can log the care too.</p><form id="fridge-done-form"><label>Log care<select name="type"><option value="">Just put the plan away</option><option value="pee">Pee</option><option value="poop">Poop</option><option value="meal">Meal</option><option value="walk">Walk (enter times)</option><option value="covered_gap">Trainer visit (enter times)</option></select></label><p class="fine">Choose a care type only if it happened just now.</p><div class="button-row"><button class="primary">Done</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
+      `<h2 id="dialog-title">${esc(n.label)}: done</h2><p>The plan moves to Saved. You can log the care too.</p><form id="fridge-done-form"><label>Also log, as of now<select name="type"><option value="">Nothing</option><option value="pee">Pee</option><option value="poop">Poop</option><option value="meal">Meal</option><option value="walk">Walk (enter times)</option><option value="covered_gap">Trainer visit (enter times)</option></select></label><div class="button-row"><button class="primary">Done</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
     );
     $("fridge-done-form").onsubmit = safe(async (ev) => {
       ev.preventDefault();

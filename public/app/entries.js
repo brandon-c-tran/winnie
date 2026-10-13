@@ -1,12 +1,12 @@
 // Entry rows, reactions, the entry detail sheet, and photo loading.
-import { placeLabel } from "../places.js?v=3.10";
+import { placeLabel } from "../places.js?v=4.3";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { photoCaption } from "../everyday.js?v=3.10";
-import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.2";
-import { TYPES, clock, dateLabel, esc, person } from "./format.js?v=4.2";
-import { openDialog, safe, toast } from "./ui.js?v=4.2";
-import { placeSummary } from "./forms.js?v=4.2";
-import { state } from "./state.js?v=4.2";
+import { photoCaption } from "../everyday.js?v=4.3";
+import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.3";
+import { TYPES, clock, dateLabel, esc, person } from "./format.js?v=4.3";
+import { openDialog, safe, toast } from "./ui.js?v=4.3";
+import { placeSummary } from "./forms.js?v=4.3";
+import { state } from "./state.js?v=4.3";
 
 let reactionPickerId = null;
 const reactionEmojis = ["❤️", "😂", "👏"];

@@ -7,9 +7,10 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "dev": "node scripts/dev.mjs",
-    "check": "node scripts/check.mjs",
+    "check": "node scripts/check.mjs && eslint .",
     "test:e2e": "playwright test",
-    "dev:large": "WINNIE_DEV_SEED=large node scripts/dev.mjs"
+    "dev:large": "WINNIE_DEV_SEED=large node scripts/dev.mjs",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@netlify/blobs": "11.0.3",
@@ -18,7 +19,9 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
+    "eslint": "^9.13.0",
     "fake-indexeddb": "6.2.5",
+    "globals": "^15.11.0",
     "prettier": "3.9.6"
   }
 }

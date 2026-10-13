@@ -1,13 +1,16 @@
 // Today: the room's state, the log buttons, Also today, the day strip, and partner greetings.
-import { careStates, careDay } from "../care-plans.js?v=3.10";
-import { fridgeState, onFridge } from "../fridge-model.js?v=3.10";
-import { latestCare, elapsed } from "../care-state.js?v=3.10";
+import { careStates, careDay } from "../care-plans.js?v=4.3";
+import { fridgeState, onFridge } from "../fridge-model.js?v=4.3";
+import { latestCare, elapsed } from "../care-state.js?v=4.3";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
 import { getTimes } from "../vendor/suncalc.js";
-import { rhythmInsights, durationLabel } from "../insights.js?v=3.10";
-import { care, facts, fridge, room, sync } from "./services.js?v=4.2";
-import { setTab } from "./nav.js?v=4.2";
-import { finishWalk, log } from "./logging.js?v=4.2";
+import { weatherKind } from "../room.js?v=4.3";
+import { cachedWeather, refreshWeather, weatherWords } from "./weather.js?v=4.3";
+import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.3";
+import { rhythmInsights, durationLabel } from "../insights.js?v=4.3";
+import { care, facts, fridge, room, sync } from "./services.js?v=4.3";
+import { setTab, showPhotos } from "./nav.js?v=4.3";
+import { finishWalk, log } from "./logging.js?v=4.3";
 import {
   $,
   TYPES,
@@ -18,13 +21,14 @@ import {
   esc,
   person,
   when,
-} from "./format.js?v=4.2";
-import { html, toast } from "./ui.js?v=4.2";
-import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.2";
-import { legacyDiff } from "./settings.js?v=4.2";
-import { renderLastTimes, renderStory } from "./library.js?v=4.2";
-import { state } from "./state.js?v=4.2";
+} from "./format.js?v=4.3";
+import { html, toast } from "./ui.js?v=4.3";
+import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.3";
+import { legacyDiff } from "./settings.js?v=4.3";
+import { renderLastTimes, renderStory } from "./library.js?v=4.3";
+import { state } from "./state.js?v=4.3";
 
+let shownWeather = 0;
 let roomReady = false,
   wallKey = null;
 export function roomObject(what) {
@@ -40,11 +44,14 @@ export function roomObject(what) {
       ? finishWalk()
       : log("walk");
   if (what === "window") {
-    const t = getTimes(new Date(), 37.7749, -122.4194);
-    toast(
-      `Sunrise ${clock(+t.sunrise)}, sunset ${clock(+t.sunset)}. Sleep logs as a nap between them and as night sleep outside them.`,
-    );
+    const t = getTimes(new Date(), 37.7749, -122.4194),
+      w = cachedWeather(),
+      words = weatherWords(weatherKind(w), w);
+    toast(`${words ? words + " · " : ""}Sunrise ${clock(+t.sunrise)} · Sunset ${clock(+t.sunset)}`);
   }
+  if (what === "toy") return room.react("toy");
+  if (what === "ribbon") return toast("Canine Good Citizen");
+  if (what === "shelf") return showPhotos("memories");
 }
 function updateWall(profile) {
   const p = fridgeState(profile).photo,
@@ -177,10 +184,18 @@ export function render() {
       pending,
       error: errors.length > 0,
       due: dueToday(view),
+      weather: cachedWeather(),
+      trophies: Math.min(3, recentTrophies()),
     },
     { instant: !roomReady },
   );
   roomReady = true;
+  refreshWeather().then((w) => {
+    if (w && w.at !== shownWeather) {
+      shownWeather = w.at;
+      room.set({ weather: w });
+    }
+  });
   greetPartner(events);
   hydratePhotos();
   if (state.tab === "plans") care.render();
@@ -239,6 +254,7 @@ function renderToday(events, sleeping, walk) {
   );
   renderAlso(events);
   fridge.render();
+  onThisDayToday(events);
   renderDay(events);
 }
 function renderAlso(events) {
@@ -270,7 +286,7 @@ function renderAlso(events) {
       })
       .join(
         "",
-      )}</div><p class="fine">One tap logs it for today with an approximate time.</p>`,
+      )}</div>`,
   );
 }
 function renderDay(events) {

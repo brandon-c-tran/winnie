@@ -1,9 +1,9 @@
 // Delegated click handling for buttons rendered as HTML strings.
 // A button is matched by the first data attribute in BY_ATTRIBUTE it carries, otherwise by
 // its data-act name in ACTIONS. Handlers receive the button.
-import { sleepContext } from "../everyday.js?v=3.10";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.2";
-import { $, active, clock, dayKey, esc } from "./format.js?v=4.2";
+import { sleepContext } from "../everyday.js?v=4.3";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.3";
+import { $, active, clock, dayKey, esc } from "./format.js?v=4.3";
 import {
   earlierSheet,
   endSleep,
@@ -13,11 +13,11 @@ import {
   moreCare,
   saveEarlier,
   saveMeal,
-} from "./logging.js?v=4.2";
-import { editForm, nextCareForm, placePicker, plan } from "./forms.js?v=4.2";
-import { confirmVisit, trainerSchedule } from "./trainer.js?v=4.2";
-import { renderPatterns, showEvidence } from "./library.js?v=4.2";
-import { detail } from "./entries.js?v=4.2";
+} from "./logging.js?v=4.3";
+import { editForm, nextCareForm, placePicker, plan } from "./forms.js?v=4.3";
+import { confirmVisit, trainerSchedule } from "./trainer.js?v=4.3";
+import { renderPatterns, showEvidence } from "./library.js?v=4.3";
+import { detail } from "./entries.js?v=4.3";
 import {
   autoPlace,
   autoPlaceEnabled,
@@ -25,12 +25,13 @@ import {
   photoURLs,
   room,
   sync,
-} from "./services.js?v=4.2";
-import { choosePhoto, download } from "./photos.js?v=4.2";
-import { review, settings, updatePushStatus } from "./settings.js?v=4.2";
-import { openHistory } from "./nav.js?v=4.2";
-import { render } from "./today.js?v=4.2";
-import { state } from "./state.js?v=4.2";
+} from "./services.js?v=4.3";
+import { choosePhoto, download } from "./photos.js?v=4.3";
+import { review, settings, updatePushStatus } from "./settings.js?v=4.3";
+import { openHistory } from "./nav.js?v=4.3";
+import { render } from "./today.js?v=4.3";
+import { state } from "./state.js?v=4.3";
+import { postcard, setRecapYear } from "./memories-view.js?v=4.3";
 
 // Disable the button while an async handler runs, so a double tap can't repeat it.
 const busy = (fn) => async (b) => {
@@ -91,6 +92,7 @@ const BY_ATTRIBUTE = [
     busy((b) => saveMeal(b.dataset.food || "")),
   ],
   [(b) => has(b, "visit"), (b) => confirmVisit(b.dataset.visit)],
+  [(b) => has(b, "recapYear"), (b) => setRecapYear(Number(b.dataset.recapYear))],
   [
     (b) => has(b, "rhythm"),
     (b) => {
@@ -165,7 +167,7 @@ const BY_ATTRIBUTE = [
     (b) => {
       const id = esc(b.dataset.delete);
       openDialog(
-        `<h2 id="dialog-title">Remove this entry?</h2><p class="fine">You can undo this right after.</p><div class="button-row"><button class="primary" data-confirm-delete="${id}">Remove entry</button><button class="secondary" data-open="${id}">Keep it</button></div><p id="form-error" class="error"></p>`,
+        `<h2 id="dialog-title">Remove this entry?</h2><div class="button-row"><button class="primary" data-confirm-delete="${id}">Remove entry</button><button class="secondary" data-open="${id}">Keep it</button></div><p id="form-error" class="error"></p>`,
       );
     },
   ],
@@ -314,6 +316,8 @@ const ACTIONS = {
       await updatePushStatus();
     }
   },
+  "postcard-share": () => postcard(true),
+  "postcard-save": () => postcard(false),
   export: () => {
     const { home, token, person, ...shared } = sync.data.snapshot;
     download(
@@ -332,7 +336,7 @@ const ACTIONS = {
   },
   invite: () =>
     openDialog(
-      `<h2 id="dialog-title">Shared code</h2><p class="fine">The long code still works for joining. A join code from Add a device is shorter and expires.</p><input readonly aria-label="Shared code" value="${esc(sync.session.code)}"><p class="fine">Anyone with this code can join your log. Only share it with people who should see the log.</p>`,
+      `<h2 id="dialog-title">Shared code</h2><input readonly aria-label="Shared code" value="${esc(sync.session.code)}"><p class="fine">Anyone with this code can join the log.</p>`,
     ),
   reconnect: () => {
     if (sync.data.queue.length)

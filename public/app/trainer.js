@@ -1,12 +1,9 @@
 // Trainer visits imported from the calendar.
-import { validateTrainerImport } from "../everyday.js?v=3.10";
-import { $, clock, dateLabel, esc } from "./format.js?v=4.2";
-import { facts, sync } from "./services.js?v=4.2";
-import { openDialog, safe, toast } from "./ui.js?v=4.2";
+import { validateTrainerImport } from "../everyday.js?v=4.3";
+import { $, clock, dateLabel, esc } from "./format.js?v=4.3";
+import { facts, sync } from "./services.js?v=4.3";
+import { openDialog, safe, toast } from "./ui.js?v=4.3";
 
-function renderTrainer() {
-  $("trainer-card").hidden = true;
-}
 export function visitRow(v, events = facts()) {
   const logged = events.find(
     (e) =>
@@ -15,7 +12,7 @@ export function visitRow(v, events = facts()) {
         e.who === "trainer" &&
         Math.abs(e.time - v.start) < 1800000),
   );
-  return `<div class="scheduled-visit"><strong>${esc(v.title)}</strong><p class="fine">${dateLabel(v.start)} · ${clock(v.start)}–${clock(v.end)} · ${logged ? "Confirmed" : "Planned"}</p>${logged ? `<button class="text-button" data-open="${esc(logged.id)}">View logged visit</button>` : v.end <= Date.now() ? `<button class="secondary small" data-visit="${esc(v.id)}">Confirm visit happened</button>` : '<span class="fine">Ready to confirm after the visit.</span>'}</div>`;
+  return `<div class="scheduled-visit"><strong>${esc(v.title)}</strong><p class="fine">${dateLabel(v.start)} · ${clock(v.start)}–${clock(v.end)} · ${logged ? "Confirmed" : "Planned"}</p>${logged ? `<button class="text-button" data-open="${esc(logged.id)}">View logged visit</button>` : v.end <= Date.now() ? `<button class="secondary small" data-visit="${esc(v.id)}">Confirm visit happened</button>` : ""}</div>`;
 }
 export function trainerSchedule() {
   const schedule = sync.view().profile.trainerSchedule,

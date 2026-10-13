@@ -11,7 +11,8 @@ Run `npm ci`, then `npm run dev` (or `npm run dev:large` for a log about the siz
 - `public/app.js`: startup only. `public/app/`: one module per job (format, state, services, ui, nav, today, logging, entries, forms, library, settings, photos, trainer, clicks).
 - `public/`: the room engine (`room.js`), pixel icons (`icons.js`), offline client (`sync.js`), shared logic modules, and the service worker. Versioned files are cached on the phone: when you change one, bump its `?v=` tag everywhere it is imported and bump `CACHE` in `sw.js`.
 - Adding a device: Settings, Add a device shows an 8-character join code that works once for 15 minutes. The long shared code still works.
-- `docs/pixel-winnie-poses.md`: how to make and clean new pixel Winnie poses.
+- Pixel Winnie: `scripts/build-poses.mjs` builds the room sprite sheet from his cleaned frames; `ASTRA_HANDOFF.md` specifies poses that need new art.
+- Memories (Photos tab): weekly postcard, on this day, milestones and the year so far, all counted from saved entries (`public/memories.js`).
 - `netlify/lib/`: server-validated commands, conditional storage adapter, authentication, uploads, and push delivery.
 - `netlify/functions/`: API, read-only legacy compatibility, scheduled notifications, and backups.
 - `tests/`: deterministic store, API, IndexedDB, and history-pattern tests (`npm test`).

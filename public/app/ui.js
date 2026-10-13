@@ -1,7 +1,8 @@
 // Toasts, the sheet (one <dialog>), error handling, and memoised HTML writes.
-import { $ } from "./format.js?v=4.2";
-import { room } from "./services.js?v=4.2";
-import { state } from "./state.js?v=4.2";
+import { icon } from "../icons.js?v=4.0";
+import { $ } from "./format.js?v=4.3";
+import { room } from "./services.js?v=4.3";
+import { state } from "./state.js?v=4.3";
 
 let toastTimer;
 export function toast(message, undo = null, actions = []) {
@@ -12,9 +13,14 @@ export function toast(message, undo = null, actions = []) {
   state.lastUndo = undo;
   const box = $("toast-actions");
   box.replaceChildren(
-    ...actions.map(([label, fn]) => {
+    // An action is [label, run] or [label, run, iconName]; icon actions stay compact.
+    ...actions.map(([label, fn, iconName]) => {
       const b = document.createElement("button");
-      b.textContent = label;
+      if (iconName) {
+        b.innerHTML = icon(iconName, "ic sm");
+        b.setAttribute("aria-label", label);
+        b.className = "toast-icon";
+      } else b.textContent = label;
       b.onclick = () => {
         $("toast").hidden = true;
         state.lastUndo = null;

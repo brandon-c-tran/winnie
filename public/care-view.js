@@ -4,7 +4,7 @@ import {
   planState,
   completionId,
   validateCarePlans,
-} from "./care-plans.js?v=3.10";
+} from "./care-plans.js?v=4.3";
 import { icon } from "./icons.js?v=4.0";
 
 export function createCare({
@@ -48,7 +48,7 @@ export function createCare({
     const all = states(),
       active = all.filter((s) => !s.paused && s.due),
       inactive = all.filter((s) => s.paused || !s.due);
-    const content = `<div class="section-heading"><h2>Upcoming</h2></div>${active.length ? `<div class="care-plan-list">${active.map((s) => row(s)).join("")}</div>` : '<div class="care-plan-empty"><h3>Nothing planned.</h3><p>A plan like Bath every 3 weeks shows up on Today when it is due. Tap Done to log it.</p><button class="px btn ink" data-care-action="new">Add plan</button></div>'}${contextHTML()}${inactive.length ? `<details class="care-inactive"><summary>Paused and finished (${inactive.length})</summary>${inactive.map((s) => row(s)).join("")}</details>` : ""}<div class="section-heading saved-notes"><h2>Notes</h2><button class="text-button" data-fridge="saved">Saved notes</button></div><p class="fine care-calendar-note">Plans use San Francisco dates. Marking one done updates both phones.</p>`;
+    const content = `<div class="section-heading"><h2>Upcoming</h2></div>${active.length ? `<div class="care-plan-list">${active.map((s) => row(s)).join("")}</div>` : '<div class="care-plan-empty"><h3>Nothing planned.</h3><p>A plan like Bath every 3 weeks shows up on Today when it is due. Tap Done to log it.</p><button class="px btn ink" data-care-action="new">Add plan</button></div>'}${contextHTML()}${inactive.length ? `<details class="care-inactive"><summary>Paused and finished (${inactive.length})</summary>${inactive.map((s) => row(s)).join("")}</details>` : ""}<div class="section-heading saved-notes"><h2>Notes</h2><button class="text-button" data-fridge="saved">Saved notes</button></div>`;
     if (content !== lastContent) {
       const expanded = root.querySelector(".care-inactive")?.open;
       lastContent = content;
@@ -111,7 +111,7 @@ export function createCare({
         )
         .join(
           "",
-        )}</select></label></div><p class="fine">The next date counts from the due date, or from when it was done if late. Missed dates stay as one item.</p><label>Details <span class="fine">(optional)</span><textarea name="instructions" maxlength="2000" placeholder="Optional">${esc(p.instructions)}</textarea></label><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary">Save care</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+        )}</select></label></div><label>Details <span class="fine">(optional)</span><textarea name="instructions" maxlength="2000" placeholder="Optional">${esc(p.instructions)}</textarea></label><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary">Save care</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
     );
     const form = $("care-plan-form"),
       state = old && planState(old, sync.view().events);
@@ -121,7 +121,7 @@ export function createCare({
         .closest("label")
         .insertAdjacentHTML(
           "beforeend",
-          '<span class="fine">The next date now follows his completions.</span>',
+          "",
         );
     }
     const repeat = () => {
@@ -196,7 +196,7 @@ export function createCare({
       .toISOString()
       .slice(0, 16);
     openDialog(
-      `<h2 id="dialog-title">${esc(s.plan.title)}</h2><p class="fine">Scheduled for ${date(s.due)}${s.claimedBy ? ` · ${esc(person(s.claimedBy))} has it` : ""}</p>${s.plan.instructions ? `<p class="detail-notes">${esc(s.plan.instructions)}</p>` : ""}<form id="care-complete-form"><label>Done at<input type="datetime-local" name="time" value="${local}" max="${local}" required></label><label>Note <span class="fine">(optional)</span><textarea name="note" maxlength="2000" placeholder="Optional"></textarea></label><p class="fine">Adds one entry to the log${s.plan.unit !== "once" ? " and sets the next date" : ""}.</p><div class="button-row"><button class="primary">Save</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
+      `<h2 id="dialog-title">${esc(s.plan.title)}</h2><p class="fine">Scheduled for ${date(s.due)}${s.claimedBy ? ` · ${esc(person(s.claimedBy))} has it` : ""}</p>${s.plan.instructions ? `<p class="detail-notes">${esc(s.plan.instructions)}</p>` : ""}<form id="care-complete-form"><label>Done at<input type="datetime-local" name="time" value="${local}" max="${local}" required></label><label>Note <span class="fine">(optional)</span><textarea name="note" maxlength="2000" placeholder="Optional"></textarea></label><div class="button-row"><button class="primary">Save</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
     );
     const form = $("care-complete-form");
     form.onsubmit = safe(async (ev) => {

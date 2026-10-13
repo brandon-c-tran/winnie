@@ -1,21 +1,22 @@
+import { renderMemories } from "./memories-view.js?v=4.3";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=3.10";
-import { elapsed } from "../care-state.js?v=3.10";
+import { placeLabel } from "../places.js?v=4.3";
+import { elapsed } from "../care-state.js?v=4.3";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=3.10";
-import { insightsView } from "../insight-view.js?v=3.10";
-import { photoCaption } from "../everyday.js?v=3.10";
-import { html, openDialog } from "./ui.js?v=4.2";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.2";
-import { facts, places } from "./services.js?v=4.2";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.2";
-import { editForm } from "./forms.js?v=4.2";
-import { state } from "./state.js?v=4.2";
+} from "../insights.js?v=4.3";
+import { insightsView } from "../insight-view.js?v=4.3";
+import { photoCaption } from "../everyday.js?v=4.3";
+import { html, openDialog } from "./ui.js?v=4.3";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.3";
+import { facts, places } from "./services.js?v=4.3";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.3";
+import { editForm } from "./forms.js?v=4.3";
+import { state } from "./state.js?v=4.3";
 
 let patternDays = 28,
   insightData = null,
@@ -46,10 +47,15 @@ export function renderLastTimes(events) {
   );
 }
 export function renderStory() {
-  $("story-tools").hidden = ["patterns", "places"].includes(state.filter);
+  $("story-tools").hidden = ["patterns", "places", "memories"].includes(state.filter);
   $("places-view").hidden = state.filter !== "places";
   $("story-items").hidden = state.filter === "places";
-  $("story-count").hidden = state.filter === "places";
+  $("story-count").hidden = ["places", "memories"].includes(state.filter);
+  if (state.filter === "memories") {
+    $("load-more").hidden = true;
+    renderMemories();
+    return;
+  }
   if (state.filter === "places") {
     $("load-more").hidden = true;
     places.render(facts());
@@ -157,19 +163,6 @@ $("load-more").onclick = () => {
   state.limit += 60;
   renderStory();
 };
-document.querySelectorAll("[data-filter]").forEach(
-  (button) =>
-    (button.onclick = () => {
-      state.filter = button.dataset.filter;
-      storySection = state.filter;
-      state.limit = 60;
-      $("history-type").value = "";
-      document
-        .querySelectorAll("[data-filter]")
-        .forEach((b) => b.classList.toggle("selected", b === button));
-      renderStory();
-    }),
-);
 $("story-add").onclick = () => editForm("moment");
 export function renderPatterns() {
   insightData = rhythmInsights(facts(), patternDays);

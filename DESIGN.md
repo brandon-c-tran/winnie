@@ -402,7 +402,7 @@ A canvas diorama, the centre of the identity. It shows only recorded facts.
 **Palette.** Room colours live in `C` in `public/room.js`: periwinkle checked wallpaper (`room-wall` and two darker steps, 4px checks), periwinkle wainscot panels (`room-wainscot`), pale rail and baseboard, honey-wood floor planks 5 art px tall (`room-wood` with highlight, shade and `room-seam` joints), gingham bed (`room-bed` rim, `room-gingham` checks), wooden door (`room-door`) with a Sun Yellow knob, red bowl, doormat and leash (Alarm Red), all outlined in ink. The sky is keyed to real solar altitude in `SKY` (night navy through dusk rose and sunrise apricot to day blue) and the whole room is multiplied by `TINT` (cool blue at night, apricot at golden hour, white by day).
 
 **Scene objects and what they mean.**
-- **Window:** the real San Francisco sky from solar position (suncalc): sun arc and drifting clouds by day, stars and the actual moon phase at night, a dark skyline with Sutro Tower and lit windows after dusk. During an active walk a tiny Winnie trots across the skyline. Tapping it toasts sunrise and sunset and how sleep is classified.
+- **Window:** the real San Francisco sky from solar position (suncalc): sun arc and drifting clouds by day, stars and the actual moon phase at night, a dark skyline with Sutro Tower and lit windows after dusk. Live San Francisco weather from Open-Meteo (cached 20 minutes, optional): overcast greys the sky and hides the sun, fog drifts in over the skyline and Sutro Tower, rain and snow fall in the glass; grey days dim the room and drop the sunbeam. During an active walk a tiny Winnie trots across the skyline. Tapping it toasts the weather, sunrise and sunset.
 - **Door, leash and doormat:** the walk. The leash hangs on its hook unless a walk is active. Tapping the door logs a walk, or finishes the active one.
 - **Bed:** sleep. Winnie is in it only during an active nap or night sleep, breathing one art px, with z particles. Tapping logs sleep.
 - **Bowl:** meal. Fills with kibble when a meal is logged and empties as he eats. Tapping logs a meal.
@@ -413,10 +413,16 @@ A canvas diorama, the centre of the identity. It shows only recorded facts.
 - **Wall sconce:** switches on after dusk (dithered warm pool of light) unless Winnie is asleep for the night.
 - **Sunbeam:** a dithered beam from the window across the floor by day, leaning with the time of day; a faint cool beam at night.
 - **Plant, toy caterpillar:** set dressing; the toy is an idle sniffing spot.
+- **Snuggle Puppy:** his real plush, in the bed. He sleeps with it, carries it when he plays, and tapping it starts a play. Hidden from the bed while he holds it or sleeps.
+- **CGC ribbon:** his Canine Good Citizen rosette under the picture. Tapping names it.
+- **Trophy shelf:** one trophy per milestone from the last 30 days, up to three; no shelf when there are none. Tapping opens Memories.
+- **Seasons:** a pumpkin by the door in October (its face glows after dark), string lights along the rail from December 1 to January 6, flowers on the plant in spring.
+
+**Poses.** The sheet is `public/photos/winnie-room-v2.png`, built by `scripts/build-poses.mjs` from the six cleaned frames: sit, blink, sleep, walk (2), happy, plus tail wag, eating (2), sniffing (2), yawn, wet with towel, holding the Snuggle Puppy, and asleep with it. Idle time mixes wandering, wagging, sniffing, playing with the plush, and an evening yawn; night sleep starts with a yawn. New poses that need real art are specified in `ASTRA_HANDOFF.md`.
 
 **State machine.** Inputs are recorded state only: `sleep` (active nap or night sleep), `walk` (active walk), note count, pending count, review error, due today, and SF time. With nothing running he is awake in the room. Starting sleep: he walks to the bed and settles ("z"). Ending it: he hops out ("!") and wags. Starting a walk: he walks to the door, the leash comes off, the door opens and he fades out through it; while out he is absent from the room. Ending it: the door opens, he walks back in leaving fading paw prints, hops ("!") and wags.
 
-**Reactions to logs.** Pee or poop: he trots toward the door, sparkles, hops ("~"), wags. Meal: kibble appears, he walks to the bowl ("nom"), eats with crumbs, hops (heart). Photo: white flash, he looks back ("!"). Plan done: calendar flashes, he walks to it, hops. Partner logged something: he goes to the door to greet it ("!"), then acts out a partner meal at the bowl. Reaction or pat: hearts. Undo: "?". While he is out on a walk, logs show as sparkles or hearts at the door instead; while asleep, a log gets a "z", a pat gets hearts.
+**Reactions to logs.** Pee or poop: he trots toward the door, sniffs, sparkles, hops ("~"), wags. Meal: kibble appears, he walks to the bowl ("nom"), eats head-down with crumbs, hops (heart). Photo: white flash, he looks back ("!"). Plan done: calendar flashes, he walks to it, hops. Partner logged something: he goes to the door to greet it ("!"), then acts out a partner meal at the bowl. Bath: he shakes off (rows jitter, water drops), then sits in his striped towel with darkened fur before a hop. Other grooming: sparkles and a hop. Reaction or pat: hearts. Undo: "?". While he is out on a walk, logs show as sparkles or hearts at the door instead; while asleep, a log gets a "z", a pat gets hearts.
 
 **Idle.** Every 3-7 seconds he picks one neutral action: wander, wag, turn around, or go sniff the toy ("?"). He blinks occasionally.
 
@@ -448,6 +454,7 @@ All motion is stepped. CSS uses `steps()` timing only: button press `60ms steps(
 - **Don't** round UI corners or use blurred shadows (pixel art draws its own curves on the grid).
 - **Don't** use eased or springy CSS curves; use stepped timing.
 - **Don't** use taglines, "our / together / moments / story / little", exclamation marks, em dashes or rhetorical questions in UI copy.
+- **Don't** write copy that explains how the interface works: no hint lines, tutorials, or sentences about what a tap does, where something will show up, or how a date is worked out ("One tap logs it", "Shows up here when it's due", "Tap a group to zoom"). Labels and results speak for themselves. Keep a sentence only when it states a fact the person cannot see and that changes what they do: an error and its fix, when a code expires, that nothing is tracked between logs.
 - **Don't** set paragraphs in Pixelify Sans or use all-caps labels.
 - **Don't** smooth-scale pixel art or draw it off the art grid; scale by integers with `image-rendering: pixelated`.
 - **Don't** use brown or black outlines in the UI or the room.
