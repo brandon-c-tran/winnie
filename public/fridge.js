@@ -1,7 +1,9 @@
-import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=4.9";
+import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=4.10";
 import { icon } from "./icons.js?v=4.0";
 const face = (id, size = "sm") =>
-  id === "brandon" || id === "kim" ? `<img class="face ${size}" src="/photos/${id}-pixel.png" alt="" aria-hidden="true">` : "";
+  id === "brandon" || id === "kim"
+    ? `<img class="face ${size}" src="/photos/${id}-pixel.png" alt="" aria-hidden="true">`
+    : "";
 
 export function createFridge({
   extraNext = () => "",
@@ -98,9 +100,11 @@ export function createFridge({
     const content = `<div class="card-head"><h2 id="notes-title">Notes</h2><button class="text-button small" data-fridge="saved">Saved (${saved.length})</button></div>${active.length ? "" : '<div class="notes-empty"><span>No notes on the fridge.</span><button class="px btn" data-fridge="new">Add note</button></div>'}<div class="notes" ${active.length ? "" : "hidden"}>${active
       .map(
         (note) =>
-          `<button class="sticky ${note.color === "rose" ? "rose" : ""}" data-fridge="note" data-id="${esc(note.id)}" data-note-card="${esc(note.id)}" aria-label="Edit note: ${esc(note.text.slice(0, 100))}">${face(note.by, "magnet")}<span class="tx">${esc(note.text)}</span><small>${note.by ? esc(person(note.by)) : "Note"}${note.createdAt ? " · " + day(note.createdAt) : ""}${note.until ? " · today only" : ""}</small></button>`,
+          `<button class="sticky ${note.color === "rose" ? "rose" : ""}" data-fridge="note" data-id="${esc(note.id)}" data-note-card="${esc(note.id)}" aria-label="Edit note: ${esc(note.text.slice(0, 100))}"><span class="tx">${esc(note.text)}</span><span class="note-byline">${face(note.by, "magnet")}<small><span>${note.by ? esc(person(note.by)) : "Note"}</span>${note.createdAt ? `<time datetime="${new Date(note.createdAt).toISOString()}">${day(note.createdAt)}</time>` : ""}${note.until ? "<span>Today only</span>" : ""}</small></span></button>`,
       )
-      .join("")}${active.length < 2 ? `<button class="add-note" data-fridge="new">${icon("plus", "ic sm")}Add note</button>` : ""}</div>`;
+      .join(
+        "",
+      )}${active.length < 2 ? `<button class="add-note" data-fridge="new">${icon("plus", "ic sm")}Add note</button>` : ""}</div>`;
     if (last === content) return;
     last = content;
     root.innerHTML = content;
@@ -317,7 +321,7 @@ export function createFridge({
                 : { eventId: item.e.id, photoId: item.photo.id };
             await store(b, selected.profile.revision);
             closeDialog();
-            
+
             toast("Wall photo changed");
           } finally {
             button.disabled = false;

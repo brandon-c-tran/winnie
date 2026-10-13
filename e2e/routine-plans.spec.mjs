@@ -1,26 +1,60 @@
 import { test, expect } from "@playwright/test";
 import { code, join, toast } from "./helpers.mjs";
 
-test("training imports remain planned until a past visit is confirmed", async ({page}, info) => {
+test("training imports remain planned until a past visit is confirmed", async ({
+  page,
+}, info) => {
   const errors = await join(page, code(info));
-  const now = Date.now(), schedule = {checkedAt:new Date(now).toISOString(),through:"2027-01-01",visits:[
-    {id:"past-visit",title:"Training fixture",start:now-7200000,end:now-3600000},
-    {id:"next-visit",title:"Next training fixture",start:now+86400000,end:now+90000000},
-  ]};
+  const now = Date.now(),
+    schedule = {
+      checkedAt: new Date(now).toISOString(),
+      through: "2027-01-01",
+      visits: [
+        {
+          id: "past-visit",
+          title: "Training fixture",
+          start: now - 7200000,
+          end: now - 3600000,
+        },
+        {
+          id: "next-visit",
+          title: "Next training fixture",
+          start: now + 86400000,
+          end: now + 90000000,
+        },
+      ],
+    };
   await page.locator("#plans-tab").click();
   await page.locator('#training-visits [data-act="trainer-schedule"]').click();
-  await page.locator('#trainer-import').setInputFiles({name:"training.json",mimeType:"application/json",buffer:Buffer.from(JSON.stringify(schedule))});
+  await page
+    .locator("#trainer-import")
+    .setInputFiles({
+      name: "training.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(schedule)),
+    });
   await page.locator("#save-trainer-import").click();
   await expect(page.locator("#dialog")).toContainText("Next training fixture");
   await page.locator('[data-visit="past-visit"]').click();
-  await expect(page.locator("#dialog .scheduled-visit",{hasText:"Training fixture"}).first()).toContainText("Logged");
+  await expect(
+    page
+      .locator("#dialog .scheduled-visit", { hasText: "Training fixture" })
+      .first(),
+  ).toContainText("Logged");
   await page.locator("#dialog-close").click();
-  await expect(page.locator("#training-visits")).toContainText("Next training fixture");
+  await expect(page.locator("#training-visits")).toContainText(
+    "Next training fixture",
+  );
   await page.locator("#today-tab").click();
-  await expect(page.locator("#timeline")).not.toContainText("Next training fixture");
+  await expect(page.locator("#timeline")).not.toContainText(
+    "Next training fixture",
+  );
   await expect(page.locator("#sync-status")).toHaveText("Up to date");
-  await page.reload(); await page.locator("#plans-tab").click();
-  await expect(page.locator("#training-visits")).toContainText("Next training fixture");
+  await page.reload();
+  await page.locator("#plans-tab").click();
+  await expect(page.locator("#training-visits")).toContainText(
+    "Next training fixture",
+  );
   expect(errors).toEqual([]);
 });
 
@@ -88,6 +122,10 @@ test("supplies share state and monthly dose stays separate from refill", async (
   await page.getByRole("button", { name: "Update heartgard" }).click();
   await page.locator('#supply-form [value="ordered"]').check();
   await page.locator("#supply-form .primary").click();
+  await expect(page.locator("#dialog")).not.toBeVisible();
+  await expect(
+    page.locator(".supply-row", { hasText: "Heartgard" }),
+  ).toContainText("Ordered");
   await expect(page.locator("#sync-status")).toHaveText("Up to date");
   await page.reload();
   await page.locator("#plans-tab").click();
