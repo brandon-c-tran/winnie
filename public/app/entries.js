@@ -1,14 +1,14 @@
-import { createReactionPicker } from "./reaction-picker.js?v=4.7";
+import { createReactionPicker } from "./reaction-picker.js?v=4.8";
 // Entry rows, reactions, the entry detail sheet, and photo loading.
-import { QUALITY } from "../pantry.js?v=4.7";
-import { placeLabel } from "../places.js?v=4.7";
+import { QUALITY } from "../pantry.js?v=4.8";
+import { placeLabel } from "../places.js?v=4.8";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { photoCaption } from "../everyday.js?v=4.7";
-import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.7";
-import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.7";
-import { openDialog, safe, toast } from "./ui.js?v=4.7";
-import { placeSummary } from "./forms.js?v=4.7";
-import { state } from "./state.js?v=4.7";
+import { photoCaption } from "../everyday.js?v=4.8";
+import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.8";
+import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.8";
+import { openDialog, safe, toast } from "./ui.js?v=4.8";
+import { placeSummary } from "./forms.js?v=4.8";
+import { state } from "./state.js?v=4.8";
 
 const pendingReactions = new Set();
 const picker = createReactionPicker({

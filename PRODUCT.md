@@ -46,6 +46,8 @@ The product is Winnie, centered on Winnie Bernard and his family. Copy voice dec
 
 Observed logging habits (Brandon, October 12, 2026): pee and poop are logged most; walks and sleep are not logged reliably (Winnie now sleeps freely in the living room); occasional care like baths is easy to forget in the moment. Design for the logging that actually happens, and make occasional care easy to catch up on later.
 
+Photo collection preference (Brandon, October 13, 2026): prompting naturally when poop is logged helps collect care photos. Offer an optional photo prompt after saving a quick poop log, keep consistency available there, and show attached photos in Today. Skipping the prompt must preserve the log.
+
 Places intent (Brandon, October 13, 2026): pee and poop logs are also proxies for places Winnie has been. Place browsing should lead with destinations and group their source records, rather than lead with a care-event map. Recorded days remain distinct from inferred visits or trips.
 
 ## Evidence on Hand

@@ -45,6 +45,7 @@ test("attach care photos to the existing entry without creating a duplicate", as
 }, info) => {
   const errors = await join(page, code(info));
   await page.locator('#care-actions [data-log="poop"]').click();
+  await page.getByRole('button', { name: 'Not now', exact: true }).click();
   await page.locator("#photos-tab").click();
   await page.locator('[data-filter="care-photos"]').click();
   await page.locator("#story-add").click();

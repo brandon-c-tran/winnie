@@ -1,10 +1,10 @@
 // Settings, sync status, review of conflicting or older changes, and joining.
-import { placeLabel } from "../places.js?v=4.7";
-import { autoPlaceEnabled, sync } from "./services.js?v=4.7";
-import { $, clock, dateLabel, esc, person, when } from "./format.js?v=4.7";
-import { openDialog, safe } from "./ui.js?v=4.7";
-import { eventLabel } from "./entries.js?v=4.7";
-import { render } from "./today.js?v=4.7";
+import { placeLabel } from "../places.js?v=4.8";
+import { autoPlaceEnabled, sync } from "./services.js?v=4.8";
+import { $, clock, dateLabel, esc, person, when } from "./format.js?v=4.8";
+import { openDialog, safe } from "./ui.js?v=4.8";
+import { eventLabel } from "./entries.js?v=4.8";
+import { render } from "./today.js?v=4.8";
 
 function syncSheet() {
   const pending = sync.data.queue.length,

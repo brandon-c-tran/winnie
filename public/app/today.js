@@ -1,22 +1,22 @@
 // Today: the room's state, the log buttons, Also today, the day strip, and partner greetings.
-import { careStates, careDay } from "../care-plans.js?v=4.7";
-import { fridgeState, onFridge } from "../fridge-model.js?v=4.7";
-import { latestCare, elapsed } from "../care-state.js?v=4.7";
+import { careStates, careDay } from "../care-plans.js?v=4.8";
+import { fridgeState, onFridge } from "../fridge-model.js?v=4.8";
+import { latestCare, elapsed } from "../care-state.js?v=4.8";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
 import { getTimes } from "../vendor/suncalc.js";
-import { weatherKind } from "../room.js?v=4.7";
+import { weatherKind } from "../room.js?v=4.8";
 import {
   cachedWeather,
   refreshWeather,
   weatherWords,
-} from "./weather.js?v=4.7";
-import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.7";
-import { rhythmInsights, durationLabel } from "../insights.js?v=4.7";
-import { care, facts, fridge, room, sync } from "./services.js?v=4.7";
-import { setTab, showPhotos } from "./nav.js?v=4.7";
-import { pantryHTML } from "./pantry-view.js?v=4.7";
-import { QUALITY } from "../pantry.js?v=4.7";
-import { finishWalk, log } from "./logging.js?v=4.7";
+} from "./weather.js?v=4.8";
+import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.8";
+import { rhythmInsights, durationLabel } from "../insights.js?v=4.8";
+import { care, facts, fridge, room, sync } from "./services.js?v=4.8";
+import { setTab, showPhotos } from "./nav.js?v=4.8";
+import { pantryHTML } from "./pantry-view.js?v=4.8";
+import { QUALITY } from "../pantry.js?v=4.8";
+import { finishWalk, log } from "./logging.js?v=4.8";
 import {
   $,
   TYPES,
@@ -27,12 +27,12 @@ import {
   esc,
   person,
   when,
-} from "./format.js?v=4.7";
-import { html, toast } from "./ui.js?v=4.7";
-import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.7";
-import { legacyDiff } from "./settings.js?v=4.7";
-import { renderLastTimes, renderStory } from "./library.js?v=4.7";
-import { state } from "./state.js?v=4.7";
+} from "./format.js?v=4.8";
+import { html, toast } from "./ui.js?v=4.8";
+import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.8";
+import { legacyDiff } from "./settings.js?v=4.8";
+import { renderLastTimes, renderStory } from "./library.js?v=4.8";
+import { state } from "./state.js?v=4.8";
 
 let shownWeather = 0;
 let roomReady = false,
@@ -176,7 +176,8 @@ export function render() {
     errors = sync.data.queue.filter((q) => q.error),
     oldCount = legacyDiff().length;
   const me = person(sync.session.person);
-  $("person-name").innerHTML = face(sync.session.person, "chip") || esc(me[0]);
+  $("person-name").innerHTML =
+    face(sync.session.person, "hud-portrait") || esc(me[0]);
   $("settings").setAttribute("aria-label", `Settings. This phone is ${me}'s`);
   const s = sync.lastError
     ? "offline"
@@ -380,7 +381,7 @@ function renderDay(events) {
   html(
     "timeline",
     day.length
-      ? day.map(entry).join("")
+      ? day.map((event) => entry(event, { photoRecord: true })).join("")
       : `<div class="empty"><p>Nothing logged ${isToday ? "yet today" : "this day"}.</p></div>`,
   );
 }

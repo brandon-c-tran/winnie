@@ -1,23 +1,23 @@
-import { renderMemories } from "./memories-view.js?v=4.7";
-import { foodPoopStats } from "../pantry.js?v=4.7";
+import { renderMemories } from "./memories-view.js?v=4.8";
+import { foodPoopStats } from "../pantry.js?v=4.8";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.7";
-import { elapsed } from "../care-state.js?v=4.7";
+import { placeLabel } from "../places.js?v=4.8";
+import { elapsed } from "../care-state.js?v=4.8";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.7";
-import { insightsView } from "../insight-view.js?v=4.7";
-import { photoCaption } from "../everyday.js?v=4.7";
-import { html, openDialog } from "./ui.js?v=4.7";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.7";
-import { facts, places } from "./services.js?v=4.7";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.7";
-import { addPhotos } from "./photos.js?v=4.7";
-import { state } from "./state.js?v=4.7";
+} from "../insights.js?v=4.8";
+import { insightsView } from "../insight-view.js?v=4.8";
+import { photoCaption } from "../everyday.js?v=4.8";
+import { html, openDialog } from "./ui.js?v=4.8";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.8";
+import { facts, places } from "./services.js?v=4.8";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.8";
+import { addPhotos } from "./photos.js?v=4.8";
+import { state } from "./state.js?v=4.8";
 
 let patternDays = 28,
   insightData = null,

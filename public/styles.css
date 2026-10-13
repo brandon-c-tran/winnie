@@ -2255,21 +2255,26 @@ details {
   height: 52px;
   margin-right: 10px;
 }
-.face.chip {
+.face.hud-portrait {
   width: 32px;
-  height: 36px;
+  height: 32px;
   margin: 0;
   border: 0;
   background: transparent;
 }
 .me:has(.face) {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
   min-width: 44px;
   height: 44px;
-  padding: 2px 4px;
+  padding: 4px;
 }
 .me #person-name {
-  display: flex;
-  align-items: center;
+  display: grid;
+  place-items: center;
+  line-height: 0;
 }
 .face.magnet {
   position: static;
@@ -2758,6 +2763,14 @@ details {
   width: 100%;
   height: auto;
   max-height: 300px;
+  object-fit: contain;
+}
+#timeline .record-photo {
+  justify-self: start;
+}
+#timeline .record-photo img {
+  width: 144px;
+  height: 144px;
   object-fit: contain;
 }
 .record-photo > span {
