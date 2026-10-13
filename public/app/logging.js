@@ -1,30 +1,32 @@
 // Logging: one-tap logs, sleep and walks, grooming, Earlier, meals, More, press-and-hold.
-import { elapsed } from "../care-state.js?v=4.3";
+import { elapsed } from "../care-state.js?v=4.4";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { durationLabel } from "../insights.js?v=4.3";
+import { durationLabel } from "../insights.js?v=4.4";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
-} from "../everyday.js?v=4.3";
+} from "../everyday.js?v=4.4";
 import {
   autoPlace,
   autoPlaceEnabled,
   facts,
   room,
   sync,
-} from "./services.js?v=4.3";
-import { $, TYPES, active, clock, esc, uid } from "./format.js?v=4.3";
+} from "./services.js?v=4.4";
+import { $, TYPES, active, clock, esc, uid } from "./format.js?v=4.4";
 import {
   closeDialog,
   openDialog,
   renderedHTML,
   safe,
   toast,
-} from "./ui.js?v=4.3";
-import { editForm } from "./forms.js?v=4.3";
-import { render } from "./today.js?v=4.3";
-import { state } from "./state.js?v=4.3";
+} from "./ui.js?v=4.4";
+import { editForm } from "./forms.js?v=4.4";
+import { render } from "./today.js?v=4.4";
+import { state } from "./state.js?v=4.4";
+import { rotation, lastEaten } from "../pantry.js?v=4.4";
+import { pantryNow } from "./pantry-view.js?v=4.4";
 
 let mealSubmitting = false;
 let pressTimer = 0;
@@ -179,14 +181,27 @@ function pottyPhoto(id, type) {
     `<h2 id="dialog-title">${type === "grooming" ? "Photo" : TYPES[type][1] + " photo"}</h2><p class="fine" id="auto-place-status" data-event="${esc(id)}" role="status">${autoPlaceEnabled() ? "Location is added when this phone allows it." : "Automatic location is off on this phone."}</p><div class="photo-choice"><button class="px" data-photo-camera="${id}">${icon("photo", "ic lg")}Take photo</button><button class="px" data-photo-library="${id}">${icon("photos", "ic lg")}Choose photo</button><button class="text-button" data-act="close">Not now</button></div><p id="form-error" class="error" role="alert"></p>`,
   );
 }
+// Foods in rotation order (eaten longest ago first), with when each was last eaten and what's left.
+function mealOptions() {
+  const events = facts(),
+    pantry = pantryNow(),
+    names = [...new Set([...pantry.foods.map((f) => f.name), ...foodChoices(events)])];
+  const used = names.filter((n) => pantry.foods.some((f) => f.name.toLowerCase() === n.toLowerCase()) || lastEaten(n, events));
+  const rest = names.filter((n) => !used.includes(n));
+  return [...rotation(used, events), ...rest].map((food) => {
+    const t = lastEaten(food, events),
+      stock = pantry.foods.find((f) => f.name.toLowerCase() === food.toLowerCase()),
+      d = t ? Math.floor((Date.now() - t) / 86400000) : null;
+    const parts = [d === null ? "" : d === 0 ? "today" : `${d}d ago`, stock ? `${Math.round(stock.left)} left` : ""].filter(Boolean);
+    return { food, note: parts.join(" · ") };
+  });
+}
 function mealPicker() {
   openDialog(
-    `<h2 id="dialog-title">Meal</h2><div class="food-grid">${foodChoices(
-      facts(),
-    )
+    `<h2 id="dialog-title">Meal</h2><div class="food-grid">${mealOptions()
       .map(
-        (food) =>
-          `<button class="px" style="--c:var(--meal)" data-food="${esc(food)}">${esc(food)}</button>`,
+        ({ food, note }) =>
+          `<button class="px" style="--c:var(--meal)" data-food="${esc(food)}">${esc(food)}${note ? `<small>${esc(note)}</small>` : ""}</button>`,
       )
       .join(
         "",

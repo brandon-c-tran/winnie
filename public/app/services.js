@@ -1,17 +1,18 @@
 // Long-lived services: the shared log, the room, plans, notes, places, location.
-import { createCare } from "../care-view.js?v=4.3";
-import { createPlacesView } from "../places-view.js?v=4.3";
-import { createFridge } from "../fridge.js?v=4.3";
-import { createAutoPlace } from "../auto-place.js?v=4.3";
-import { createRoom } from "../room.js?v=4.3";
-import { WinnieSync } from "../sync.js?v=4.3";
-import { $, esc, person } from "./format.js?v=4.3";
-import { detail, entry, hydratePhotos } from "./entries.js?v=4.3";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.3";
-import { visitRow } from "./trainer.js?v=4.3";
-import { editForm } from "./forms.js?v=4.3";
-import { log } from "./logging.js?v=4.3";
-import { roomObject } from "./today.js?v=4.3";
+import { createCare } from "../care-view.js?v=4.4";
+import { createPlacesView } from "../places-view.js?v=4.4";
+import { createFridge } from "../fridge.js?v=4.4";
+import { createAutoPlace } from "../auto-place.js?v=4.4";
+import { createRoom } from "../room.js?v=4.4";
+import { WinnieSync } from "../sync.js?v=4.4";
+import { $, esc, person } from "./format.js?v=4.4";
+import { detail, entry, hydratePhotos } from "./entries.js?v=4.4";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.4";
+import { visitRow } from "./trainer.js?v=4.4";
+import { editForm } from "./forms.js?v=4.4";
+import { log } from "./logging.js?v=4.4";
+import { roomObject } from "./today.js?v=4.4";
+import { pantryNextHTML } from "./pantry-view.js?v=4.4";
 
 export const sync = new WinnieSync();
 export const places = createPlacesView({
@@ -51,6 +52,7 @@ export const care = createCare({
   },
 });
 export const fridge = createFridge({
+  extraNext: () => pantryNextHTML(),
   careDueHTML: care.fridgeHTML,
   root: $("fridge-board"),
   nextRoot: $("up-next"),

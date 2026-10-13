@@ -12,6 +12,8 @@ Run `npm ci`, then `npm run dev` (or `npm run dev:large` for a log about the siz
 - `public/`: the room engine (`room.js`), pixel icons (`icons.js`), offline client (`sync.js`), shared logic modules, and the service worker. Versioned files are cached on the phone: when you change one, bump its `?v=` tag everywhere it is imported and bump `CACHE` in `sw.js`.
 - Adding a device: Settings, Add a device shows an 8-character join code that works once for 15 minutes. The long shared code still works.
 - Pixel Winnie: `scripts/build-poses.mjs` builds the room sprite sheet from his cleaned frames; `ASTRA_HANDOFF.md` specifies poses that need new art.
+- People: Brandon's and Kim's portraits live in `public/photos/*-pixel.png` and `*-face.png`, cleaned from `assets/people/` with `scripts/clean-portrait.mjs`.
+- Food on hand (Plans tab): stock per food counts down from each meal logged with it; when food won't outlast delivery time plus two days, Today shows Order food with the Amazon link. Logic in `public/pantry.js`, shared with the server, which validates it as part of shared settings. Poop quality tags (firm, soft, loose) feed Poop by food in Trends.
 - Memories (Photos tab): weekly postcard, on this day, milestones and the year so far, all counted from saved entries (`public/memories.js`).
 - `netlify/lib/`: server-validated commands, conditional storage adapter, authentication, uploads, and push delivery.
 - `netlify/functions/`: API, read-only legacy compatibility, scheduled notifications, and backups.

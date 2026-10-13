@@ -2255,3 +2255,228 @@ details {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- people: Brandon's and Kim's Stardew portraits ---------- */
+.face {
+  display: inline-block;
+  vertical-align: -0.25em;
+  image-rendering: pixelated;
+  box-shadow: 0 0 0 1.5px var(--ink);
+  background: var(--surface);
+  flex: none;
+}
+.face.xs {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+.face.sm {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+}
+.face.md {
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.face.chip {
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  box-shadow: none;
+  vertical-align: top;
+}
+.me:has(.face) {
+  height: 30px;
+  overflow: hidden;
+}
+.me #person-name {
+  display: flex;
+}
+.face.magnet {
+  position: absolute;
+  top: -9px;
+  left: calc(50% - 10px);
+  width: 20px;
+  height: 20px;
+  box-shadow: 0 0 0 2px var(--ink);
+  z-index: 1;
+}
+.sticky:has(.face.magnet)::before {
+  display: none;
+}
+.radio-person span {
+  display: flex;
+  align-items: center;
+}
+
+/* the other person's log, as a game dialogue box over the room */
+.dialogue {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  text-align: left;
+  line-height: 1.2;
+  color: var(--ink);
+  background: #fff6dc;
+  border: 0;
+  border-radius: 0;
+  box-shadow:
+    0 -3px 0 0 var(--ink),
+    0 3px 0 0 var(--ink),
+    -3px 0 0 0 var(--ink),
+    3px 0 0 0 var(--ink),
+    inset 0 0 0 3px #e0b25c;
+  animation: dialogue-in 180ms steps(3) both;
+  cursor: pointer;
+  max-width: 420px;
+  margin-inline: auto;
+}
+.dlg-face {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  box-shadow: 0 0 0 2px var(--ink);
+  flex: none;
+}
+.dlg-text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  font: 500 14px var(--ui);
+}
+.dlg-text b {
+  font: 700 15px var(--px);
+}
+.dlg-text span {
+  overflow-wrap: anywhere;
+}
+@keyframes dialogue-in {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialogue {
+    animation: none;
+  }
+}
+
+/* poop quality, right after a poop */
+.quality-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 8px var(--gut) 4px;
+  padding: 10px;
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.quality-bar .q-label {
+  font: 600 14px var(--px);
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.quality-bar .seg {
+  display: flex;
+  gap: 8px;
+}
+.quality-bar .btn {
+  --c: var(--poop);
+  min-height: 40px;
+  padding-inline: 12px;
+}
+
+/* food on hand */
+.food-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 2px dashed var(--line);
+}
+.food-row:first-of-type {
+  border-top: 0;
+}
+.food-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.food-main small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.food-acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+.food-acts .btn {
+  min-height: 36px;
+  padding-inline: 10px;
+  text-decoration: none;
+}
+.meter {
+  display: block;
+  height: 8px;
+  background: var(--sunk);
+  box-shadow: 0 0 0 1.5px var(--ink);
+  max-width: 160px;
+}
+.meter i {
+  display: block;
+  height: 100%;
+  background: var(--meal);
+}
+.meter.low i {
+  background: var(--amber);
+}
+.food-grid .px small {
+  font: 500 11px var(--ui);
+  color: rgb(34 38 74 / 0.8);
+}
+
+/* poop by food, in Trends */
+.by-food {
+  display: grid;
+  grid-template-columns: minmax(0, 6em) minmax(0, 1fr);
+  gap: 4px 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+.by-food > .muted {
+  grid-column: 2;
+  font-size: 12px;
+}
+.q-bar {
+  display: flex;
+  height: 14px;
+  box-shadow: 0 0 0 1.5px var(--ink);
+  background: var(--sunk);
+}
+.q-bar i {
+  display: block;
+}
+.firm {
+  background: var(--poop);
+}
+.soft {
+  background: var(--amber);
+}
+.loose {
+  background: var(--sick);
+}

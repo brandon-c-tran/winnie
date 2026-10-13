@@ -4,14 +4,14 @@ import {
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.3";
-import { cityFor } from "../places.js?v=4.3";
+} from "../memories.js?v=4.4";
+import { cityFor } from "../places.js?v=4.4";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.3";
-import { $, esc } from "./format.js?v=4.3";
-import { html, toast } from "./ui.js?v=4.3";
-import { hydratePhotos } from "./entries.js?v=4.3";
-import { download } from "./photos.js?v=4.3";
+import { facts, sync } from "./services.js?v=4.4";
+import { $, esc } from "./format.js?v=4.4";
+import { html, toast } from "./ui.js?v=4.4";
+import { hydratePhotos } from "./entries.js?v=4.4";
+import { download } from "./photos.js?v=4.4";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -129,7 +129,15 @@ async function drawPostcard(week, range) {
     document.fonts.load('700 80px "Pixelify Sans"'),
     document.fonts.load('500 40px "Rubik"'),
   ]).catch(() => {});
-  const photo = await photoImage(week.best);
+  const [photo, ...faceImgs] = await Promise.all([
+    photoImage(week.best),
+    loadImage("/photos/brandon-face.png"),
+    loadImage("/photos/kim-face.png"),
+  ]);
+  const faces = [
+    ["brandon", faceImgs[0]],
+    ["kim", faceImgs[1]],
+  ].filter(([, img]) => img);
   if (ticket !== drawing || !canvas.isConnected) return;
   const c = canvas.getContext("2d");
   c.imageSmoothingEnabled = false;
@@ -213,7 +221,27 @@ async function drawPostcard(week, range) {
     96,
     CARD.h - 96,
   );
+  // who logged it: each face with their count, right-aligned on the footer line
+  let x = CARD.w - 96;
+  for (const [who, img] of faces.reverse()) {
+    const n = String(week.byPerson?.[who] || 0);
+    c.font = '700 44px "Pixelify Sans", monospace';
+    const w = c.measureText(n).width;
+    c.fillStyle = COLORS.ink;
+    c.fillText(n, x - w, CARD.h - 96);
+    x -= w + 14 + 64;
+    c.fillRect(x - 4, CARD.h - 96 - 56, 72, 72);
+    c.drawImage(img, x, CARD.h - 96 - 52, 64, 64);
+    x -= 40;
+  }
 }
+const loadImage = (src) =>
+  new Promise((ok) => {
+    const img = new Image();
+    img.onload = () => ok(img);
+    img.onerror = () => ok(null);
+    img.src = src;
+  });
 export async function postcard(share) {
   const canvas = $("postcard");
   if (!canvas) return;

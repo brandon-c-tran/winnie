@@ -111,6 +111,10 @@ export function weekStats(events, now = Date.now()) {
       photos: withPhotos.reduce((n, e) => n + e.photos.length, 0),
     },
     days: new Set(week.map((e) => localDay(e.time))).size,
+    byPerson: {
+      brandon: count((e) => e.loggedBy === "brandon"),
+      kim: count((e) => e.loggedBy === "kim"),
+    },
     best: best
       ? { eventId: best.id, photoId: best.photos[0].id, time: best.time }
       : null,

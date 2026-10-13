@@ -1,22 +1,23 @@
-import { renderMemories } from "./memories-view.js?v=4.3";
+import { renderMemories } from "./memories-view.js?v=4.4";
+import { foodPoopStats } from "../pantry.js?v=4.4";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.3";
-import { elapsed } from "../care-state.js?v=4.3";
+import { placeLabel } from "../places.js?v=4.4";
+import { elapsed } from "../care-state.js?v=4.4";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.3";
-import { insightsView } from "../insight-view.js?v=4.3";
-import { photoCaption } from "../everyday.js?v=4.3";
-import { html, openDialog } from "./ui.js?v=4.3";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.3";
-import { facts, places } from "./services.js?v=4.3";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.3";
-import { editForm } from "./forms.js?v=4.3";
-import { state } from "./state.js?v=4.3";
+} from "../insights.js?v=4.4";
+import { insightsView } from "../insight-view.js?v=4.4";
+import { photoCaption } from "../everyday.js?v=4.4";
+import { html, openDialog } from "./ui.js?v=4.4";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.4";
+import { facts, places } from "./services.js?v=4.4";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.4";
+import { editForm } from "./forms.js?v=4.4";
+import { state } from "./state.js?v=4.4";
 
 let patternDays = 28,
   insightData = null,
@@ -170,13 +171,28 @@ export function renderPatterns() {
   $("load-more").hidden = true;
   html(
     "story-items",
-    countsHTML(facts()) + insightsView(insightData, state.insightTopic),
+    countsHTML(facts()) +
+      (state.insightTopic === "poop" ? foodPoopHTML(facts()) : "") +
+      insightsView(insightData, state.insightTopic),
   );
   $("pattern-window").onchange = (e) => {
     patternDays = Number(e.target.value);
     renderPatterns();
     $("pattern-window").focus();
   };
+}
+function foodPoopHTML(events) {
+  const rows = foodPoopStats(events);
+  const total = rows.reduce((n, r) => n + r.tagged, 0);
+  const body = total < 3
+    ? `<p class="muted">Not enough tagged poops yet.</p>`
+    : rows
+        .map((r) => {
+          const pct = (n) => ((n / r.tagged) * 100).toFixed(0);
+          return `<div class="by-food"><b>${esc(r.food)}</b><span class="q-bar" role="img" aria-label="${esc(r.food)}: ${r.firm} firm, ${r.soft} soft, ${r.loose} loose"><i class="firm" style="width:${pct(r.firm)}%"></i><i class="soft" style="width:${pct(r.soft)}%"></i><i class="loose" style="width:${pct(r.loose)}%"></i></span><span class="muted">${r.soft + r.loose} of ${r.tagged} soft or loose</span></div>`;
+        })
+        .join("");
+  return `<section class="rhythm-answer"><h3>Poop by food</h3><p class="muted">The first poop within a day after each meal.</p>${body}<div class="legend"><span><i class="firm"></i>Firm</span><span><i class="soft"></i>Soft</span><span><i class="loose"></i>Loose</span></div></section>`;
 }
 function countsHTML(events) {
   const days = Array.from({ length: 14 }, (_, i) => {

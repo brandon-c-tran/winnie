@@ -1,7 +1,10 @@
-import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=4.3";
+import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=4.4";
 import { icon } from "./icons.js?v=4.0";
+const face = (id, size = "sm") =>
+  id === "brandon" || id === "kim" ? `<img class="face ${size}" src="/photos/${id}-face.png" alt="" aria-hidden="true">` : "";
 
 export function createFridge({
+  extraNext = () => "",
   root,
   nextRoot,
   careDueHTML = () => "",
@@ -80,9 +83,9 @@ export function createFridge({
             e.who === "trainer" &&
             Math.abs(e.time - visits[0].start) < 1800000),
       );
-    const due = careDueHTML();
+    const due = careDueHTML() + extraNext();
     const nextRow = n
-      ? `<div class="row"><span class="sq" style="--c:var(--pee)">${icon("plans", "ic sm")}</span><div><b>${esc(n.label)}</b><small>${n.dueAt ? `${day(n.dueAt)} · ${time(n.dueAt)}` : "No time set"} · <span class="owner">${n.claimedBy ? `${esc(person(n.claimedBy))} has it` : "Nobody yet"}</span></small></div><span class="button-row">${n.claimedBy ? "" : '<button class="px btn" data-fridge="claim">I\'ll do it</button>'}<button class="px btn" data-fridge="done">Done</button></span></div>`
+      ? `<div class="row"><span class="sq" style="--c:var(--pee)">${icon("plans", "ic sm")}</span><div><b>${esc(n.label)}</b><small>${n.dueAt ? `${day(n.dueAt)} · ${time(n.dueAt)}` : "No time set"} · <span class="owner">${n.claimedBy ? `${face(n.claimedBy)}${esc(person(n.claimedBy))} has it` : "Nobody yet"}</span></small></div><span class="button-row">${n.claimedBy ? "" : '<button class="px btn" data-fridge="claim">I\'ll do it</button>'}<button class="px btn" data-fridge="done">Done</button></span></div>`
       : "";
     const visitRow = visits[0]
       ? `<div class="row"><span class="sq" style="--c:var(--care)">${icon("star", "ic sm")}</span><div><b>${esc(visits[0].title)}</b><small>${visitConfirmed ? "Confirmed" : "Planned"} · ${time(visits[0].start)}</small></div><button class="text-button" data-act="trainer-schedule">Open</button></div>`
@@ -95,7 +98,7 @@ export function createFridge({
     const content = `<div class="card-head"><h2 id="notes-title">Notes</h2><button class="text-button small" data-fridge="saved">Saved (${saved.length})</button></div>${active.length ? "" : '<div class="notes-empty"><span>No notes on the fridge.</span><button class="px btn" data-fridge="new">Add note</button></div>'}<div class="notes" ${active.length ? "" : "hidden"}>${active
       .map(
         (note) =>
-          `<button class="sticky ${note.color === "rose" ? "rose" : ""}" data-fridge="note" data-id="${esc(note.id)}" data-note-card="${esc(note.id)}" aria-label="Edit note: ${esc(note.text.slice(0, 100))}"><span class="tx">${esc(note.text)}</span><small>${note.by ? esc(person(note.by)) : "Note"}${note.createdAt ? " · " + day(note.createdAt) : ""}${note.until ? " · today only" : ""}</small></button>`,
+          `<button class="sticky ${note.color === "rose" ? "rose" : ""}" data-fridge="note" data-id="${esc(note.id)}" data-note-card="${esc(note.id)}" aria-label="Edit note: ${esc(note.text.slice(0, 100))}">${face(note.by, "magnet")}<span class="tx">${esc(note.text)}</span><small>${note.by ? esc(person(note.by)) : "Note"}${note.createdAt ? " · " + day(note.createdAt) : ""}${note.until ? " · today only" : ""}</small></button>`,
       )
       .join("")}${active.length < 2 ? `<button class="add-note" data-fridge="new">${icon("plus", "ic sm")}Add note</button>` : ""}</div>`;
     if (last === content) return;

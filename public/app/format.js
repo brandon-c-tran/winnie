@@ -13,6 +13,11 @@ export const esc = (value) =>
   );
 export const person = (id) => ({ brandon: "Brandon", kim: "Kim" })[id] || "";
 export const by = (id) => (person(id) ? " · " + person(id) : "");
+// Brandon's and Kim's Stardew portraits, cropped to the face. Decorative: names stay in text.
+export const face = (id, size = "sm") =>
+  id === "brandon" || id === "kim"
+    ? `<img class="face ${size}" src="/photos/${id}-face.png" alt="" aria-hidden="true">`
+    : "";
 export const dayKey = (time) => {
   const d = new Date(time);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
