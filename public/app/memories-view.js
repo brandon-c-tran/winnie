@@ -4,14 +4,14 @@ import {
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.7";
-import { cityFor } from "../places.js?v=4.7";
+} from "../memories.js?v=4.8";
+import { cityFor } from "../places.js?v=4.8";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.7";
-import { $, esc } from "./format.js?v=4.7";
-import { html, toast } from "./ui.js?v=4.7";
-import { hydratePhotos } from "./entries.js?v=4.7";
-import { download } from "./photos.js?v=4.7";
+import { facts, sync } from "./services.js?v=4.8";
+import { $, esc } from "./format.js?v=4.8";
+import { html, toast } from "./ui.js?v=4.8";
+import { hydratePhotos } from "./entries.js?v=4.8";
+import { download } from "./photos.js?v=4.8";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });

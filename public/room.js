@@ -1861,7 +1861,16 @@ export function createRoom(canvas, opts = {}) {
     draw();
     wake();
   });
-  const ro = new ResizeObserver(() => size());
+  // Resizing the canvas changes its parent's height. Defer that write so it
+  // doesn't trigger a ResizeObserver loop during phone viewport changes.
+  let resizeFrame = 0;
+  const ro = new ResizeObserver(() => {
+    if (resizeFrame) cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => {
+      resizeFrame = 0;
+      size();
+    });
+  });
   ro.observe(canvas.parentElement);
   if (!still) {
     new IntersectionObserver(([en]) => {

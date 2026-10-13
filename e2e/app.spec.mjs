@@ -126,6 +126,7 @@ test("History searches and Trends draws the 14-day chart", async ({
 }, info) => {
   await join(page, code(info));
   await page.locator('#care-actions [data-log="poop"]').click();
+  await page.getByRole('button', { name: 'Not now', exact: true }).click();
   await page.locator("#history-tab").click();
   await page.locator("#story-search").fill("poop");
   await expect(page.locator("#story-items")).toContainText("Poop");

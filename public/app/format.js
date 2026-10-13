@@ -13,11 +13,11 @@ export const esc = (value) =>
   );
 export const person = (id) => ({ brandon: "Brandon", kim: "Kim" })[id] || "";
 export const by = (id) => (person(id) ? " · " + person(id) : "");
-// Native head portraits for record rails; full portraits for larger placements.
-// Both are shown whole. Names remain text, so the artwork is decorative.
+// Use the full bust in every placement; the separate face assets are close crops.
+// Names remain text, so the artwork is decorative.
 export const face = (id, size = "sm") =>
   id === "brandon" || id === "kim"
-    ? `<img class="face ${size}" src="/photos/${id}-${size === "record" ? "face" : "pixel"}.png" alt="" aria-hidden="true">`
+    ? `<img class="face ${size}" src="/photos/${id}-pixel.png" alt="" aria-hidden="true">`
     : "";
 export const dayKey = (time) => {
   const d = new Date(time);

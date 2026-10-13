@@ -374,8 +374,8 @@ One line under the room that states the room's state in words.
 Square labels floating over the room: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings.
 
 ### People (Brandon and Kim)
-Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). History and Care photos use the existing `brandon-face.png` and `kim-face.png` head portraits at their native 40×40px size, with the name beneath in a dedicated left rail. Entry details use the full `brandon-pixel.png` and `kim-pixel.png` artwork in a 64×64px area beside the title and logger attribution. Both treatments show the artwork whole with `object-fit: contain`, a bottom baseline and pixelated rendering; neither crops or enlarges a head from the full portrait.
-- Other placements retain the full artwork: `xs`, `sm` and magnets occupy 28×32px, `md` occupies 44×52px, and the room's Settings portrait occupies 32×36px inside a 44px target. Names remain separate text and portraits are decorative.
+Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). All placements use the existing full-bust `brandon-pixel.png` and `kim-pixel.png` artwork. Today, History and Care photos contain the whole portrait in a 40×40px area, with the name beneath in a dedicated left rail. Entry details retain a 64×64px portrait area beside the title and logger attribution. Portraits use `object-fit: contain`, a bottom baseline and pixelated rendering; the close-cropped head assets are not used.
+- Other placements retain the full artwork: `xs`, `sm` and magnets occupy 28×32px, `md` occupies 44×52px, and the room's Settings portrait occupies 32×32px, centred inside its 44×44px target. Names remain separate text and portraits are decorative.
 - **Dialogue box.** When the other phone logs something, a game dialogue box rises over the bottom of the room: the 48px full portrait, the name in Pixelify 700, "Logged meal 12:40 PM" in Rubik. Cream paper, 3px ink edge, gold inner rim. Tap opens the entry; it leaves on its own after 7 seconds. It replaces the old "Kim logged" toast.
 - The weekly postcard puts both faces on the footer line with each person's count for the week.
 
@@ -486,13 +486,24 @@ sentences when a relationship genuinely needs prose. This is a standing user
 preference for future interfaces as well as the care log.
 
 History owns its Daily log and Trends sections, search, type and date filters.
-Entries are grouped by day as signed records. A native 40px head portrait with
+Entries are grouped by day as signed records. A full-bust portrait contained in a 40px square with
 the name beneath occupies the left rail. Beside it, event and time share the
 heading, followed by one useful result when recorded (such as stool consistency,
 food or duration) and an optional note limited to two visible lines. The footer
 contains only a photo-count link when applicable and reactions. Place, tags and
 full notes belong in the entry detail. Last-care counters live in an expandable
 summary.
+
+Today uses the same signed records and displays the first attached photo beneath
+the entry in a 144×144px area with `object-fit: contain`. A count overlays the
+preview when there are multiple photos; opening it leads to the entry details.
+History retains its compact photo-count links.
+
+After a quick poop log saves, an optional Poop photo sheet opens with Take photo,
+Choose photo, Consistency and Not now. Consistency updates in place so the photo
+choices stay available; a successful photo attachment closes the sheet. Not now
+or dismissing the sheet preserves the saved log. The prompt does not replace an
+already-open dialog, and pee and earlier logging retain their existing flow.
 
 Entry details pair an uncropped full portrait in a 64px area with the event title
 in Pixelify Sans 700 at 24px and logger attribution. Labeled date/time fields,

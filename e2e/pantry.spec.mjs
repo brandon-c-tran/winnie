@@ -49,7 +49,8 @@ test("poop quality: tag right after a poop, then it shows by food in Trends", as
     await expect(toast(page)).toContainText("Meal logged");
     await page.locator('#care-actions [data-log="poop"]').click();
     await expect(page.locator("#poop-quality")).toBeVisible();
-    await page.locator("#poop-quality button", { hasText: q }).click();
+    await page.locator("#dialog [data-quality]", { hasText: q }).click();
+    await page.getByRole("button", { name: "Not now", exact: true }).click();
     await expect(page.locator("#poop-quality")).toBeHidden();
     await page.waitForTimeout(650); // past the double-tap guard on log buttons
   }

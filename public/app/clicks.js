@@ -1,9 +1,9 @@
 // Delegated click handling for buttons rendered as HTML strings.
 // A button is matched by the first data attribute in BY_ATTRIBUTE it carries, otherwise by
 // its data-act name in ACTIONS. Handlers receive the button.
-import { sleepContext } from "../everyday.js?v=4.7";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.7";
-import { $, active, clock, dayKey, esc } from "./format.js?v=4.7";
+import { sleepContext } from "../everyday.js?v=4.8";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.8";
+import { $, active, clock, dayKey, esc } from "./format.js?v=4.8";
 import {
   earlierSheet,
   endSleep,
@@ -13,11 +13,11 @@ import {
   moreCare,
   saveEarlier,
   saveMeal,
-} from "./logging.js?v=4.7";
-import { editForm, nextCareForm, placePicker, plan } from "./forms.js?v=4.7";
-import { confirmVisit, trainerSchedule } from "./trainer.js?v=4.7";
-import { renderPatterns, showEvidence } from "./library.js?v=4.7";
-import { detail } from "./entries.js?v=4.7";
+} from "./logging.js?v=4.8";
+import { editForm, nextCareForm, placePicker, plan } from "./forms.js?v=4.8";
+import { confirmVisit, trainerSchedule } from "./trainer.js?v=4.8";
+import { renderPatterns, showEvidence } from "./library.js?v=4.8";
+import { detail } from "./entries.js?v=4.8";
 import {
   autoPlace,
   autoPlaceEnabled,
@@ -25,14 +25,14 @@ import {
   photoURLs,
   room,
   sync,
-} from "./services.js?v=4.7";
-import { addPhotos, choosePhoto, download } from "./photos.js?v=4.7";
-import { review, settings, updatePushStatus } from "./settings.js?v=4.7";
-import { openHistory } from "./nav.js?v=4.7";
-import { render } from "./today.js?v=4.7";
-import { state } from "./state.js?v=4.7";
-import { QUALITY } from "../pantry.js?v=4.7";
-import { postcard, setRecapYear } from "./memories-view.js?v=4.7";
+} from "./services.js?v=4.8";
+import { addPhotos, choosePhoto, download } from "./photos.js?v=4.8";
+import { review, settings, updatePushStatus } from "./settings.js?v=4.8";
+import { openHistory } from "./nav.js?v=4.8";
+import { render } from "./today.js?v=4.8";
+import { state } from "./state.js?v=4.8";
+import { QUALITY } from "../pantry.js?v=4.8";
+import { postcard, setRecapYear } from "./memories-view.js?v=4.8";
 
 // Disable the button while an async handler runs, so a double tap can't repeat it.
 const busy = (fn) => async (b) => {
@@ -100,11 +100,24 @@ const BY_ATTRIBUTE = [
       if (!e) return;
       const q = b.dataset.quality,
         tags = (e.tags || []).filter((t) => !QUALITY.includes(t));
-      await sync.enqueue("edit", e.id, { tags: e.tags?.includes(q) ? tags : [...tags, q] });
-      if ($("dialog").open) detail(e.id);
+      await sync.enqueue("edit", e.id, {
+        tags: e.tags?.includes(q) ? tags : [...tags, q],
+      });
+      if ($("dialog").open && state.quickPhotoId === e.id) {
+        const selected =
+          sync.view().events.find((event) => event.id === e.id)?.tags || [];
+        for (const button of $("dialog").querySelectorAll("[data-quality]")) {
+          const pressed = selected.includes(button.dataset.quality);
+          button.classList.toggle("selected", pressed);
+          button.setAttribute("aria-pressed", String(pressed));
+        }
+      } else if ($("dialog").open) detail(e.id);
     },
   ],
-  [(b) => has(b, "recapYear"), (b) => setRecapYear(Number(b.dataset.recapYear))],
+  [
+    (b) => has(b, "recapYear"),
+    (b) => setRecapYear(Number(b.dataset.recapYear)),
+  ],
   [
     (b) => has(b, "rhythm"),
     (b) => {
