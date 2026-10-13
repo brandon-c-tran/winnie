@@ -1,25 +1,24 @@
 // Winnie: startup. Everything else lives in ./app/.
-import { loadCities } from "./places.js?v=4.11";
-import { protectAppSelection } from "./selection.js?v=4.11";
-import { sync } from "./app/services.js?v=4.11";
-import { render } from "./app/today.js?v=4.11";
-import { detail, refreshReactions } from "./app/entries.js?v=4.11";
-import { $ } from "./app/format.js?v=4.11";
-import { setTab } from "./app/nav.js?v=4.11";
-import { error } from "./app/ui.js?v=4.11";
-import "./app/format.js?v=4.11";
-import "./app/services.js?v=4.11";
-import "./app/ui.js?v=4.11";
-import "./app/nav.js?v=4.11";
-import "./app/today.js?v=4.11";
-import "./app/library.js?v=4.11";
-import "./app/entries.js?v=4.11";
-import "./app/logging.js?v=4.11";
-import "./app/forms.js?v=4.11";
-import "./app/settings.js?v=4.11";
-import "./app/photos.js?v=4.11";
-import "./app/clicks.js?v=4.11";
-import "./app/trainer.js?v=4.11";
+import { protectAppSelection } from "./selection.js?v=4.15";
+import { sync } from "./app/services.js?v=4.15";
+import { render } from "./app/today.js?v=4.15";
+import { detail, refreshReactions } from "./app/entries.js?v=4.15";
+import { $ } from "./app/format.js?v=4.15";
+import { setTab } from "./app/nav.js?v=4.15";
+import { error, hasDialogDrafts, restoreDrafts } from "./app/ui.js?v=4.15";
+import "./app/format.js?v=4.15";
+import "./app/services.js?v=4.15";
+import "./app/ui.js?v=4.15";
+import "./app/nav.js?v=4.15";
+import "./app/today.js?v=4.15";
+import "./app/library.js?v=4.15";
+import "./app/entries.js?v=4.15";
+import "./app/logging.js?v=4.15";
+import "./app/forms.js?v=4.15";
+import "./app/settings.js?v=4.15";
+import "./app/photos.js?v=4.15";
+import "./app/clicks.js?v=4.15";
+import "./app/trainer.js?v=4.15";
 
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {
@@ -42,7 +41,7 @@ if ("serviceWorker" in navigator) {
     if (e.data?.type === "APP_UPDATED" && hadController) {
       const reload = () => {
         if (
-          !$("dialog").open &&
+          !$("dialog").open && !hasDialogDrafts() &&
           !document.querySelector("input:focus, textarea:focus")
         )
           location.reload();
@@ -71,6 +70,7 @@ await sync.init().catch((err) => {
   $("connect-form").querySelector("[type=submit]").disabled = true;
 });
 const linkedEvent = new URL(location.href).searchParams.get("event");
+await restoreDrafts();
 if (linkedEvent && sync.session) {
   await sync.refresh().catch(() => {});
   detail(linkedEvent);
@@ -78,6 +78,3 @@ if (linkedEvent && sync.session) {
 setInterval(() => {
   if (!document.hidden && !$("dialog").open) render();
 }, 60000);
-loadCities()
-  .then(() => render())
-  .catch(() => {});

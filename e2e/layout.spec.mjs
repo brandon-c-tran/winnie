@@ -62,7 +62,7 @@ test("no state scrolls sideways", async ({ page }, info) => {
   }
   await page.locator('[data-act="more"]').click();
   await page.locator('[data-act="start-walk"]').click();
-  await expect(page.locator("#room-status")).toContainText("Out on a walk");
+  await expect(page.locator("#room-status")).toContainText("Walk timer running");
   await noSideways(page, "walk running");
   await page.locator('[data-act="more"]').click();
   await page.locator('[data-act="start-sleep"]').click();

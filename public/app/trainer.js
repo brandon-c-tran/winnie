@@ -1,8 +1,8 @@
 // Trainer visits imported from the calendar.
-import { validateTrainerImport } from "../everyday.js?v=4.11";
-import { $, clock, dateLabel, esc } from "./format.js?v=4.11";
-import { facts, sync } from "./services.js?v=4.11";
-import { openDialog, safe, toast } from "./ui.js?v=4.11";
+import { validateTrainerImport } from "../everyday.js?v=4.15";
+import { $, clock, dateLabel, esc } from "./format.js?v=4.15";
+import { facts, sync } from "./services.js?v=4.15";
+import { openDialog, safe, toast } from "./ui.js?v=4.15";
 
 export function visitRow(v, events = facts()) {
   const logged = events.find(

@@ -1,4 +1,4 @@
-import { notificationState } from "./everyday.js?v=4.11";
+import { notificationState } from "./everyday.js?v=4.15";
 const API = "/.netlify/functions/api";
 const empty = () => ({
   snapshot: {
@@ -90,6 +90,8 @@ export function project(data) {
           ...(e.photos || []),
           { id: c.payload.photoId, addedBy: item.person },
         ];
+      if (c.kind === "keepPhoto")
+        e.photos = (e.photos || []).map(p => p.id === c.payload.photoId ? {...p, keepsake: c.payload.keep} : p);
       if (c.kind === "removePhoto")
         e.photos = (e.photos || []).filter((p) => p.id !== c.payload.photoId);
       e.revision++;

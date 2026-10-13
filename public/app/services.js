@@ -1,17 +1,17 @@
 // Long-lived services: the shared log, the room, plans, notes, places, location.
-import { createCare } from "../care-view.js?v=4.11";
-import { createPlacesView } from "../places-view.js?v=4.11";
-import { createFridge } from "../fridge.js?v=4.11";
-import { createAutoPlace } from "../auto-place.js?v=4.11";
-import { createRoom } from "../room.js?v=4.11";
-import { WinnieSync } from "../sync.js?v=4.11";
-import { $, esc, person } from "./format.js?v=4.11";
-import { detail, entry, hydratePhotos } from "./entries.js?v=4.11";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.11";
-import { editForm } from "./forms.js?v=4.11";
-import { log } from "./logging.js?v=4.11";
-import { roomObject } from "./today.js?v=4.11";
-import { pantryNextHTML } from "./pantry-view.js?v=4.11";
+import { createCare } from "../care-view.js?v=4.15";
+import { createPlacesView } from "../places-view.js?v=4.15";
+import { createFridge } from "../fridge.js?v=4.15";
+import { createAutoPlace } from "../auto-place.js?v=4.15";
+import { createRoom } from "../room.js?v=4.15";
+import { WinnieSync } from "../sync.js?v=4.15";
+import { $, esc, person } from "./format.js?v=4.15";
+import { detail, entry, hydratePhotos } from "./entries.js?v=4.15";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.15";
+import { editForm } from "./forms.js?v=4.15";
+import { log, routineSheet } from "./logging.js?v=4.15";
+import { roomObject } from "./today.js?v=4.15";
+import { pantryNextHTML } from "./pantry-view.js?v=4.15";
 
 export const sync = new WinnieSync();
 export const places = createPlacesView({
@@ -31,6 +31,7 @@ export const care = createCare({
   safe,
   detail,
   celebrate: () => room.react("done"),
+  completeRoutine: routineSheet,
   attachLocation: (id) => {
     void autoPlace.attach(id);
   },

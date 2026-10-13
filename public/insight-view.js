@@ -1,7 +1,7 @@
 import {
   clockMinute as time,
   durationLabel as duration,
-} from "./insights.js?v=4.11";
+} from "./insights.js?v=4.15";
 const date = (day) =>
   new Date(day + "T12:00:00Z").toLocaleDateString("en-US", {
     month: "short",
@@ -81,7 +81,7 @@ function nightView(d) {
     ${d.pastNight.enough ? `<section class="rhythm-question"><p class="eyebrow">LAST PERIOD</p><p>${span(d.previousStart, d.previousEnd)}: bed around ${roundTime(d.pastNight.bed.median)}, up around ${roundTime(d.pastNight.wake.median)}, from ${d.pastNight.count} completed entries.</p>${evidence("past-nights", "Check the comparison")}</section>` : ""}`;
 }
 
-export function insightsView(d, topic) {
+export function insightsView(d, topic, summary = "") {
   return `<div class="rhythm-toolbar"><div class="rhythm-topics" role="group" aria-label="Routine to explore">${[
     ["poop", "Poop"],
     ["pee", "Pee"],
@@ -95,7 +95,7 @@ export function insightsView(d, topic) {
       "",
     )}</div><label><span class="sr-only">Insight time window</span><select id="pattern-window">${[7, 28, 90].map((n) => `<option value="${n}" ${n === d.days ? "selected" : ""}>${n} days</option>`).join("")}</select></label></div>
     <p class="rhythm-period">${span(d.start, d.end)} · San Francisco time</p>
-    <div class="rhythm-content">${topic === "nights" ? nightView(d) : pottyView(d, topic)}</div>
+    ${summary}<div class="rhythm-content">${topic === "nights" ? nightView(d) : pottyView(d, topic)}</div>
     <details class="rhythm-method"><summary>What goes into these insights</summary><p>${d.total} entries across ${d.activeDays} of ${d.days} days in this period. Missing logs never count as missed care. Future and deleted entries are excluded.</p><p>${topic === "nights" ? `${d.night.omitted} night entries were excluded because they are unfinished, have uncertain times, or have an invalid interval. Naps are excluded. No gaps are filled in.` : "Clock patterns use timed entries. Daytime spacing compares consecutive entries on the same day between 6am and 10pm, excluding gaps under 15 minutes or over 8 hours."}</p>${topic === "poop" ? `<p>Meal pairing uses the first poop after the most recent meal, within four hours, once per meal. Meals from the last four hours wait until their full window has passed (${d.afterMeals.waiting} waiting). An unmatched meal does not mean he didn’t poop.</p>` : ""}</details>
     <div class="rhythm-footer"><span>${d.allCount.toLocaleString()} entries in his history</span><button class="text-button" data-act="all-history">All entries ↗</button></div>`;
 }

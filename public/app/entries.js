@@ -1,15 +1,30 @@
-import { createReactionPicker } from "./reaction-picker.js?v=4.11";
+import { isCarePhoto } from "../keepsakes.js?v=4.15";
+import { createReactionPicker } from "./reaction-picker.js?v=4.15";
 // Entry rows, reactions, the entry detail sheet, and photo loading.
-import { QUALITY } from "../pantry.js?v=4.11";
-import { placeLabel } from "../places.js?v=4.11";
+import { QUALITY } from "../pantry.js?v=4.15";
+import { placeLabel } from "../places.js?v=4.15";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { photoCaption } from "../everyday.js?v=4.11";
-import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.11";
-import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.11";
-import { openDialog, safe, toast } from "./ui.js?v=4.11";
-import { placeSummary } from "./forms.js?v=4.11";
-import { state } from "./state.js?v=4.11";
+import { photoCaption } from "../everyday.js?v=4.15";
+import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.15";
+import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.15";
+import { openDialog, safe, toast } from "./ui.js?v=4.15";
+import { placeSummary } from "./forms.js?v=4.15";
+import { state } from "./state.js?v=4.15";
 
+document.addEventListener("click", safe(async ev => {
+  const button = ev.target.closest("[data-keep-photo]");
+  if (!button) return;
+  button.disabled = true;
+  try {
+    const event = sync.view().events.find(e => e.id === button.dataset.id);
+    const photo = event?.photos?.find(p => p.id === button.dataset.keepPhoto);
+    if (!photo) throw Error("This photo is no longer attached.");
+    await sync.enqueue("keepPhoto", event.id, {photoId: photo.id, keep: !photo.keepsake});
+    button.textContent = photo.keepsake ? "Keep in Winnie" : "Kept in Winnie";
+    button.setAttribute("aria-pressed", String(!photo.keepsake));
+    toast(photo.keepsake ? "Removed from Winnie. Care photo kept." : "Kept in Winnie. Care photo stays attached.");
+  } finally { button.disabled = false; }
+}));
 const pendingReactions = new Set();
 const picker = createReactionPicker({
   choices: [
@@ -181,7 +196,7 @@ export function detail(id) {
       ${e.foods?.length || (e.who && e.who !== "us") || e.tags?.some((t) => !QUALITY.includes(t)) ? `<div class="detail-facts">${entryFacts({ foods: e.foods, tags: (e.tags || []).filter((t) => !QUALITY.includes(t)) }, "")}${e.who && e.who !== "us" ? `<span class="entry-fact"><span class="fact-label">Care by</span><span>${esc(e.who)}</span></span>` : ""}</div>` : ""}
       ${e.type === "poop" ? `<section class="detail-section"><h3>Consistency</h3><div class="signal-buttons">${QUALITY.map((q) => `<button aria-pressed="${e.tags?.includes(q) || false}" data-quality="${q}" data-id="${esc(id)}" class="${e.tags?.includes(q) ? "selected" : ""}">${q[0].toUpperCase() + q.slice(1)}</button>`).join("")}</div></section>` : ""}
       <section class="detail-section detail-place"><div class="detail-section-heading"><h3>Place</h3><button class="text-button" data-place="${esc(id)}">${placeLabel(e) ? "Edit place" : "Add place"}</button></div>${placeLabel(e) ? placeSummary(e) : '<p class="fine">No place recorded</p>'}</section>
-      <section class="detail-section"><div class="detail-section-heading"><h3>Photos${e.photos?.length ? ` <span class="fine">${e.photos.length}</span>` : ""}</h3><div class="detail-photo-add"><button class="text-button" data-photo-camera="${esc(id)}">Take photo</button><button class="text-button" data-photo-library="${esc(id)}">Choose photo</button></div></div>${(e.photos || []).map((p) => `<figure class="detail-image"><img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}"><figcaption class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove photo</button></figcaption></figure>`).join("")}${!e.photos?.length ? '<p class="fine">No photos attached</p>' : ""}</section>
+      <section class="detail-section"><div class="detail-section-heading"><h3>Photos${e.photos?.length ? ` <span class="fine">${e.photos.length}</span>` : ""}</h3><div class="detail-photo-add"><button class="text-button" data-photo-camera="${esc(id)}">Take photo</button><button class="text-button" data-photo-library="${esc(id)}">Choose photo</button></div></div>${(e.photos || []).map((p) => `<figure class="detail-image"><img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}"><figcaption class="photo-actions">${isCarePhoto(e) ? `<button class="text-button" data-keep-photo="${esc(p.id)}" data-id="${esc(id)}" aria-pressed="${p.keepsake === true}">${p.keepsake ? "Kept in Winnie" : "Keep in Winnie"}</button>` : ""}<button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove photo</button></figcaption></figure>`).join("")}${!e.photos?.length ? '<p class="fine">No photos attached</p>' : ""}</section>
       ${["pee", "poop"].includes(e.type) ? `<section class="detail-section"><h3>Who started it?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button aria-pressed="${e.signal === s}" data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div></section>` : e.signal ? `<p>${esc(e.signal)}</p>` : ""}
       <footer class="detail-section"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></footer><p id="form-error" class="error" role="alert"></p>
     </article>`,

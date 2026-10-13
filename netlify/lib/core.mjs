@@ -512,6 +512,11 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         event.deletedAt = now;
         notify = true;
       } else if (kind === "restore") {
+        if (event.carePlanId && event.deletedAt) {
+          const plan = doc.profile.carePlans?.find(p => p.id === event.carePlanId);
+          assert(plan && !plan.paused && planState(plan, doc.events, now).due === event.careDue,
+            "This care occurrence changed. Refresh Care before restoring it.", 409);
+        }
         delete event.deletedAt;
         ensureActivity(doc, event);
       } else if (kind === "attach") {
@@ -526,6 +531,11 @@ export function applyCommand(doc, command, device, now = Date.now()) {
           });
           notify = true;
         }
+      } else if (kind === "keepPhoto") {
+        assert(typeof payload.keep === "boolean", "Choose whether to keep this photo.");
+        const photo = event.photos?.find(p => p.id === payload.photoId);
+        assert(photo, "This photo is no longer attached.", 409);
+        photo.keepsake = payload.keep;
       } else if (kind === "removePhoto")
         event.photos = (event.photos || []).filter(
           (p) => p.id !== payload.photoId,

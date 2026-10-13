@@ -1,11 +1,23 @@
 // Photo picking, resizing, and saving.
-import { $, clock, dateLabel, dateTime, esc, uid } from "./format.js?v=4.11";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.11";
-import { facts, sync } from "./services.js?v=4.11";
-import { detail, eventLabel } from "./entries.js?v=4.11";
+import { $, clock, dateLabel, dateTime, esc, uid } from "./format.js?v=4.15";
+import {
+  closeDialog,
+  openDialog,
+  safe,
+  toast,
+  retainDialogDraft,
+  resumeDialogDraft,
+  markDialogDirty,
+  draftFields,
+  applyDraftFields,
+  persistDialogDraft,
+} from "./ui.js?v=4.15";
+import { isCarePhoto } from "../keepsakes.js?v=4.15";
+import { facts, sync, photoURLs } from "./services.js?v=4.15";
+import { detail, eventLabel, hydratePhotos } from "./entries.js?v=4.15";
 import { icon } from "../icons.js?v=4.0";
-import { render } from "./today.js?v=4.11";
-import { state } from "./state.js?v=4.11";
+import { render } from "./today.js?v=4.15";
+import { state } from "./state.js?v=4.15";
 
 // The photo composer owns its previews; they never enter the shared log before Save.
 let draft = null;
@@ -13,10 +25,10 @@ function clearDraft() {
   draft?.items.forEach((item) => URL.revokeObjectURL(item.url));
   draft = null;
 }
-document.addEventListener("winnie:surface-change", clearDraft);
-$("dialog").addEventListener("close", clearDraft);
 
-export function addPhotos(care = false) {
+export function addPhotos(care = false, restored = null) {
+  if (!care && !restored && resumeDialogDraft("photos:" + sync.session?.home))
+    return;
   if (care) {
     openDialog(
       `<h2 id="dialog-title">Attach to care entry</h2><label class="search-box"><span class="sr-only">Find care entry</span><input id="attach-search" type="search" placeholder="Search date, note or type"></label><div id="attach-entries" class="attach-entries"></div><button class="text-button" data-act="earlier">Add a care entry</button><p id="form-error" class="error" role="alert"></p>`,
@@ -25,7 +37,7 @@ export function addPhotos(care = false) {
       const query = $("attach-search").value.trim().toLowerCase();
       const entries = facts().filter(
         (e) =>
-          ["poop", "meal"].includes(e.type) &&
+          isCarePhoto(e) &&
           `${eventLabel(e)} ${dateLabel(e.time)} ${e.note || ""}`
             .toLowerCase()
             .includes(query),
@@ -46,8 +58,40 @@ export function addPhotos(care = false) {
   openDialog(
     `<h2 id="dialog-title">Add photos</h2><form id="photo-composer"><div class="photo-composer-pick"><button type="button" class="primary" data-album-library>${icon("photo", "ic sm")} Choose photos</button><button type="button" class="secondary" data-album-camera>Take photo</button></div><div id="photo-draft" class="photo-draft"></div><p id="photo-draft-status" class="fine" role="status">No photos selected</p><label>Caption <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Add a caption"></textarea></label><label>Date taken<input name="time" type="datetime-local" value="${dateTime(Date.now())}" required></label><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary" type="submit" disabled>Save photos</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
   );
-  draft = { id: uid(), items: [], saved: false, busy: false };
+  draft = {
+    id: restored?.id || uid(),
+    items: (restored?.items || []).map((item) => ({
+      blob: item.blob,
+      url: URL.createObjectURL(item.blob),
+    })),
+    saved: restored?.saved || false,
+    busy: false,
+  };
   const current = draft;
+  const composer = $("photo-composer");
+  applyDraftFields(composer, restored?.fields);
+  retainDialogDraft(
+    "photos:" + sync.session?.home,
+    () => {
+      draft = current;
+      renderDraft();
+    },
+    () => {
+      current.items.forEach((item) => URL.revokeObjectURL(item.url));
+      current.items = [];
+      if (draft === current) draft = null;
+    },
+    () => ({
+      kind: "photos",
+      id: current.id,
+      saved: current.saved,
+      items: current.items.map((item) => ({ blob: item.blob })),
+      fields: draftFields(composer),
+    }),
+  );
+  composer.elements.note.disabled = current.saved;
+  composer.elements.time.disabled = current.saved;
+  renderDraft();
   $("photo-composer").onsubmit = safe(async (event) => {
     event.preventDefault();
     if (current.busy || current.preparing || !current.items.length) return;
@@ -69,14 +113,17 @@ export function addPhotos(care = false) {
           retroactive: true,
         });
         current.saved = true;
+        persistDialogDraft();
       }
       while (current.items.length) {
         const item = current.items[0];
         await sync.addPhoto(current.id, item.blob);
         current.items.shift();
         URL.revokeObjectURL(item.url);
+        persistDialogDraft();
       }
       closeDialog();
+      clearDraft();
       render();
       toast("Photos saved", () => sync.enqueue("delete", current.id));
     } finally {
@@ -93,6 +140,9 @@ export function addPhotos(care = false) {
     }
   });
 }
+document.addEventListener("winnie:resume-draft", ({ detail: data }) => {
+  if (data?.kind === "photos") addPhotos(false, data);
+});
 function renderDraft() {
   if (!draft || !$("photo-draft")) return;
   $("photo-draft").innerHTML = draft.items
@@ -119,6 +169,7 @@ document.addEventListener("click", (event) => {
   if (b.hasAttribute("data-remove-draft") && draft && !draft.busy) {
     const [item] = draft.items.splice(Number(b.dataset.removeDraft), 1);
     if (item) URL.revokeObjectURL(item.url);
+    markDialogDirty();
     renderDraft();
   }
   if (b.dataset.attachEntry) {
@@ -172,11 +223,30 @@ export function choosePhoto(target, camera = false) {
   input.value = "";
   input.click();
 }
+function savedPhotos(id, ids) {
+  const entry = sync.view().events.find((e) => e.id === id);
+  if (!entry) return;
+  openDialog(
+    `<h2 id="dialog-title">Photo saved</h2><div class="saved-photos">${(
+      entry.photos || []
+    )
+      .filter((p) => ids.includes(p.id))
+      .map(
+        (p) =>
+          `<figure><img src="${esc(photoURLs.get(p.id))}" data-photo="${esc(p.id)}" alt="Saved care photo">${isCarePhoto(entry) ? `<figcaption><button class="px btn" data-keep-photo="${esc(p.id)}" data-id="${esc(id)}" aria-pressed="${p.keepsake === true}">${p.keepsake ? "Kept in Winnie" : "Keep in Winnie"}</button></figcaption>` : ""}</figure>`,
+      )
+      .join(
+        "",
+      )}</div><div class="button-row"><button class="primary" data-act="close">Done</button><button class="text-button" data-open="${esc(id)}">View care entry</button></div><p id="form-error" class="error" role="alert"></p>`,
+  );
+  hydratePhotos();
+}
 for (const id of ["camera-input", "library-input"])
   $(id).onchange = safe(async (e) => {
     const files = Array.from(e.target.files || []).slice(0, 20),
       target = state.photoTarget,
       albumDraft = draft;
+    const attached = [];
     if (!files.length) return;
     if (target === "album") {
       if (!albumDraft || albumDraft.busy || albumDraft.preparing) return;
@@ -191,13 +261,19 @@ for (const id of ["camera-input", "library-input"])
         if (target === "album") {
           if (!albumDraft || draft !== albumDraft || albumDraft.busy) return;
           albumDraft.items.push({ blob, url: URL.createObjectURL(blob) });
+          markDialogDirty();
           renderDraft();
         } else if (target === "form") {
           if (!$("event-form")) return;
           state.formPhotos.push(blob);
+          markDialogDirty();
           $("form-photo-status").textContent =
             `${state.formPhotos.length} ${state.formPhotos.length === 1 ? "photo" : "photos"} ready to keep.`;
-        } else await sync.addPhoto(target, blob);
+        } else {
+          const photoId = await sync.addPhoto(target, blob);
+          photoURLs.set(photoId, URL.createObjectURL(blob));
+          attached.push(photoId);
+        }
       }
       if (target === "album") toast("Photos ready to save");
       else if (target !== "form") {
@@ -206,7 +282,7 @@ for (const id of ["camera-input", "library-input"])
         );
         if (state.quickPhotoId === target) {
           state.quickPhotoId = null;
-          closeDialog();
+          savedPhotos(target, attached);
         } else if ($("dialog").open && state.detailId === target)
           detail(target);
         render();

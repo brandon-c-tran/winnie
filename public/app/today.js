@@ -1,22 +1,22 @@
 // Today: the room's state, the log buttons, Also today, the day strip, and partner greetings.
-import { careStates, careDay } from "../care-plans.js?v=4.11";
-import { fridgeState, onFridge } from "../fridge-model.js?v=4.11";
-import { latestCare, elapsed } from "../care-state.js?v=4.11";
+import { careStates, careDay } from "../care-plans.js?v=4.15";
+import { fridgeState, onFridge } from "../fridge-model.js?v=4.15";
+import { latestCare, elapsed } from "../care-state.js?v=4.15";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
 import { getTimes } from "../vendor/suncalc.js";
-import { weatherKind } from "../room.js?v=4.11";
+import { weatherKind } from "../room.js?v=4.15";
 import {
   cachedWeather,
   refreshWeather,
   weatherWords,
-} from "./weather.js?v=4.11";
-import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.11";
-import { rhythmInsights, durationLabel } from "../insights.js?v=4.11";
-import { care, facts, fridge, room, sync } from "./services.js?v=4.11";
-import { setTab, showPhotos } from "./nav.js?v=4.11";
-import { pantryHTML } from "./pantry-view.js?v=4.11";
-import { QUALITY } from "../pantry.js?v=4.11";
-import { finishWalk, log } from "./logging.js?v=4.11";
+} from "./weather.js?v=4.15";
+import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.15";
+import { rhythmInsights, durationLabel } from "../insights.js?v=4.15";
+import { care, facts, fridge, room, sync } from "./services.js?v=4.15";
+import { setTab, showPhotos } from "./nav.js?v=4.15";
+import { pantryHTML } from "./pantry-view.js?v=4.15";
+import { QUALITY } from "../pantry.js?v=4.15";
+import { finishWalk, log } from "./logging.js?v=4.15";
 import {
   $,
   TYPES,
@@ -27,16 +27,29 @@ import {
   esc,
   person,
   when,
-} from "./format.js?v=4.11";
-import { html, toast } from "./ui.js?v=4.11";
-import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.11";
-import { legacyDiff } from "./settings.js?v=4.11";
-import { renderLastTimes, renderStory } from "./library.js?v=4.11";
-import { state } from "./state.js?v=4.11";
-import { ROUTINE, lastRoutine } from "../routine.js?v=4.11";
-import { suppliesHTML } from "./supplies-view.js?v=4.11";
-import { trainingHTML } from "./trainer.js?v=4.11";
+} from "./format.js?v=4.15";
+import { html, toast } from "./ui.js?v=4.15";
+import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.15";
+import { legacyDiff } from "./settings.js?v=4.15";
+import { renderLastTimes, renderStory } from "./library.js?v=4.15";
+import { state } from "./state.js?v=4.15";
+import { ROUTINE, lastRoutine } from "../routine.js?v=4.15";
+import { suppliesHTML } from "./supplies-view.js?v=4.15";
+import { trainingHTML } from "./trainer.js?v=4.15";
 
+const roomActions = document.createElement("details");
+roomActions.className = "room-actions";
+roomActions.innerHTML = '<summary>Room actions</summary><div class="button-row">' + [
+  ["winnie", "Pet Winnie"], ["toy", "Play with toy"], ["photo", "Change wall photo"],
+  ["fridge", "Leave a note"], ["calendar", "Open plans"], ["bowl", "Log meal"],
+  ["bed", "Sleep timer"], ["door", "Walk timer"], ["window", "Weather and daylight"],
+  ["shelf", "Open memories"], ["ribbon", "Training ribbon"]
+].map(([action, label]) => '<button class="text-button" data-room-action="' + action + '">' + label + '</button>').join('') + '</div>';
+$("room-status").after(roomActions);
+roomActions.addEventListener("click", event => {
+  const button = event.target.closest("[data-room-action]");
+  if (button) roomObject(button.dataset.roomAction);
+});
 let shownWeather = 0;
 let roomReady = false,
   wallKey = null;
@@ -70,13 +83,13 @@ function updateWall(profile) {
   if (key === wallKey) return;
   wallKey = key;
   const img = new Image();
-  img.onload = () => room.setPhoto(img);
+  img.onload = () => { if (wallKey === key) room.setPhoto(img); if (img.src.startsWith("blob:")) URL.revokeObjectURL(img.src); };
   if (p)
     sync
       .photo(p.photoId)
       .then((blob) => (img.src = URL.createObjectURL(blob)))
-      .catch(() => (img.src = "/photos/winnie-smile.png"));
-  else img.src = "/photos/winnie-smile.png";
+      .catch(() => (img.src = "/photos/winnie-wall.jpg"));
+  else img.src = "/photos/winnie-wall.jpg";
 }
 const dueToday = (view) =>
   careStates(view.profile, view.events).some(
@@ -183,7 +196,7 @@ export function render() {
     face(sync.session.person, "hud-portrait") || esc(me[0]);
   $("settings").setAttribute("aria-label", `Settings. This phone is ${me}'s`);
   const s = sync.lastError
-    ? "offline"
+    ? navigator.onLine ? "review" : "offline"
     : errors.length
       ? "review"
       : pending
@@ -194,7 +207,7 @@ export function render() {
     s === "offline"
       ? "Offline"
       : s === "review"
-        ? `${errors.length} to review`
+        ? sync.lastError ? "Sync needs attention" : `${errors.length} to review`
         : s === "pending"
           ? sync.busy
             ? "Sending"
@@ -202,6 +215,7 @@ export function render() {
           : sync.lastChecked
             ? "Up to date"
             : "Opening";
+  $("sync-chip").setAttribute("aria-label", "Sync status: " + $("sync-status").textContent + ". Open sync details");
   $("pending-banner").hidden = !oldCount;
   if (oldCount)
     $("pending-banner").innerHTML =
@@ -217,8 +231,8 @@ export function render() {
   room.set(
     {
       epoch: now,
-      sleep: sleeping?.type || null,
-      walk: !!walk,
+      sleep: sleeping && now - sleeping.time < 36 * 3600000 ? sleeping.type : null,
+      walk: !!walk && now - walk.time < 36 * 3600000,
       notes: fridgeState(view.profile).notes.filter((n) => onFridge(n)).length,
       pending,
       error: errors.length > 0,
@@ -255,16 +269,19 @@ function renderToday(events, sleeping, walk) {
       (e) => e.time <= now && !["nap", "slumber", "walk"].includes(e.type),
     );
   const run = walk || sleeping;
+  const stale = run && now - run.time >= 36 * 3600000;
   // Something running: the status line says so and finishing it is one tap.
   $("room-status").classList.toggle("running", !!run);
-  $("room-status").innerHTML = run
-    ? `<span class="sq run-ic" style="--c:${typeColor(run.type)}" aria-hidden="true">${icon(typeIcon(run.type), "ic sm")}</span><span class="grow"><b>${run.type === "walk" ? "Out on a walk" : run.type === "nap" ? "Napping" : "Asleep for the night"}</b> <span>${durationLabel(Math.max(1, Math.round((now - run.time) / 60000)))}${run.loggedBy ? `<span class="status-person">${face(run.loggedBy, "xs")}${esc(person(run.loggedBy))}</span>` : ""}</span></span><button class="px btn" data-act="${run.type === "walk" ? "finish-walk" : "end-sleep"}">${run.type === "walk" ? "Finish walk" : run.type === "nap" ? "End nap" : "End sleep"}</button>`
-    : `<b>Awake</b>${last ? `<span class="status-last">Last log ${when(last.time)}${last.loggedBy ? `<span class="status-person">${esc(person(last.loggedBy))}</span>` : ""}</span>` : ""}`;
+  $("room-status").innerHTML = stale
+    ? `<span class="grow"><b>Unfinished ${run.type === "walk" ? "walk" : "sleep"} entry</b><span class="status-last">Started ${when(run.time)}</span></span><button class="px btn" data-edit="${esc(run.id)}">Correct time</button>`
+    : run
+    ? `<span class="sq run-ic" style="--c:${typeColor(run.type)}" aria-hidden="true">${icon(typeIcon(run.type), "ic sm")}</span><span class="grow"><b>${run.type === "walk" ? "Walk timer running" : run.type === "nap" ? "Nap timer running" : "Sleep timer running"}</b> <span>${durationLabel(Math.max(1, Math.round((now - run.time) / 60000)))}${run.loggedBy ? `<span class="status-person">${face(run.loggedBy, "xs")}${esc(person(run.loggedBy))}</span>` : ""}</span></span><button class="px btn" data-act="${run.type === "walk" ? "finish-walk" : "end-sleep"}">${run.type === "walk" ? "Finish walk" : run.type === "nap" ? "End nap" : "End sleep"}</button>`
+    : last ? `<b>Last logged</b><span class="status-last">${esc(eventLabel(last))} ${when(last.time)}${last.loggedBy ? `<span class="status-person">${esc(person(last.loggedBy))}</span>` : ""}</span>` : `<span>No care logged yet</span>`;
   $("room").setAttribute(
     "aria-label",
-    run
-      ? `${run.type === "walk" ? "Out on a walk" : "Asleep"} since ${clock(run.time)}`
-      : "Winnie is awake in his room",
+    run && !stale
+      ? `${run.type === "walk" ? "Walk" : "Sleep"} timer started ${clock(run.time)}`
+      : "Winnie’s room",
   );
   $("active-bar").hidden = true;
   const latest = latestCare(events);
@@ -316,7 +333,7 @@ function renderToday(events, sleeping, walk) {
                 : days === 1
                   ? "Yesterday"
                   : `${days} days ago`;
-        return `<div class="routine-row">${icon(glyph, "ic sm")}<div class="routine-copy"><b>${title}</b>${last ? `<button class="routine-last" data-open="${esc(last.id)}" aria-label="Last ${title.toLowerCase()}: ${age}">${age}</button>` : `<span class="muted">${age}</span>`}</div><button class="routine-done" data-groom="${title}" aria-label="Log ${title.toLowerCase()} now">Done</button></div>`;
+        return `<div class="routine-row">${icon(glyph, "ic sm")}<div class="routine-copy"><b>${title}</b>${last ? `<button class="routine-last" data-open="${esc(last.id)}" aria-label="Last ${title.toLowerCase()}: ${age}">${age}</button>` : `<span class="muted">${age}</span>`}</div><button class="routine-done" data-groom="${title}" aria-label="Record ${title.toLowerCase()}">Done</button></div>`;
       },
     ).join("")}</div>`,
   );

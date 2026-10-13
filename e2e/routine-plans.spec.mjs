@@ -65,7 +65,8 @@ test("care stays visible, records last done, survives reload and Undo", async ({
   await expect(page.locator(".routine-row")).toHaveCount(6);
   const brush = page.locator(".routine-row", { hasText: "Brush" });
   await expect(brush).toContainText("Not logged yet");
-  await brush.getByRole("button", { name: "Log brush now" }).click();
+  await brush.getByRole("button", { name: "Record brush" }).click();
+  await page.getByRole("button", { name: "Save brush", exact: true }).click();
   await expect(brush).toContainText("Today");
   await expect(page.locator("#sync-status")).toHaveText("Up to date");
   await page.reload();
@@ -74,7 +75,8 @@ test("care stays visible, records last done, survives reload and Undo", async ({
   await expect(page.locator("#dialog-title")).toContainText("Brush");
   await page.locator("#dialog-close").click();
   const ears = page.locator(".routine-row", { hasText: "Ears" });
-  await ears.getByRole("button", { name: "Log ears now" }).click();
+  await ears.getByRole("button", { name: "Record ears" }).click();
+  await page.getByRole("button", { name: "Save ears", exact: true }).click();
   await expect(ears).toContainText("Today");
   await page.locator("#undo").click();
   await expect(ears).toContainText("Not logged yet");

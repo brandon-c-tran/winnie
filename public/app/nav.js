@@ -1,8 +1,8 @@
 // Tabs and day navigation.
 import { icon } from "../icons.js?v=4.0";
-import { $, dayKey } from "./format.js?v=4.11";
-import { render } from "./today.js?v=4.11";
-import { state } from "./state.js?v=4.11";
+import { $, dayKey } from "./format.js?v=4.15";
+import { render } from "./today.js?v=4.15";
+import { state } from "./state.js?v=4.15";
 
 $("day-picker").value = dayKey(Date.now());
 let historySection = "care",
@@ -46,6 +46,8 @@ export function setTab(next) {
   );
   window.scrollTo(0, 0);
   render();
+  const heading = $(next + "-view").querySelector("h1");
+  if (heading) { heading.tabIndex = -1; heading.focus({preventScroll: true}); }
 }
 // Switch the Photos tab between Photos, Places and Memories.
 export function showPhotos(section) {

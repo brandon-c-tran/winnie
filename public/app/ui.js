@@ -1,8 +1,9 @@
 // Toasts, the sheet (one <dialog>), error handling, and memoised HTML writes.
 import { icon } from "../icons.js?v=4.0";
-import { $ } from "./format.js?v=4.11";
-import { room } from "./services.js?v=4.11";
-import { state } from "./state.js?v=4.11";
+import { $ } from "./format.js?v=4.15";
+import { room, sync } from "./services.js?v=4.15";
+import { state } from "./state.js?v=4.15";
+import { createDraftStore } from "../draft-store.js?v=4.15";
 
 let toastTimer;
 export function toast(message, undo = null, actions = []) {
@@ -53,6 +54,170 @@ export function safe(fn) {
   };
 }
 let closingTimer = 0;
+let draftKey = null,
+  draftResume = null,
+  draftDiscard = null,
+  draftCapture = null,
+  dirty = false;
+const drafts = new Map();
+const draftStore = createDraftStore();
+let draftStorageFailed = false;
+export const hasDialogDrafts = () => dirty || drafts.size > 0;
+window.addEventListener("beforeunload", (event) => {
+  if (draftStorageFailed && hasDialogDrafts()) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+export async function restoreDrafts() {
+  if (!sync.session) return;
+  try {
+    for (const saved of await draftStore.list(sync.session.home))
+      drafts.set(saved.key, saved);
+    renderDrafts();
+  } catch {
+    draftStorageFailed = true;
+  }
+}
+export function persistDialogDraft() {
+  if (!dirty || !draftKey || !draftCapture) return;
+  const saved = {
+    key: draftKey,
+    home: sync.session.home,
+    title: $("dialog-title")?.textContent || "Unfinished entry",
+    data: draftCapture(),
+  };
+  void draftStore.put(saved).catch(() => {
+    draftStorageFailed = true;
+    toast(
+      "Draft is open, but could not be saved on this phone. Keep this page open.",
+    );
+  });
+}
+export function draftFields(form) {
+  return Object.fromEntries(
+    [...form.elements]
+      .filter((el) => el.name && el.type !== "file")
+      .map((el) => [el.name, el.value]),
+  );
+}
+export function applyDraftFields(form, fields = {}) {
+  for (const [name, value] of Object.entries(fields)) {
+    const input = form.elements.namedItem(name);
+    if (input && input.type !== "file") input.value = value;
+  }
+}
+export function retainDialogDraft(
+  key,
+  onResume = () => {},
+  onDiscard = () => {},
+  capture = null,
+) {
+  draftKey = key;
+  draftResume = onResume;
+  draftDiscard = onDiscard;
+  draftCapture = capture;
+}
+function renderDrafts() {
+  let box = $("unfinished-drafts");
+  if (!box) {
+    box = document.createElement("section");
+    box.id = "unfinished-drafts";
+    box.setAttribute("aria-label", "Unfinished entries");
+    $("routine-care").before(box);
+  }
+  box.replaceChildren();
+  for (const [key, saved] of drafts) {
+    if (!key.includes(`:${sync.session?.home}`)) continue;
+    const row = document.createElement("div"),
+      label = document.createElement("span"),
+      resume = document.createElement("button"),
+      discard = document.createElement("button");
+    label.textContent = saved.title;
+    resume.textContent = "Resume";
+    resume.className = "text-button";
+    resume.setAttribute("aria-label", "Resume " + saved.title.toLowerCase());
+    resume.onclick = () => resumeDialogDraft(key);
+    discard.textContent = "Discard";
+    discard.className = "text-button";
+    discard.setAttribute("aria-label", "Discard " + saved.title.toLowerCase());
+    discard.onclick = () => {
+      if (!confirm("Discard this unfinished draft?")) return;
+      saved.discard?.();
+      drafts.delete(key);
+      void draftStore.remove(key).catch(error);
+      renderDrafts();
+    };
+    row.append(label, resume, discard);
+    box.append(row);
+  }
+  box.hidden = !box.children.length;
+}
+export function markDialogDirty() {
+  dirty = true;
+  persistDialogDraft();
+}
+export function resumeDialogDraft(key) {
+  const saved = drafts.get(key);
+  if (!saved) return false;
+  if (!saved.content) {
+    drafts.delete(key);
+    document.dispatchEvent(
+      new CustomEvent("winnie:resume-draft", { detail: saved.data }),
+    );
+    dirty = true;
+    renderDrafts();
+    return true;
+  }
+  openDialog("");
+  $("dialog-content").replaceChildren(saved.content);
+  Object.assign(state, saved.state);
+  retainDialogDraft(key, saved.resume, saved.discard, saved.capture);
+  dirty = true;
+  drafts.delete(key);
+  renderDrafts();
+  saved.resume();
+  $("dialog-content").querySelector("input, textarea, button")?.focus();
+  return true;
+}
+export function requestCloseDialog() {
+  // Never dismiss an in-flight submission or photo preparation.
+  const form = $("dialog-content").querySelector("form");
+  if (
+    form?.querySelector('[type="submit"]:disabled') &&
+    (form.id !== "photo-composer" ||
+      form.querySelector("input:disabled, textarea:disabled"))
+  ) {
+    toast("Wait for saving to finish.");
+    return;
+  }
+  if (dirty && draftKey) {
+    const title = $("dialog-title")?.textContent || "Unfinished entry";
+    persistDialogDraft();
+    const content = document.createDocumentFragment();
+    content.append(...$("dialog-content").childNodes);
+    drafts.set(draftKey, {
+      content,
+      title,
+      resume: draftResume,
+      discard: draftDiscard,
+      capture: draftCapture,
+      state: {
+        formPhotos: state.formPhotos,
+        formType: state.formType,
+        detailId: state.detailId,
+        quickPhotoId: state.quickPhotoId,
+      },
+    });
+    draftKey = null;
+    closeDialog();
+    renderDrafts();
+    toast("Draft kept on this phone. Reopen to continue.");
+    return;
+  }
+  if (dirty && !confirm("Discard your unsaved changes?")) return;
+  closeDialog();
+}
 export function openDialog(html) {
   document.dispatchEvent(new Event("winnie:surface-change"));
   const d = $("dialog");
@@ -60,6 +225,11 @@ export function openDialog(html) {
   d.classList.remove("closing");
   if (!d.open) state.dialogReturn = document.activeElement;
   $("dialog-content").innerHTML = html;
+  draftKey = null;
+  draftResume = null;
+  draftDiscard = null;
+  draftCapture = null;
+  dirty = false;
   state.detailId = null;
   if (!d.open) {
     d.showModal();
@@ -67,6 +237,15 @@ export function openDialog(html) {
   }
 }
 export function closeDialog() {
+  if (draftKey) {
+    drafts.delete(draftKey);
+    void draftStore.remove(draftKey).catch(error);
+  }
+  draftKey = null;
+  draftResume = null;
+  draftDiscard = null;
+  draftCapture = null;
+  dirty = false;
   document.dispatchEvent(new Event("winnie:surface-change"));
   const d = $("dialog");
   if (d.open && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -82,19 +261,25 @@ export function closeDialog() {
   state.quickPhotoId = null;
   state.formPhotos = [];
   state.formType = null;
-  state.dialogReturn?.focus?.();
+  renderDrafts();
 }
-$("dialog-close").onclick = closeDialog;
-$("dialog").addEventListener("close", () => room?.pause(false));
+$("dialog-close").onclick = requestCloseDialog;
+$("dialog").addEventListener("input", markDialogDirty);
+$("dialog").addEventListener("change", markDialogDirty);
+$("dialog").addEventListener("close", () => {
+  room?.pause(false);
+  const target = state.dialogReturn;
+  if (target?.isConnected) target.focus();
+  else document.querySelector(`#${state.tab}-view h1`)?.focus();
+});
 $("dialog").addEventListener("click", (ev) => {
   // Tapping the dimmed area above a sheet closes it.
-  if (ev.target === $("dialog")) closeDialog();
+  if (ev.target === $("dialog")) requestCloseDialog();
 });
 document.addEventListener("touchstart", () => {}, { passive: true });
-$("dialog").addEventListener("cancel", () => {
-  state.detailId = null;
-  state.formPhotos = [];
-  state.formType = null;
+$("dialog").addEventListener("cancel", (event) => {
+  event.preventDefault();
+  requestCloseDialog();
 });
 $("toast-close").onclick = () => {
   $("toast").hidden = true;

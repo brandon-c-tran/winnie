@@ -9,12 +9,15 @@ Run `npm ci`, then `npm run dev` (or `npm run dev:large` for a log about the siz
 ## Project
 
 - `public/app.js`: startup only. `public/app/`: one module per job (format, state, services, ui, nav, today, logging, entries, forms, library, settings, photos, trainer, clicks).
+- Connected grooming: `public/app/logging.js` owns the Now / Yesterday / Pick date completion sheet used by Today, Plans and Earlier. It can link a due reminder to the saved care entry; undo allows that occurrence to be completed again. `public/care-plans.js` supplies reminder state and completion IDs.
+- Unfinished work: `public/app/ui.js` coordinates Resume and Discard for entry, grooming and photo-composer drafts. `public/draft-store.js` persists household-scoped drafts in device-local IndexedDB, encoding selected photo blobs as ArrayBuffers for WebKit. Drafts survive reopening when local storage succeeds and are never shared until submitted; storage failures show a warning.
+- Chosen care photos: `public/keepsakes.js` filters Winnie and memory photos. Keep in Winnie marks only the chosen photo on a pee, poop or meal entry; the care attachment remains in place. `public/app/entries.js` and `public/app/photos.js` expose the selection, and the server validates the `keepPhoto` command in `netlify/lib/core.mjs`.
 - `public/`: the room engine (`room.js`), pixel icons (`icons.js`), offline client (`sync.js`), shared logic modules, and the service worker. Versioned files are cached on the phone: when you change one, bump its `?v=` tag everywhere it is imported and bump `CACHE` in `sw.js`.
 - Adding a device: Settings, Add a device shows an 8-character join code that works once for 15 minutes. The long shared code still works.
 - Pixel Winnie: `scripts/build-poses.mjs` builds the room sprite sheet from his cleaned frames; `ASTRA_HANDOFF.md` specifies poses that need new art.
 - People: Brandon's and Kim's portraits live in `public/photos/*-pixel.png` and `*-face.png`, cleaned from `assets/people/` with `scripts/clean-portrait.mjs`.
 - Food on hand (Plans tab): stock per food counts down from each meal logged with it; when food won't outlast delivery time plus two days, Today shows Order food with the Amazon link. Logic in `public/pantry.js`, shared with the server, which validates it as part of shared settings. Poop quality tags (firm, soft, loose) feed Poop by food in Trends.
-- Memories (Photos tab): weekly postcard, on this day, milestones and the year so far, all counted from saved entries (`public/memories.js`).
+- Memories (Photos tab): a chosen-photo postcard with its saved caption, date and place, On this day, and expandable care milestones and yearly totals. `public/app/memories-view.js` renders and exports the postcard; `public/memories.js` derives dates and counts from saved entries.
 - `netlify/lib/`: server-validated commands, conditional storage adapter, authentication, uploads, and push delivery.
 - `netlify/functions/`: API, read-only legacy compatibility, scheduled notifications, and backups.
 - `tests/`: deterministic store, API, IndexedDB, and history-pattern tests (`npm test`).
