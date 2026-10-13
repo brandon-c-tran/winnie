@@ -1,17 +1,17 @@
 // Settings, sync status, review of conflicting or older changes, and joining.
-import { placeLabel } from "../places.js?v=4.11";
-import { autoPlaceEnabled, sync } from "./services.js?v=4.11";
-import { $, clock, dateLabel, esc, person, when } from "./format.js?v=4.11";
-import { openDialog, safe } from "./ui.js?v=4.11";
-import { eventLabel } from "./entries.js?v=4.11";
-import { render } from "./today.js?v=4.11";
+import { placeLabel } from "../places.js?v=4.15";
+import { autoPlaceEnabled, sync } from "./services.js?v=4.15";
+import { $, clock, dateLabel, esc, person, when } from "./format.js?v=4.15";
+import { openDialog, safe } from "./ui.js?v=4.15";
+import { eventLabel } from "./entries.js?v=4.15";
+import { render } from "./today.js?v=4.15";
 
 function syncSheet() {
   const pending = sync.data.queue.length,
     errors = sync.data.queue.filter((q) => q.error).length;
   const [title, msg] = sync.lastError
     ? [
-        "Offline",
+        navigator.onLine ? "Sync needs attention" : "Offline",
         `This phone can't reach the shared log: ${sync.lastError} New logs keep saving here and send when it's back.`,
       ]
     : errors

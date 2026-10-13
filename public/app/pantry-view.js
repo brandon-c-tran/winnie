@@ -1,10 +1,10 @@
 // Food on hand: the Food section in Plans, "Order food" in Up next, restocking and editing.
-import { pantryState, emptyPantry, lastEaten } from "../pantry.js?v=4.11";
+import { pantryState, emptyPantry, lastEaten } from "../pantry.js?v=4.15";
 import { icon } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.11";
-import { $, esc, face, person } from "./format.js?v=4.11";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.11";
-import { render } from "./today.js?v=4.11";
+import { facts, sync } from "./services.js?v=4.15";
+import { $, esc, face, person } from "./format.js?v=4.15";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.15";
+import { render } from "./today.js?v=4.15";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -55,6 +55,7 @@ export function pantryNextHTML() {
 }
 
 function foodSheet(id) {
+  const openedAt = Date.now(), profileRevision = sync.view().profile.revision;
   const s = pantryNow(),
     f = s.foods.find((x) => x.id === id);
   openDialog(
@@ -66,13 +67,15 @@ function foodSheet(id) {
       name = String(v.get("name")).trim(),
       link = String(v.get("link") || "").trim();
     if (link && !/^https:\/\//.test(link)) throw Error("Use a full https:// link.");
+    if (sync.view().profile.revision !== profileRevision || (f && pantryNow().foods.find(x => x.id === id)?.left !== f.left))
+      throw Error("Food stock changed while this form was open. Reopen it to use the latest count.");
     await save((p) => {
       const item = {
         id: f?.id || crypto.randomUUID().slice(0, 18),
         name,
         perPackage: Number(v.get("perPackage")),
         link,
-        count: { servings: Number(v.get("servings")), at: Date.now() },
+        count: { servings: Number(v.get("servings")), at: openedAt },
       };
       p.foods = f ? p.foods.map((x) => (x.id === f.id ? item : x)) : [...p.foods, item];
     });

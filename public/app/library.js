@@ -1,23 +1,24 @@
-import { renderMemories } from "./memories-view.js?v=4.11";
-import { foodPoopStats } from "../pantry.js?v=4.11";
+import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.15";
+import { renderMemories } from "./memories-view.js?v=4.15";
+import { foodPoopStats } from "../pantry.js?v=4.15";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.11";
-import { elapsed } from "../care-state.js?v=4.11";
+import { placeLabel } from "../places.js?v=4.15";
+import { elapsed } from "../care-state.js?v=4.15";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.11";
-import { insightsView } from "../insight-view.js?v=4.11";
-import { photoCaption } from "../everyday.js?v=4.11";
-import { html, openDialog } from "./ui.js?v=4.11";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.11";
-import { facts, places } from "./services.js?v=4.11";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.11";
-import { addPhotos } from "./photos.js?v=4.11";
-import { state } from "./state.js?v=4.11";
+} from "../insights.js?v=4.15";
+import { insightsView } from "../insight-view.js?v=4.15";
+import { photoCaption } from "../everyday.js?v=4.15";
+import { html, openDialog } from "./ui.js?v=4.15";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.15";
+import { facts, places } from "./services.js?v=4.15";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.15";
+import { addPhotos } from "./photos.js?v=4.15";
+import { state } from "./state.js?v=4.15";
 
 let patternDays = 28,
   insightData = null,
@@ -144,11 +145,11 @@ function renderGallery() {
       e.photos?.length &&
       matches(e, query) &&
       (care
-        ? ["poop", "meal"].includes(e.type) &&
+        ? isCarePhoto(e) &&
           (album === "all" || e.type === album)
-        : !["poop", "meal"].includes(e.type)),
+        : winniePhotos(e).length > 0),
   );
-  const photos = events.flatMap((e) => e.photos.map((p) => ({ e, p })));
+  const photos = events.flatMap((e) => (care ? e.photos : winniePhotos(e)).map((p) => ({ e, p })));
   $("photo-count").textContent =
     photos.length + (photos.length === 1 ? " photo" : " photos");
   $("photo-more").hidden =
@@ -178,7 +179,7 @@ function renderGallery() {
             )
             .join("") +
           "</div>"
-      : `<div class="album-empty">${icon(care ? "poop" : "photo", "ic")}<h3>${query || (care && album !== "all") ? "No matching photos" : care ? "No care photos yet" : "Add a photo of Winnie"}</h3><p>${query || (care && album !== "all") ? "Try another search or clear the filters." : care ? "Attach a photo to a poop or meal entry." : "Poop and meal photos are in Care photos."}</p><button class="px btn ink" data-add-photos>${care ? "Attach to entry" : "Choose photos"}</button></div>`,
+      : `<div class="album-empty">${icon(care ? "poop" : "photo", "ic")}<h3>${query || (care && album !== "all") ? "No matching photos" : care ? "No care photos yet" : "Add a photo of Winnie"}</h3><p>${query || (care && album !== "all") ? "Try another search or clear the filters." : care ? "" : "No keepsakes yet."}</p><button class="px btn ink" data-add-photos>${care ? "Attach to entry" : "Choose photos"}</button></div>`,
   );
   hydratePhotos();
 }
@@ -246,9 +247,8 @@ export function renderPatterns() {
   $("load-more").hidden = true;
   html(
     "story-items",
-    countsHTML(facts()) +
-      (state.insightTopic === "poop" ? foodPoopHTML(facts()) : "") +
-      insightsView(insightData, state.insightTopic),
+    insightsView(insightData, state.insightTopic, countsHTML(facts()) +
+      (state.insightTopic === "poop" ? foodPoopHTML(facts()) : "")),
   );
   $("pattern-window").onchange = (e) => {
     patternDays = Number(e.target.value);
@@ -277,13 +277,13 @@ function foodPoopHTML(events) {
   return `<section class="rhythm-answer"><h3>Poop by food</h3><p class="muted">The first poop within a day after each meal.</p>${body}<div class="legend"><span><i class="firm"></i>Firm</span><span><i class="soft"></i>Soft</span><span><i class="loose"></i>Loose</span></div></section>`;
 }
 function countsHTML(events) {
-  const days = Array.from({ length: 14 }, (_, i) => {
+  const days = Array.from({ length: patternDays }, (_, i) => {
     const d = new Date();
-    d.setDate(d.getDate() - 13 + i);
+    d.setDate(d.getDate() - patternDays + 1 + i);
     return dayKey(d.getTime());
   });
   const rows = days.map((k) => {
-    const day = events.filter((e) => dayKey(e.time) === k);
+    const day = events.filter((e) => e.time <= Date.now() && dayKey(e.time) === k);
     return [
       k,
       day.filter((e) => e.type === "pee").length,
@@ -301,7 +301,7 @@ function countsHTML(events) {
       month: "short",
       day: "numeric",
     });
-  return `<section class="rhythm-answer"><h3>Pee and poop, last 14 days</h3><div class="counts" role="img" aria-label="${rows.map(([k, p, q]) => `${short(k)}: ${p} pee, ${q} poop`).join("; ")}">${rows.map(([, p, q]) => `<span class="day">${p ? `<span class="seg-pee" style="height:${(p / max) * 100}%"></span>` : ""}${q ? `<span class="seg-poop" style="height:${(q / max) * 100}%"></span>` : ""}</span>`).join("")}</div><div class="rhythm-axis"><span>${short(days[0])}</span><span>Today</span></div><div class="legend"><span><i style="background:var(--pee)"></i>Pee</span><span><i style="background:var(--poop)"></i>Poop</span><span>On days with logs: ${avg(1)} pee, ${avg(2)} poop</span></div></section>`;
+  return `<section class="rhythm-answer"><h3>Pee and poop, last ${patternDays} days</h3><div class="counts" role="img" aria-label="${rows.map(([k, p, q]) => `${short(k)}: ${p} pee, ${q} poop`).join("; ")}">${rows.map(([, p, q]) => `<span class="day">${p ? `<span class="seg-pee" style="height:${(p / max) * 100}%"></span>` : ""}${q ? `<span class="seg-poop" style="height:${(q / max) * 100}%"></span>` : ""}</span>`).join("")}</div><div class="rhythm-axis"><span>${short(days[0])}</span><span>Today</span></div><div class="legend"><span><i style="background:var(--pee)"></i>Pee</span><span><i style="background:var(--poop)"></i>Poop</span><span>On days with logs: ${avg(1)} pee, ${avg(2)} poop</span></div></section>`;
 }
 export function showEvidence(key, more = false) {
   state.evidenceKey = key;

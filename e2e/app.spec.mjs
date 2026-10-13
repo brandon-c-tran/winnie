@@ -14,7 +14,7 @@ test("Today opens on the room with the log buttons and tabs", async ({
   );
   for (const tab of ["Today", "Plans", "History", "Photos"])
     await expect(page.locator("#tabbar")).toContainText(tab);
-  await expect(page.locator("#room-status")).toContainText("Awake");
+  await expect(page.locator("#room-status")).toContainText("Last logged");
   expect(errors).toEqual([]);
 });
 
@@ -45,7 +45,8 @@ test("a bath from More shows up in History's last-time counters", async ({
   await join(page, code(info));
   await page.locator('[data-act="more"]').click();
   await page.locator('#dialog [data-groom="Bath"]').click();
-  await expect(toast(page)).toContainText("Bath logged");
+  await page.getByRole("button", {name: "Save bath", exact: true}).click();
+  await expect(toast(page)).toContainText("Bath saved");
   await page.locator("#history-tab").click();
   await expect(page.locator("#last-times")).toContainText("Bath");
 });
@@ -80,10 +81,10 @@ test("a walk empties the room and finishes with one tap", async ({
   await join(page, code(info));
   await page.locator('[data-act="more"]').click();
   await page.locator('[data-act="start-walk"]').click();
-  await expect(page.locator("#room-status")).toContainText("Out on a walk");
+  await expect(page.locator("#room-status")).toContainText("Walk timer running");
   await page.locator('#room-status [data-act="finish-walk"]').click();
   await expect(toast(page)).toContainText("Walk finished");
-  await expect(page.locator("#room-status")).toContainText("Awake");
+  await expect(page.locator("#room-status")).toContainText("Last logged");
 });
 
 test("a recurring bath plan shows in Up next and Done logs it", async ({
@@ -101,8 +102,8 @@ test("a recurring bath plan shows in Up next and Done logs it", async ({
   await page.locator("#today-tab").click();
   await expect(page.locator("#up-next")).toContainText("Bath");
   await page.locator('#up-next [data-care-action="complete"]').click();
-  await page.locator("#care-complete-form .primary").click();
-  await expect(toast(page)).toContainText("Bath done");
+  await page.locator("#routine-form .primary").click();
+  await expect(toast(page)).toContainText("Bath saved");
 });
 
 test("a note goes on the fridge", async ({ page }, info) => {
@@ -120,7 +121,7 @@ test("a note goes on the fridge", async ({ page }, info) => {
   );
 });
 
-test("History searches and Trends draws the 14-day chart", async ({
+test("History searches and Trends draws the selected-window chart", async ({
   page,
 }, info) => {
   await join(page, code(info));
@@ -131,7 +132,7 @@ test("History searches and Trends draws the 14-day chart", async ({
   await expect(page.locator("#story-items")).toContainText("Poop");
   await page.locator('[data-history="patterns"]').click();
   await expect(page.locator("#story-items")).toContainText(
-    "Pee and poop, last 14 days",
+    "Pee and poop, last 28 days",
   );
 });
 
@@ -168,12 +169,14 @@ test("a bath makes Winnie shake off, and Memories counts it", async ({
   await join(page, code(info));
   await page.locator('[data-act="more"]').click();
   await page.locator('#dialog [data-groom="Bath"]').click();
-  await expect(toast(page)).toContainText("Bath logged");
+  await page.getByRole("button", {name:"Save bath", exact:true}).click();
+  await expect(toast(page)).toContainText("Bath saved");
   await page.locator("#photos-tab").click();
   await page.locator('[data-filter="memories"]').click();
-  await expect(page.locator("#week-title")).toHaveText("This week");
+  await expect(page.locator("#week-title")).toHaveText("Postcard");
   await expect(page.locator("#photo-items")).toContainText("First bath logged");
-  // the postcard canvas has been drawn
+  await expect(page.locator("#postcard")).toBeHidden();
+  // the postcard canvas is prepared even when no eligible photo exists
   await expect
     .poll(() =>
       page

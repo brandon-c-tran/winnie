@@ -1,17 +1,19 @@
 // Memories: this week's postcard, on this day, milestones, and the year so far.
+import { memoryEvents } from "../keepsakes.js?v=4.15";
+import { placeLabel } from "../places.js?v=4.15";
 import {
   milestones,
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.11";
-import { cityFor } from "../places.js?v=4.11";
+} from "../memories.js?v=4.15";
+import { cityFor } from "../places.js?v=4.15";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.11";
-import { $, esc } from "./format.js?v=4.11";
-import { html, toast } from "./ui.js?v=4.11";
-import { hydratePhotos } from "./entries.js?v=4.11";
-import { download } from "./photos.js?v=4.11";
+import { facts, sync } from "./services.js?v=4.15";
+import { $, esc } from "./format.js?v=4.15";
+import { html, toast } from "./ui.js?v=4.15";
+import { hydratePhotos } from "./entries.js?v=4.15";
+import { download } from "./photos.js?v=4.15";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -43,16 +45,35 @@ export const recentTrophies = () =>
 
 // ---------- the view ----------
 let recapYear = new Date().getFullYear();
+let postcardPhoto = "";
 export function renderMemories() {
   const events = facts(),
-    week = weekStats(events),
-    ago = onThisDay(events),
+    memories = memoryEvents(events),
+    week = weekStats(memories),
+    ago = onThisDay(memories),
     list = allMilestones(),
     years = [
       ...new Set(events.map((e) => new Date(e.time).getFullYear())),
     ].sort((a, b) => b - a),
     recap = yearRecap(events, recapYear);
-  const range = `${short.format(week.start)} to ${short.format(week.end)}`;
+  const choices = memories
+    .flatMap((e) => e.photos.map((p) => ({ e, p })))
+    .slice(0, 60);
+  const chosen =
+    choices.find((x) => x.p.id === postcardPhoto) ||
+    choices.find((x) => x.p.id === week.best?.photoId) ||
+    choices[0];
+  if (chosen)
+    week.best = {
+      eventId: chosen.e.id,
+      photoId: chosen.p.id,
+      time: chosen.e.time,
+    };
+  week.caption = chosen?.e.note || "";
+  week.place = chosen ? placeLabel(chosen.e) : "";
+  const range = chosen
+    ? full.format(chosen.e.time)
+    : "";
   const agoHTML = ago.length
     ? `<section class="card mem" aria-labelledby="ago-title"><div class="card-head"><h2 id="ago-title">On this day</h2></div>${ago
         .map(
@@ -81,21 +102,28 @@ export function renderMemories() {
   html(
     "photo-items",
     `<section class="card mem" aria-labelledby="week-title">
-      <div class="card-head"><h2 id="week-title">This week</h2><span class="muted">${range}</span></div>
-      <canvas id="postcard" class="postcard" width="1080" height="1350" role="img" aria-label="Postcard for ${range}: ${week.counts.pee} pee, ${week.counts.poop} poop, ${week.counts.meal} meals, ${week.counts.walk} walks"></canvas>
-      <div class="button-row"><button class="px btn ink" data-act="postcard-share">Share</button><button class="px btn" data-act="postcard-save">Save</button></div>
+      <div class="card-head"><h2 id="week-title">Postcard</h2><span class="muted">${range}</span></div>
+      ${chosen ? `<label>Photo<select id="postcard-photo">${choices.map(({ e, p }) => `<option value="${esc(p.id)}" ${p.id === chosen.p.id ? "selected" : ""}>${esc(e.note || "Winnie")} — ${full.format(e.time)}</option>`).join("")}</select></label><button class="text-button" data-edit="${esc(chosen.e.id)}">Edit caption</button>` : `<p>No keepsakes yet.</p><button class="px btn" data-add-photos>Add photos</button>`}
+      <canvas ${chosen ? "" : "hidden"} id="postcard" class="postcard" width="1080" height="1350" role="img" aria-label="Winnie postcard: ${esc(range)}${week.caption ? ", " + esc(week.caption) : ""}"></canvas>
+      <div class="button-row" ${chosen ? "" : "hidden"}><button class="px btn ink" data-act="postcard-share">Share</button><button class="px btn" data-act="postcard-save">Save</button></div>
     </section>
     ${agoHTML}
-    <section class="card mem" aria-labelledby="ms-title">
+    <details class="card mem"><summary>Care milestones and totals</summary><section aria-labelledby="ms-title">
       <div class="card-head"><h2 id="ms-title">Milestones</h2><span class="muted">${list.length}</span></div>
       ${list.length ? `<div class="mem-list">${list.map((m) => `<button class="mem-row" data-open="${esc(m.eventId)}"><span class="sq" style="--c:var(--pee)">${icon("star", "ic sm")}</span><b>${esc(m.title)}</b><span class="muted">${full.format(m.time)}</span></button>`).join("")}</div>` : `<p class="muted">None yet.</p>`}
     </section>
-    <section class="card mem" aria-labelledby="year-title">
+    <section aria-labelledby="year-title">
       <div class="card-head"><h2 id="year-title">${recapYear === new Date().getFullYear() ? `${recapYear} so far` : recapYear}</h2>${years.length > 1 ? `<span class="seg">${years.map((y) => `<button class="px btn" data-recap-year="${y}" aria-pressed="${y === recapYear}">${y}</button>`).join("")}</span>` : ""}</div>
       <div class="mem-counts">${recapRows.map(([n, label, type]) => count(n, label, type)).join("")}</div>
       <p class="muted">${recap.entries.toLocaleString()} entries on ${recap.days.toLocaleString()} days${recap.busiestDay ? `. Busiest day ${short.format(new Date(recap.busiestDay.day + "T12:00"))}, ${recap.busiestDay.entries} entries.` : "."}</p>
-    </section>`,
+    </section></details>`,
   );
+  if ($("postcard-photo"))
+    $("postcard-photo").onchange = (event) => {
+      postcardPhoto = event.target.value;
+      renderMemories();
+      $("postcard-photo")?.focus();
+    };
   hydratePhotos();
   drawPostcard(week, range).catch(() => {});
 }
@@ -125,126 +153,76 @@ async function drawPostcard(week, range) {
   const canvas = $("postcard");
   if (!canvas) return;
   const ticket = ++drawing;
+  canvas.dataset.ready = "false";
+  document
+    .querySelectorAll('[data-act^="postcard-"]')
+    .forEach((button) => (button.disabled = true));
   await Promise.all([
     document.fonts.load('700 80px "Pixelify Sans"'),
     document.fonts.load('500 40px "Rubik"'),
   ]).catch(() => {});
-  const [photo, ...faceImgs] = await Promise.all([
-    photoImage(week.best),
-    loadImage("/photos/brandon-pixel.png"),
-    loadImage("/photos/kim-pixel.png"),
-  ]);
-  const faces = [
-    ["brandon", faceImgs[0]],
-    ["kim", faceImgs[1]],
-  ].filter(([, img]) => img);
-  if (ticket !== drawing || !canvas.isConnected) return;
+  const photo = await photoImage(week.best);
+  if (ticket !== drawing || !canvas.isConnected) {
+    if (photo) URL.revokeObjectURL(photo.src);
+    return;
+  }
   const c = canvas.getContext("2d");
-  c.imageSmoothingEnabled = false;
-  // gingham border
   c.fillStyle = "#f6f7ff";
   c.fillRect(0, 0, CARD.w, CARD.h);
   c.fillStyle = COLORS.g;
-  for (let i = 0; i < CARD.w; i += 36) c.fillRect(i, 0, 18, CARD.h);
-  for (let j = 0; j < CARD.h; j += 36) c.fillRect(0, j, CARD.w, 18);
-  // card
+  for (let x = 0; x < CARD.w; x += 36) c.fillRect(x, 0, 18, CARD.h);
+  for (let y = 0; y < CARD.h; y += 36) c.fillRect(0, y, CARD.w, 18);
   c.fillStyle = COLORS.ink;
   c.fillRect(48, 48, CARD.w - 96, CARD.h - 96);
   c.fillStyle = COLORS.ground;
   c.fillRect(56, 56, CARD.w - 112, CARD.h - 112);
   c.fillStyle = COLORS.ink;
   c.font = '700 96px "Pixelify Sans", monospace';
-  c.fillText("Winnie", 96, 170);
-  c.font = '500 38px "Rubik", sans-serif';
+  c.fillText("Winnie", 96, 165);
+  c.font = '500 36px "Rubik", sans-serif';
   c.fillStyle = COLORS.muted;
-  c.fillText(range, 96, 226);
-  // the room, as it is right now
-  const room = $("room"),
-    rw = CARD.w - 192,
-    rh = Math.round((rw * room.height) / room.width);
-  c.fillStyle = COLORS.ink;
-  c.fillRect(90, 266, rw + 12, rh + 12);
-  c.drawImage(room, 96, 272, rw, rh);
-  // the week's best photo and counts
-  const top = 272 + rh + 48;
-  let statsX = 96;
+  c.fillText(range, 96, 220);
   if (photo) {
-    const size = 420,
-      s = Math.min(photo.naturalWidth, photo.naturalHeight);
-    c.fillStyle = COLORS.ink;
-    c.fillRect(90, top - 6, size + 12, size + 12);
+    const scale = Math.min(888 / photo.naturalWidth, 780 / photo.naturalHeight);
+    const w = photo.naturalWidth * scale,
+      h = photo.naturalHeight * scale;
     c.imageSmoothingEnabled = true;
-    c.drawImage(
-      photo,
-      (photo.naturalWidth - s) / 2,
-      (photo.naturalHeight - s) / 2,
-      s,
-      s,
-      96,
-      top,
-      size,
-      size,
-    );
-    c.imageSmoothingEnabled = false;
-    statsX = 96 + size + 60;
+    c.drawImage(photo, (CARD.w - w) / 2, 270 + (780 - h) / 2, w, h);
+    URL.revokeObjectURL(photo.src);
   }
-  const rows = [
-    ["pee", "Pee", week.counts.pee, "#ffd84a"],
-    ["poop", "Poop", week.counts.poop, "#eaa56d"],
-    ["meal", "Meals", week.counts.meal, "#7fe0a6"],
-    ["walk", "Walks", week.counts.walk, "#a2e36f"],
-    ["groom", "Grooming", week.counts.grooming, "#8fe3e0"],
-    ["photo", "Photos", week.counts.photos, "#ff9ec2"],
-  ];
-  const colW = photo ? CARD.w - statsX - 96 : (CARD.w - 192) / 2;
-  rows.forEach(([, label, n, color], i) => {
-    const col = photo ? 0 : i % 2,
-      row = photo ? i : Math.floor(i / 2),
-      x = statsX + col * colW,
-      y = top + row * (photo ? 70 : 110);
-    c.fillStyle = COLORS.ink;
-    c.fillRect(x, y, 44, 44);
-    c.fillStyle = color;
-    c.fillRect(x + 5, y + 5, 34, 34);
-    c.fillStyle = COLORS.ink;
-    c.font = '700 54px "Pixelify Sans", monospace';
-    c.fillText(String(n), x + 64, y + 42);
-    const numberWidth = c.measureText(String(n)).width;
-    c.font = '500 36px "Rubik", sans-serif';
-    c.fillStyle = COLORS.muted;
-    c.fillText(label, x + 64 + numberWidth + 14, y + 40);
-  });
-  c.font = '700 36px "Pixelify Sans", monospace';
+  c.fillStyle = COLORS.ink;
+  c.font = '500 36px "Rubik", sans-serif';
+  const words = week.caption.split(/\s+/);
+  let line = "",
+    y = 1110,
+    lines = 0;
+  for (const word of words) {
+    const next = (line ? line + " " : "") + word;
+    if (c.measureText(next).width > 888 && line) {
+      c.fillText(line, 96, y, 888);
+      y += 46;
+      lines++;
+      line = word;
+      if (lines === 2) {
+        line += "…";
+        break;
+      }
+    } else line = next;
+  }
+  if (line) c.fillText(line, 96, y, 888);
   c.fillStyle = COLORS.muted;
-  c.fillText(
-    `${week.days} ${week.days === 1 ? "day" : "days"} logged`,
-    96,
-    CARD.h - 96,
-  );
-  // who logged it: each face with their count, right-aligned on the footer line
-  let x = CARD.w - 96;
-  for (const [who, img] of faces.reverse()) {
-    const n = String(week.byPerson?.[who] || 0);
-    c.font = '700 44px "Pixelify Sans", monospace';
-    const w = c.measureText(n).width;
-    c.fillStyle = COLORS.ink;
-    c.fillText(n, x - w, CARD.h - 96);
-    x -= w + 14 + 64;
-    c.fillRect(x - 4, CARD.h - 96 - 56, 72, 72);
-    c.drawImage(img, x, CARD.h - 96 - 52, 64, 64);
-    x -= 40;
-  }
+  c.font = '500 30px "Rubik", sans-serif';
+  if (week.place) c.fillText(week.place, 96, 1260, 888);
+  canvas.dataset.ready = String(!!photo);
+  document
+    .querySelectorAll('[data-act^="postcard-"]')
+    .forEach((button) => (button.disabled = !photo));
+  if (!photo && week.best)
+    toast("This photo is not available yet. Connect and try again.");
 }
-const loadImage = (src) =>
-  new Promise((ok) => {
-    const img = new Image();
-    img.onload = () => ok(img);
-    img.onerror = () => ok(null);
-    img.src = src;
-  });
 export async function postcard(share) {
   const canvas = $("postcard");
-  if (!canvas) return;
+  if (!canvas || canvas.dataset.ready !== "true") return;
   const blob = await new Promise((r) => canvas.toBlob(r, "image/png")),
     name = `winnie-week-${new Date().toISOString().slice(0, 10)}.png`,
     file = new File([blob], name, { type: "image/png" });
@@ -264,7 +242,7 @@ export function setRecapYear(y) {
 
 // ---------- Today: on this day, only when it is a whole year ago ----------
 export function onThisDayToday(events) {
-  const years = onThisDay(events).filter((g) => g.unit === "year");
+  const years = onThisDay(memoryEvents(events));
   const box = $("on-this-day");
   box.hidden = !years.length;
   if (!years.length) return;
@@ -272,7 +250,7 @@ export function onThisDayToday(events) {
     e = g.items[0];
   html(
     "on-this-day",
-    `<div class="card-head"><h2>${g.ago === 1 ? "A year ago today" : `${g.ago} years ago today`}</h2></div><button class="mem-photo wide" data-open="${esc(e.id)}"><img data-photo="${esc(e.photos[0].id)}" alt="Photo from ${full.format(e.time)}"></button>`,
+    `<div class="card-head"><h2>${`${g.ago === 1 ? "A" : g.ago} ${g.unit}${g.ago === 1 ? "" : "s"} ago today`}</h2></div><button class="mem-photo wide" data-open="${esc(e.id)}"><img data-photo="${esc(e.photos[0].id)}" alt="Photo from ${full.format(e.time)}"></button>`,
   );
   hydratePhotos();
 }

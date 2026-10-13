@@ -1,23 +1,30 @@
 // Delegated click handling for buttons rendered as HTML strings.
 // A button is matched by the first data attribute in BY_ATTRIBUTE it carries, otherwise by
 // its data-act name in ACTIONS. Handlers receive the button.
-import { sleepContext } from "../everyday.js?v=4.11";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.11";
-import { $, active, clock, dayKey, esc } from "./format.js?v=4.11";
+import { sleepContext } from "../everyday.js?v=4.15";
+import {
+  closeDialog,
+  openDialog,
+  safe,
+  toast,
+  requestCloseDialog,
+} from "./ui.js?v=4.15";
+import { $, active, clock, dayKey, esc } from "./format.js?v=4.15";
 import {
   earlierSheet,
   endSleep,
   finishWalk,
   log,
   logCare,
+  routineSheet,
   moreCare,
   saveEarlier,
   saveMeal,
-} from "./logging.js?v=4.11";
-import { editForm, nextCareForm, placePicker, plan } from "./forms.js?v=4.11";
-import { confirmVisit, trainerSchedule } from "./trainer.js?v=4.11";
-import { renderPatterns, showEvidence } from "./library.js?v=4.11";
-import { detail } from "./entries.js?v=4.11";
+} from "./logging.js?v=4.15";
+import { editForm, nextCareForm, placePicker, plan } from "./forms.js?v=4.15";
+import { confirmVisit, trainerSchedule } from "./trainer.js?v=4.15";
+import { renderPatterns, showEvidence } from "./library.js?v=4.15";
+import { detail } from "./entries.js?v=4.15";
 import {
   autoPlace,
   autoPlaceEnabled,
@@ -25,14 +32,14 @@ import {
   photoURLs,
   room,
   sync,
-} from "./services.js?v=4.11";
-import { addPhotos, choosePhoto, download } from "./photos.js?v=4.11";
-import { review, settings, updatePushStatus } from "./settings.js?v=4.11";
-import { openHistory } from "./nav.js?v=4.11";
-import { render } from "./today.js?v=4.11";
-import { state } from "./state.js?v=4.11";
-import { QUALITY } from "../pantry.js?v=4.11";
-import { postcard, setRecapYear } from "./memories-view.js?v=4.11";
+} from "./services.js?v=4.15";
+import { addPhotos, choosePhoto, download } from "./photos.js?v=4.15";
+import { review, settings, updatePushStatus } from "./settings.js?v=4.15";
+import { openHistory } from "./nav.js?v=4.15";
+import { render } from "./today.js?v=4.15";
+import { state } from "./state.js?v=4.15";
+import { QUALITY } from "../pantry.js?v=4.15";
+import { postcard, setRecapYear } from "./memories-view.js?v=4.15";
 
 // Disable the button while an async handler runs, so a double tap can't repeat it.
 const busy = (fn) => async (b) => {
@@ -59,8 +66,7 @@ const BY_ATTRIBUTE = [
   [
     (b) => has(b, "groom"),
     busy((b) => {
-      closeDialog();
-      return logCare("grooming", b.dataset.groom);
+      return routineSheet(b.dataset.groom);
     }),
   ],
   [
@@ -81,12 +87,16 @@ const BY_ATTRIBUTE = [
   [(b) => flag(b, "data-early-save"), () => saveEarlier()],
   [
     (b) => flag(b, "data-early-form"),
-    () =>
-      editForm(
+    () => {
+      const time = Date.now() - state.early.ago * 60000;
+      if (state.early.type === "grooming")
+        return routineSheet("Bath", null, time);
+      return editForm(
         state.early.type === "sleep" ? sleepContext().type : state.early.type,
         null,
-        state.early.type === "grooming" ? { careTitle: "Bath" } : {},
-      ),
+        { time },
+      );
+    },
   ],
   [
     (b) => has(b, "food") || flag(b, "data-food-unknown"),
@@ -250,7 +260,7 @@ const BY_ATTRIBUTE = [
 
 const ACTIONS = {
   settings: () => settings(),
-  close: () => closeDialog(),
+  close: () => requestCloseDialog(),
   more: () => moreCare(),
   review: () => review(),
   plan: () => plan(),

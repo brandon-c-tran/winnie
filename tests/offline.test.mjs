@@ -89,6 +89,21 @@ async function settled(s) {
   while (s.busy) await new Promise((r) => setTimeout(r, 5));
 }
 
+test("chosen care photo survives offline reload and commits after its attachment", async () => {
+  navigator.onLine = false;
+  const first = await client();
+  await first.enqueue("create", "care", {type: "poop", time});
+  const photoId = await first.addPhoto("care", new Blob([new Uint8Array([255,216,255,...Array(40).fill(5)])], {type: "image/jpeg"}));
+  await first.enqueue("keepPhoto", "care", {photoId, keep: true});
+  const reopened = await client("brandon", {session: first.session, db: first.db});
+  assert.equal(reopened.view().events.find(e => e.id === "care").photos[0].keepsake, true);
+  navigator.onLine = true;
+  await reopened.flush();
+  assert.equal(reopened.data.queue.length, 0);
+  assert.equal(reopened.data.snapshot.events.find(e => e.id === "care").photos[0].keepsake, true);
+  first.db.close();
+});
+
 test("photos keep their bytes across reload and still read older Blob records", async () => {
   navigator.onLine = false;
   const first = await client();

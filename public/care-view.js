@@ -4,8 +4,8 @@ import {
   planState,
   completionId,
   validateCarePlans,
-} from "./care-plans.js?v=4.11";
-import { ROUTINE } from "./routine.js?v=4.11";
+} from "./care-plans.js?v=4.15";
+import { ROUTINE } from "./routine.js?v=4.15";
 import { icon } from "./icons.js?v=4.0";
 
 export function createCare({
@@ -19,6 +19,7 @@ export function createCare({
   safe,
   detail,
   celebrate,
+  completeRoutine,
   attachLocation = () => {},
 }) {
   const $ = (id) => document.getElementById(id);
@@ -202,6 +203,7 @@ export function createCare({
   function complete(id) {
     const s = states().find((s) => s.plan.id === id);
     if (!s || !s.due || s.paused) return;
+    if (s.plan.type === "grooming" && completeRoutine) return completeRoutine(s.plan.title, id);
     const eventId = completionId(s.plan, s.due),
       previous = sync.view().events.find((e) => e.id === eventId);
     if (previous) {

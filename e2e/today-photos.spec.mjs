@@ -48,6 +48,9 @@ for (const person of ["brandon", "kim"])
       "environment",
     );
     await chooser.setFiles("public/photos/winnie-smile.png");
+    await expect(page.locator("#dialog-title")).toHaveText("Photo saved");
+    await expect(page.locator("[data-keep-photo]")).toBeVisible();
+    await page.getByRole("button", {name:"Done", exact:true}).click();
     await expect(page.locator("#dialog")).not.toBeVisible();
     const row = page.locator("#timeline .feed-entry").first();
     await expect(row.locator(".record-author img")).toHaveAttribute(

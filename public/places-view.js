@@ -1,4 +1,5 @@
-import { placeDirectory, loadCities, placeDay } from "./places.js?v=4.11";
+import { winniePhotos } from "./keepsakes.js?v=4.15";
+import { placeDirectory, loadCities, placeDay } from "./places.js?v=4.15";
 
 export function createPlacesView({ root, esc, entry, hydratePhotos }) {
   let events = [],
@@ -76,8 +77,7 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
     }
     // Care evidence stays in its log rather than representing a destination.
     const photos = source
-      .filter((e) => !["pee", "poop", "meal"].includes(e.type))
-      .flatMap((e) => (e.photos || []).map((photo) => ({ photo, event: e })))
+      .flatMap((e) => winniePhotos(e).map((photo) => ({ photo, event: e })))
       .slice(0, 4);
     return `<section class="place-history"><button class="text-button place-back" data-place-close>Back to places</button>
       <header class="place-heading"><div><h2 tabindex="-1">${esc(group.name)}</h2><p>${esc(region(group))}</p></div>${mapLink(group)}</header>

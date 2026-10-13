@@ -529,11 +529,12 @@ main:focus {
 /* ---------- logging ---------- */
 .log-big {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
   padding: 12px var(--gut) 4px;
 }
 .tile {
+  min-width: 0;
   will-change: transform;
   display: grid;
   gap: 3px;
@@ -548,6 +549,7 @@ main:focus {
   display: flex;
   align-items: center;
   gap: 7px;
+  flex-wrap: wrap;
 }
 .tile .nm {
   font: 700 20px var(--px);
@@ -559,6 +561,38 @@ main:focus {
   border: 2px solid var(--ink);
   padding: 3px 6px 2px;
   white-space: nowrap;
+}
+
+/* Compact visuals with forgiving touch targets. */
+.text-button, .routine-done, .routine-last, #day-prev, #day-next,
+#dialog-close, #sync-chip { min-height: 44px; min-width: 44px; }
+.room-actions { margin: 0 var(--gut) 8px; }
+.room-actions summary { min-height: 44px; padding-block: 12px; font: 600 14px var(--px); color: var(--muted); }
+.room-actions .button-row { gap: 8px 16px; }
+.routine-when { border: 0; padding: 0; margin: 0 0 18px; min-width: 0; }
+.routine-when legend { font: 600 16px var(--px); margin-bottom: 12px; }
+.routine-when button { min-height: 44px; padding: 8px 12px; }
+.routine-when button[aria-pressed="true"] { background: var(--groom); color: var(--ink); }
+.routine-when label { margin-top: 16px; }
+.photo-actions { flex-wrap: wrap; }
+.saved-photos figure { margin: 0 0 18px; }
+.saved-photos img { display: block; width: 100%; height: 36vh; object-fit: contain; background: var(--ground); margin-bottom: 12px; }
+.saved-photos [aria-pressed="true"] { background: var(--photo); color: var(--ink); }
+#unfinished-drafts { margin: 20px var(--gut); border-block: 1px solid var(--line); }
+#unfinished-drafts > div { display: flex; align-items: center; gap: 12px; padding-block: 4px; }
+#unfinished-drafts span { flex: 1; font: 600 14px var(--px); }
+.photo-actions [aria-pressed="true"] { color: var(--text); font-weight: 600; }
+.card.mem > summary { min-height: 44px; font: 600 18px var(--px); padding-block: 12px; }
+.card.mem > section { margin-top: 24px; }
+.card.mem select { width: 100%; min-width: 0; text-overflow: ellipsis; }
+.counts .day { min-width: 0; }
+@media (max-width: 370px) {
+  .tile { padding-inline: 9px; }
+  .tile .top { gap: 5px; }
+  .tile .nm { font-size: 18px; }
+  .tile .top > .ic { width: 18px; height: 18px; }
+  .tile .act { padding-inline: 3px; }
+  .tile .tm { overflow-wrap: anywhere; }
 }
 .tile .tm {
   font: 700 30px/1.05 var(--px);
@@ -717,7 +751,7 @@ main:focus {
   overflow: hidden;
 }
 .sticky small {
-  font-size: 12px;
+  font-size: 13px;
   color: rgb(34 38 74 / 0.8);
 }
 .notes-empty {
@@ -1270,7 +1304,7 @@ details > summary {
   font: 700 14px var(--px);
 }
 .last small {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -1361,7 +1395,7 @@ details > summary {
   overflow-wrap: anywhere;
 }
 .memory-card small {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -1933,7 +1967,7 @@ label {
   margin: 0;
 }
 .visit-state {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
 }
 .plan-presets {
@@ -1964,7 +1998,7 @@ label {
 }
 .care-plan-cadence {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   margin-top: 4px;
 }
@@ -2441,7 +2475,7 @@ details {
     gap: 9px;
   }
   .chip {
-    font-size: 12px;
+    font-size: 13px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2711,7 +2745,7 @@ details {
 }
 .by-food > .muted {
   grid-column: 2;
-  font-size: 12px;
+  font-size: 13px;
 }
 .q-bar {
   display: flex;
@@ -2825,7 +2859,7 @@ details {
   gap: 12px 32px;
 }
 .entry-detail .entry-dates dt {
-  font-size: 12px;
+  font-size: 13px;
 }
 .entry-detail .detail-author {
   margin: 0;
@@ -2868,7 +2902,7 @@ details {
   justify-content: end;
 }
 .detail-photo-add .text-button {
-  font-size: 12px;
+  font-size: 13px;
 }
 .detail-image {
   margin: 12px 0 0;
@@ -3110,7 +3144,7 @@ details {
   background: var(--sunk);
   width: 100%;
   min-height: 44px;
-  font-size: 12px;
+  font-size: 13px;
 }
 .photo-draft:empty {
   display: none;
@@ -3303,7 +3337,7 @@ details {
   min-height: 44px;
   margin: 8px 0 16px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 .place-region + .place-region {
   margin-top: 32px;
@@ -3474,7 +3508,7 @@ details {
 .place-day summary span:last-child {
   margin-left: auto;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 .place-day > div {
   background: var(--surface);
@@ -3483,7 +3517,7 @@ details {
 .places-about {
   margin-top: 24px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.55;
 }
 .places-about summary {

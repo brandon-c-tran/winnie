@@ -1,14 +1,14 @@
 // Entry, shared plan, and place forms.
-import { eventPosition, placeName, placeLabel } from "../places.js?v=4.11";
+import { eventPosition, placeName, placeLabel } from "../places.js?v=4.15";
 import {
   validPin,
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "../care-state.js?v=4.11";
+} from "../care-state.js?v=4.15";
 import { GROOMING } from "../icons.js?v=4.0";
-import { normalizeFood } from "../everyday.js?v=4.11";
-import { autoPlace, facts, fridge, sync } from "./services.js?v=4.11";
+import { normalizeFood } from "../everyday.js?v=4.15";
+import { autoPlace, facts, fridge, sync } from "./services.js?v=4.15";
 import {
   $,
   TYPES,
@@ -17,30 +17,49 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.11";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.11";
-import { render } from "./today.js?v=4.11";
-import { detail, eventLabel } from "./entries.js?v=4.11";
-import { state } from "./state.js?v=4.11";
+} from "./format.js?v=4.15";
+import {
+  closeDialog,
+  openDialog,
+  safe,
+  toast,
+  retainDialogDraft,
+  resumeDialogDraft,
+  draftFields,
+  applyDraftFields,
+  persistDialogDraft,
+} from "./ui.js?v=4.15";
+import { render } from "./today.js?v=4.15";
+import { detail, eventLabel } from "./entries.js?v=4.15";
+import { state } from "./state.js?v=4.15";
 
-export function editForm(type = "note", id = null, defaults = {}) {
+export function editForm(
+  type = "note",
+  id = null,
+  defaults = {},
+  restored = null,
+) {
+  const draftKey = `entry:${sync.session?.home || ""}:${id || type}`;
+  if (!restored && resumeDialogDraft(draftKey)) return;
   if (id) autoPlace.cancel(id);
-  const e = id
-    ? sync.view().events.find((e) => e.id === id)
-    : {
-        type,
-        time: Date.now(),
-        end_time: null,
-        note: "",
-        who: "us",
-        tags: [],
-        ...defaults,
-      };
+  const e =
+    restored?.original ||
+    (id
+      ? sync.view().events.find((e) => e.id === id)
+      : {
+          type,
+          time: Date.now(),
+          end_time: null,
+          note: "",
+          who: "us",
+          tags: [],
+          ...defaults,
+        });
   if (!e) return;
-  const eventId = id || uid();
-  let savedRevision = id ? e.revision : undefined;
-  let entrySaved = false;
-  state.formPhotos = [];
+  const eventId = restored?.eventId || id || uid();
+  let savedRevision = restored?.savedRevision ?? (id ? e.revision : undefined);
+  let entrySaved = restored?.entrySaved || false;
+  state.formPhotos = restored?.photos || [];
   state.formType = e.type;
   openDialog(
     `<h2 id="dialog-title">${id ? "Edit entry" : e.type === "moment" ? "Add photo" : "New entry"}</h2><form id="event-form"><label>What happened?<select name="type">${Object.entries(
@@ -55,6 +74,17 @@ export function editForm(type = "note", id = null, defaults = {}) {
       )}</select></label><label id="title-label" ${e.type === "grooming" ? "" : "hidden"}>What was done<input name="careTitle" maxlength="60" value="${esc(e.careTitle || "")}" placeholder="Bath" list="groom-titles"><datalist id="groom-titles">${GROOMING.map(([t]) => `<option value="${t}"></option>`).join("")}</datalist></label><label id="foods-label" ${e.type === "meal" ? "" : "hidden"}>What he ate<input name="foods" maxlength="500" value="${esc((e.foods || []).join(", "))}" placeholder="Chicken, sardine…"></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>Ended<input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Optional">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags<input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(placeName(e))}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
   );
   const f = $("event-form");
+  retainDialogDraft(draftKey, undefined, undefined, () => ({
+    kind: "entry",
+    type,
+    id,
+    original: e,
+    eventId,
+    savedRevision,
+    entrySaved,
+    fields: draftFields(f),
+    photos: state.formPhotos.slice(),
+  }));
   f.elements.type.addEventListener("change", () => {
     $("foods-label").hidden = f.elements.type.value !== "meal";
   });
@@ -73,6 +103,14 @@ export function editForm(type = "note", id = null, defaults = {}) {
       "covered_gap",
     ].includes(f.elements.type.value);
   };
+  if (restored) {
+    applyDraftFields(f, restored.fields);
+    f.elements.type.dispatchEvent(new Event("change"));
+    if ($("form-photo-status"))
+      $("form-photo-status").textContent = state.formPhotos.length
+        ? `${state.formPhotos.length} photos ready to keep.`
+        : "";
+  }
   f.onsubmit = safe(async (ev) => {
     ev.preventDefault();
     const submit = f.querySelector("[type=submit]");
@@ -139,12 +177,14 @@ export function editForm(type = "note", id = null, defaults = {}) {
       savedRevision = sync
         .view()
         .events.find((e) => e.id === eventId)?.revision;
+      persistDialogDraft();
       while (state.formPhotos.length) {
         await sync.addPhoto(eventId, state.formPhotos[0]);
         state.formPhotos.shift();
         savedRevision = sync
           .view()
           .events.find((e) => e.id === eventId)?.revision;
+        persistDialogDraft();
       }
       closeDialog();
       toast("Saved", id ? null : () => sync.enqueue("delete", eventId));
@@ -159,6 +199,9 @@ export function editForm(type = "note", id = null, defaults = {}) {
     }
   });
 }
+document.addEventListener("winnie:resume-draft", ({ detail: data }) => {
+  if (data?.kind === "entry") editForm(data.type, data.id, {}, data);
+});
 export function plan() {
   fridge.edit();
 }
