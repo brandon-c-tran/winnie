@@ -2893,16 +2893,23 @@ details {
 .entry-detail .detail-place .place-link {
   margin: 0;
 }
-.photo-navigation {
+.photo-kinds {
   display: flex;
-  justify-content: flex-end;
-  gap: 18px;
-  margin: -8px 0 10px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
-.photo-navigation [aria-pressed="true"] {
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 5px;
+.photo-kinds button {
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: 8px 14px;
+  min-height: 44px;
+  font: 500 14px var(--ui);
+  color: var(--muted);
+}
+.photo-kinds [aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: white;
 }
 .album-empty {
   padding: 32px 8px;
@@ -3269,15 +3276,8 @@ details {
   }
 }
 /* Places: destinations first, care records within recorded days. */
-#photos-view.is-places .section-tabs,
-#photos-view.is-places .photo-navigation {
-  display: none;
-}
-#places-home {
-  margin: 0 16px 8px;
-}
 #photos-view.is-places.has-place-detail > .view-head,
-#photos-view.is-places.has-place-detail > #places-home {
+#photos-view.is-places.has-place-detail > .photo-navigation {
   display: none;
 }
 .is-places.has-place-detail #places-view {

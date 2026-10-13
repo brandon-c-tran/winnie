@@ -1,4 +1,4 @@
-import { placeDirectory, loadCities, placeDay } from "./places.js?v=4.10";
+import { placeDirectory, loadCities, placeDay } from "./places.js?v=4.11";
 
 export function createPlacesView({ root, esc, entry, hydratePhotos }) {
   let events = [],

@@ -9,7 +9,7 @@ test("concise records preserve full notes, place, tags and separate care attribu
     "After the afternoon walk. " +
     "An extra detail from the original record. ".repeat(8);
   await page.evaluate(async (note) => {
-    const { sync } = await import("/app/services.js?v=4.10");
+    const { sync } = await import("/app/services.js?v=4.11");
     await sync.enqueue("create", crypto.randomUUID(), {
       type: "poop",
       time: Date.now() - 60000,
@@ -60,7 +60,7 @@ test("entry dates stay inside narrow sheets and retain edited times", async ({
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.locator("#dialog")).not.toBeVisible();
   const saved = await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.10");
+    const { sync } = await import("/app/services.js?v=4.11");
     return sync.view().events.find((e) => e.careTitle === "Bath").time;
   });
   expect(saved).toBe(Date.parse("2026-10-11T13:43:00-07:00"));

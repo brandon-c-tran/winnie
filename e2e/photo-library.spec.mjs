@@ -37,6 +37,16 @@ test("photo-first composer saves previews to Winnie and survives reload", async 
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
   await page.locator('[data-filter="care-photos"]').click();
   await expect(page.locator("#photo-count")).toHaveText("0 photos");
+  for (const section of ["memories", "places"]) {
+    await page.locator(`[data-filter="${section}"]`).click();
+    await expect(page.locator("#photo-kinds")).toBeHidden();
+    await expect(page.locator("#story-add")).toBeHidden();
+    await expect(page.locator("#places-home")).toBeVisible();
+    await page.locator("#places-home").click();
+    await expect(page.locator("#places-home")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator('[data-filter="care-photos"]')).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("#photo-count")).toHaveText("0 photos");
+  }
   expect(errors).toEqual([]);
 });
 

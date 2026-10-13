@@ -1,23 +1,23 @@
-import { renderMemories } from "./memories-view.js?v=4.10";
-import { foodPoopStats } from "../pantry.js?v=4.10";
+import { renderMemories } from "./memories-view.js?v=4.11";
+import { foodPoopStats } from "../pantry.js?v=4.11";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.10";
-import { elapsed } from "../care-state.js?v=4.10";
+import { placeLabel } from "../places.js?v=4.11";
+import { elapsed } from "../care-state.js?v=4.11";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.10";
-import { insightsView } from "../insight-view.js?v=4.10";
-import { photoCaption } from "../everyday.js?v=4.10";
-import { html, openDialog } from "./ui.js?v=4.10";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.10";
-import { facts, places } from "./services.js?v=4.10";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.10";
-import { addPhotos } from "./photos.js?v=4.10";
-import { state } from "./state.js?v=4.10";
+} from "../insights.js?v=4.11";
+import { insightsView } from "../insight-view.js?v=4.11";
+import { photoCaption } from "../everyday.js?v=4.11";
+import { html, openDialog } from "./ui.js?v=4.11";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.11";
+import { facts, places } from "./services.js?v=4.11";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.11";
+import { addPhotos } from "./photos.js?v=4.11";
+import { state } from "./state.js?v=4.11";
 
 let patternDays = 28,
   insightData = null,
@@ -111,9 +111,13 @@ function renderGallery() {
     gallery = state.filter === "moments" || care,
     map = state.filter === "places";
   $("photos-view").classList.toggle("is-places", map);
-  $("photos-title").textContent = map ? "Places" : "Photos";
-  $("places-home").hidden = !map;
-  $("story-add").hidden = map;
+  $("photos-title").textContent = map
+    ? "Places"
+    : gallery
+      ? "Photos"
+      : "Memories";
+  $("story-add").hidden = !gallery;
+  $("photo-kinds").hidden = !gallery;
   $("photos-library").hidden = map;
   $("photo-tools").hidden = !gallery;
   $("album-label").hidden = !care;

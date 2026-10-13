@@ -521,8 +521,11 @@ in Pixelify Sans 700 at 24px and logger attribution. Labeled date/time fields,
 full notes, recorded facts, consistency, place and photos follow. Logger and
 care-provider attribution remain distinct.
 
-Photos has Winnie and Care photos tabs, with Memories and Places as secondary
-links. Winnie groups photos by month in a two-column album and excludes poop
+Photos, Memories and Places share a stable primary navigation row beneath the
+current destination's heading. Add photos appears only in Photos. Winnie and
+Care photos are subordinate collection controls shown only within Photos;
+returning to Photos restores the selected collection. Winnie groups photos by
+month in a two-column album and excludes poop
 and meal entries. Care photos groups those entries by day, using the same signed
 record heading with a large uncropped photo below. The `fullPhoto` entry option
 keeps the image across the full row with `object-fit: contain`, automatic height
@@ -536,12 +539,13 @@ poop and meal entries so each photo stays attached to its care record. Entry
 detail sheets also offer Take photo and Choose photo beside the Photos heading.
 
 Places uses a divided destination list grouped by region. Its own heading and
-Back to photos link precede search, year and order controls. Flat rows pair a
+the primary Photos / Memories / Places row precede search, year and order controls. Flat rows pair a
 Rubik place name and last recorded date with a right-aligned Pixelify recorded-day
 count; thin dividers and spacing carry the hierarchy without destination cards
 or photo thumbnails. Region headings and detail titles retain Pixelify Sans.
 
-Selecting a place replaces the list with its heading, first/latest recorded
+Selecting a place hides the shared heading and primary navigation and replaces
+the list with its heading, first/latest recorded
 dates, an optional named-spot selector and expandable recorded days containing
 the original signed entry rows. Back to places restores the list's search and
 scroll position. The City map text link opens an external map; original entries
