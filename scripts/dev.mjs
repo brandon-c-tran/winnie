@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHandler } from "../netlify/lib/api.mjs";
 import { MemoryStore } from "../tests/store.mjs";
+import { smallLog, largeLog } from "./dev-seed.mjs";
 const port = Number(process.env.WINNIE_DEV_PORT || 4173);
 const root = path.resolve("public"),
   stores = {
@@ -11,30 +12,20 @@ const root = path.resolve("public"),
     photos: new MemoryStore(),
     backup: new MemoryStore(),
   };
-const now = Date.now();
-await stores.legacy.setJSON("winnie-local-demo", {
-  schemaVersion: 3,
-  events: [
-    {
-      id: "demo-pee",
-      type: "pee",
-      time: now - 3600000,
-      who: "us",
-      note: "",
-      tags: ["outdoors"],
-      source: "manual",
-    },
-    {
-      id: "demo-meal",
-      type: "meal",
-      time: now - 7200000,
-      who: "us",
-      note: "Breakfast",
-      tags: [],
-      source: "manual",
-    },
-  ],
-});
+// WINNIE_DEV_SEED=large gives winnie-local-demo a log about the size of the real one.
+await stores.legacy.setJSON(
+  "winnie-local-demo",
+  process.env.WINNIE_DEV_SEED === "large" ? largeLog() : smallLog(),
+);
+// Browser tests get a fresh, isolated log for any code that starts with winnie-e2e-.
+const legacyGet = stores.legacy.get.bind(stores.legacy);
+stores.legacy.get = async (key, options) =>
+  (await legacyGet(key, options)) ??
+  (String(key).startsWith("winnie-e2e-")
+    ? key.endsWith("-large")
+      ? largeLog()
+      : smallLog()
+    : null);
 const api = createHandler(() => stores, { runDispatch: async () => {} });
 const mime = {
   ".html": "text/html",

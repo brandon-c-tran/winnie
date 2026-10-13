@@ -29,3 +29,4 @@ build/
 .impeccable/live/
 .impeccable/hook.cache.json
 .impeccable/config.local.json
+playwright-report/

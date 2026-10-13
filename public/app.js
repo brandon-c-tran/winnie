@@ -2014,13 +2014,16 @@ sync.addEventListener("change", () => {
   render();
   refreshReactions();
 });
+const hadController = !!navigator.serviceWorker?.controller;
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("/sw.js", { updateViaCache: "none" })
     .then((r) => r.update())
     .catch(() => {});
   navigator.serviceWorker.addEventListener("message", (e) => {
-    if (e.data?.type === "APP_UPDATED") {
+    // A first install also announces itself; only a real update (an older
+    // version was already running this page) needs a reload.
+    if (e.data?.type === "APP_UPDATED" && hadController) {
       const reload = () => {
         if (!$("dialog").open && !document.querySelector("input:focus, textarea:focus"))
           location.reload();
