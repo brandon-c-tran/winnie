@@ -158,7 +158,7 @@ test("Photos switches to Places and back", async ({ page }, info) => {
     "aria-pressed",
     "true",
   );
-  await page.locator('[data-filter="moments"]').click();
+  await page.getByRole("button", { name: "Back to photos", exact: true }).click();
   await expect(page.locator("#places-view")).toBeHidden();
 });
 
