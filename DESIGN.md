@@ -356,12 +356,12 @@ The biggest targets on Today.
 - **Border:** 2px `edge`.
 - **Shadow Strategy:** none (see Elevation).
 - **Internal Padding:** `12px 13px 13px`, 10px internal gap; head row of title plus a text button.
-- Lists and the timeline share the card shell with 1px `line` dividers between rows. Rows lead with a 26-32px icon square filled with the care colour and a 2px ink outline.
+- Lists and the timeline share the card shell with 1px `line` dividers between rows. Care rows may lead with a 26-32px icon square filled with the care colour and a 2px ink outline; signed log records use the inline author treatment documented below.
 
 ### Sticky notes (Notes card)
 Paper on the fridge.
 - Two across, min 92px, Sticky Yellow or Sticky Rose, ink text 14px, clamped to four lines, author and date in 12px below.
-- A 12px square magnet with a 2px ink border sits centred on the top edge, half off the paper: red on yellow, gingham blue on rose. A note with an author uses that person's 20px face as the magnet instead.
+- Authored notes use a frameless 28×28px full portrait in the byline below the note, beside separate author and date elements. The byline stays in normal flow with an 8px gap; author/date text wraps without bullet separators. The decorative top magnet is hidden when this portrait is present. Notes without a portrait retain the small decorative top magnet.
 - Paper ledge underneath. The add slot is a 2px dashed box with a plus icon.
 
 ### Status line
@@ -374,8 +374,8 @@ One line under the room that states the room's state in words.
 Square labels floating over the room: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings.
 
 ### People (Brandon and Kim)
-Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). All placements use the existing full-bust `brandon-pixel.png` and `kim-pixel.png` artwork. Today, History and Care photos contain the whole portrait in a 40×40px area, with the name beneath in a dedicated left rail. Entry details retain a 64×64px portrait area beside the title and logger attribution. Portraits use `object-fit: contain`, a bottom baseline and pixelated rendering; the close-cropped head assets are not used.
-- Other placements retain the full artwork: `xs`, `sm` and magnets occupy 28×32px, `md` occupies 44×52px, and the room's Settings portrait occupies 32×32px, centred inside its 44×44px target. Names remain separate text and portraits are decorative.
+Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). All placements use the existing full-bust `brandon-pixel.png` and `kim-pixel.png` artwork. Today, History and Care photos contain the whole portrait in a frameless 24×24px area inline beside the author's name, below the event, result and optional note. Entry details retain a 64×64px portrait area beside the title and logger attribution. Portraits use `object-fit: contain`, a bottom baseline and pixelated rendering; the close-cropped head assets are not used.
+- Other placements retain the full artwork: `xs` and `sm` occupy 28×32px, Notes byline portraits occupy 28×28px, `md` occupies 44×52px, and the room's Settings portrait occupies 32×32px, centred inside its 44×44px target. Names remain separate text and portraits are decorative.
 - **Dialogue box.** When the other phone logs something, a game dialogue box rises over the bottom of the room: the 48px full portrait, the name in Pixelify 700, "Logged meal 12:40 PM" in Rubik. Cream paper, 3px ink edge, gold inner rim. Tap opens the entry; it leaves on its own after 7 seconds. It replaces the old "Kim logged" toast.
 - The weekly postcard puts both faces on the footer line with each person's count for the week.
 
@@ -402,7 +402,7 @@ Every form and detail opens in the same native `<dialog>` as a bottom sheet: ful
 - **Labels:** Pixelify 600 14px above the field.
 - **Focus:** 3px Focus Pink ring at 0 offset, border goes to ink.
 - **Person radios:** hidden native radio over a bordered Pixelify label; checked fills Sun Yellow.
-- **Containment:** labels and controls allow shrinking with `min-width: 0`; controls occupy their column with `width: 100%` and `max-width: 100%`. Date and date-time inputs also use `min-inline-size: 0`, and native WebKit values align left. Keep native fields within the phone sheet without reducing their 16px text.
+- **Containment:** dialog content and forms use `minmax(0, 1fr)` tracks; labels, forms and controls allow shrinking with `min-width: 0`. Controls occupy their column with `width: 100%` and `max-width: 100%`. Native date and date-time inputs use `appearance: none` (including the WebKit prefix), `min-inline-size: 0` and `max-inline-size: 100%`; WebKit values align left and hide overflow. Preserve native date editing and 16px field text at 320px, 390px and 560px widths.
 
 ### Permanent Care and Plans rows
 Care uses a two-column divided list inside Today's card. Each row aligns an icon, a flexible text column and a 44px-minimum Done target. Rubik carries the task name and smaller underlined last-entry age; missing history reads “Not logged yet.” Below 370px, the gap narrows and the icon hides so text and actions retain room.
@@ -494,18 +494,21 @@ sentences when a relationship genuinely needs prose. This is a standing user
 preference for future interfaces as well as the care log.
 
 History owns its Daily log and Trends sections, search, type and date filters.
-Entries are grouped by day as signed records. A full-bust portrait contained in a 40px square with
-the name beneath occupies the left rail. Beside it, event and time share the
-heading, followed by one useful result when recorded (such as stool consistency,
-food or duration) and an optional note limited to two visible lines. The footer
-contains only a photo-count link when applicable and reactions. Place, tags and
+Entries are grouped by day as compact signed records. The text column contains
+the event, one useful result when recorded (such as stool consistency, food or
+duration), an optional note limited to two visible lines, then a frameless 24px
+square full-bust portrait inline with the author's name. Time aligns at the top
+right and reactions at the bottom right in the same row, with a photo-count link
+when applicable. Reaction targets remain at least 44×44px. Place, tags and
 full notes belong in the entry detail. Last-care counters live in an expandable
 summary.
 
-Today uses the same signed records and displays the first attached photo beneath
-the entry in a 144×144px area with `object-fit: contain`. A count overlays the
-preview when there are multiple photos; opening it leads to the entry details.
-History retains its compact photo-count links.
+Today uses the same signed records and displays the first attached photo beside
+the details, before the right-hand time and reaction column. The contained preview
+is 80×88px, reducing to 64×80px at widths of 360px or less. Rows use 12px padding
+and gaps, reducing to 10px horizontal padding and 8px gaps at that breakpoint.
+A count overlays the preview when there are multiple photos; opening it leads
+to the entry details. History retains its compact photo-count links.
 
 After a quick poop log saves, an optional Poop photo sheet opens with Take photo,
 Choose photo, Consistency and Not now. Consistency updates in place so the photo
@@ -521,8 +524,9 @@ care-provider attribution remain distinct.
 Photos has Winnie and Care photos tabs, with Memories and Places as secondary
 links. Winnie groups photos by month in a two-column album and excludes poop
 and meal entries. Care photos groups those entries by day, using the same signed
-record heading with a large uncropped photo below, rather than a thumbnail or
-miniature form. Its type filter offers All care photos, Poop photos and Meal
+record heading with a large uncropped photo below. The `fullPhoto` entry option
+keeps the image across the full row with `object-fit: contain`, automatic height
+and a 300px maximum height. Its type filter offers All care photos, Poop photos and Meal
 photos. Switching tabs preserves each tab's filters.
 
 Adding Winnie photos opens a photo-first composer: choose photos or take a

@@ -91,6 +91,15 @@
         ],
         "createdAt": "2026-10-13T17:10:30.871Z",
         "reason": "Agent: detector flags Winnie across three mutually exclusive screens: connect heading, Today room HUD, and Photos album tab. These are distinct screen labels, not repeated messaging in a visible panel."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/fridge.js"
+        ],
+        "createdAt": "2026-10-13T20:45:44.635Z",
+        "reason": "Agent verified: data-photo IDs are hydrated to authenticated blob URLs by hydratePhotos after rendering the picker; this is not a placeholder asset."
       }
     ]
   }

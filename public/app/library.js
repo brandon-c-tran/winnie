@@ -1,23 +1,23 @@
-import { renderMemories } from "./memories-view.js?v=4.9";
-import { foodPoopStats } from "../pantry.js?v=4.9";
+import { renderMemories } from "./memories-view.js?v=4.10";
+import { foodPoopStats } from "../pantry.js?v=4.10";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.9";
-import { elapsed } from "../care-state.js?v=4.9";
+import { placeLabel } from "../places.js?v=4.10";
+import { elapsed } from "../care-state.js?v=4.10";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.9";
-import { insightsView } from "../insight-view.js?v=4.9";
-import { photoCaption } from "../everyday.js?v=4.9";
-import { html, openDialog } from "./ui.js?v=4.9";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.9";
-import { facts, places } from "./services.js?v=4.9";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.9";
-import { addPhotos } from "./photos.js?v=4.9";
-import { state } from "./state.js?v=4.9";
+} from "../insights.js?v=4.10";
+import { insightsView } from "../insight-view.js?v=4.10";
+import { photoCaption } from "../everyday.js?v=4.10";
+import { html, openDialog } from "./ui.js?v=4.10";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.10";
+import { facts, places } from "./services.js?v=4.10";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.10";
+import { addPhotos } from "./photos.js?v=4.10";
+import { state } from "./state.js?v=4.10";
 
 let patternDays = 28,
   insightData = null,
@@ -162,7 +162,7 @@ function renderGallery() {
             .slice(0, state.limit)
             .map(
               (e, i, a) =>
-                `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? '<h2 class="history-day">' + dateLabel(e.time) + "</h2>" : ""}${entry(e, { photoRecord: true })}`,
+                `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? '<h2 class="history-day">' + dateLabel(e.time) + "</h2>" : ""}${entry(e, { photoRecord: true, fullPhoto: true })}`,
             )
             .join("")
         : '<div class="photo-grid">' +

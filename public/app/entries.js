@@ -1,14 +1,14 @@
-import { createReactionPicker } from "./reaction-picker.js?v=4.9";
+import { createReactionPicker } from "./reaction-picker.js?v=4.10";
 // Entry rows, reactions, the entry detail sheet, and photo loading.
-import { QUALITY } from "../pantry.js?v=4.9";
-import { placeLabel } from "../places.js?v=4.9";
+import { QUALITY } from "../pantry.js?v=4.10";
+import { placeLabel } from "../places.js?v=4.10";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { photoCaption } from "../everyday.js?v=4.9";
-import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.9";
-import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.9";
-import { openDialog, safe, toast } from "./ui.js?v=4.9";
-import { placeSummary } from "./forms.js?v=4.9";
-import { state } from "./state.js?v=4.9";
+import { photoCaption } from "../everyday.js?v=4.10";
+import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.10";
+import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.10";
+import { openDialog, safe, toast } from "./ui.js?v=4.10";
+import { placeSummary } from "./forms.js?v=4.10";
+import { state } from "./state.js?v=4.10";
 
 const pendingReactions = new Set();
 const picker = createReactionPicker({
@@ -121,7 +121,7 @@ function rowResult(e) {
   return "";
 }
 
-export function entry(e, { photoRecord = false } = {}) {
+export function entry(e, { photoRecord = false, fullPhoto = false } = {}) {
   const result = rowResult(e);
   const author = person(e.loggedBy);
   const portrait = face(e.loggedBy, "record");
@@ -129,10 +129,10 @@ export function entry(e, { photoRecord = false } = {}) {
     ? `<span class="record-author" aria-label="Logged by ${esc(author)}">${portrait}<span>${esc(author)}</span></span>`
     : `<span class="record-author"><span class="sq" style="--c:${typeColor(e.type)}" aria-hidden="true">${icon(typeIcon(e.type, e.careTitle), "ic sm")}</span></span>`;
   const photo = photoRecord && e.photos?.length ? e.photos[0] : null;
-  return `<div class="feed-entry signed-entry${photo ? " care-photo-record" : ""}${e.id === state.freshEntry ? " fresh" : ""}">
-    ${signature}<button class="entry" data-open="${esc(e.id)}"><span class="entry-body"><span class="entry-heading"><span class="entry-title">${esc(eventLabel(e))}</span><time class="entry-time" datetime="${new Date(e.time).toISOString()}">${clock(e.time)}</time></span>${result ? `<span class="entry-result">${esc(result)}</span>` : ""}${e.note && e.note !== eventLabel(e) ? `<span class="entry-note">${esc(e.note)}</span>` : ""}${e.pending ? '<span class="pending-dot">Not sent</span>' : ""}</span></button>
+  return `<div class="feed-entry signed-entry${photo ? ` care-photo-record${fullPhoto ? " full-photo-record" : " compact-photo-record"}` : ""}${e.id === state.freshEntry ? " fresh" : ""}">
+    <button class="entry" data-open="${esc(e.id)}"><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span>${result ? `<span class="entry-result">${esc(result)}</span>` : ""}${e.note && e.note !== eventLabel(e) ? `<span class="entry-note">${esc(e.note)}</span>` : ""}${signature}${e.pending ? '<span class="pending-dot">Not sent</span>' : ""}</span></button>
     ${photo ? `<button class="record-photo" data-open="${esc(e.id)}" aria-label="Open ${e.photos.length} ${e.photos.length === 1 ? "photo" : "photos"} from ${esc(eventLabel(e))}"><img data-photo="${esc(photo.id)}" alt="${esc(photoCaption(e))}" loading="lazy">${e.photos.length > 1 ? `<span>${e.photos.length} photos</span>` : ""}</button>` : ""}
-    <div class="entry-footer">${!photo && e.photos?.length ? `<button class="entry-photo-link" data-open="${esc(e.id)}">${icon("photo", "ic sm")}<span>${e.photos.length} ${e.photos.length === 1 ? "photo" : "photos"}</span></button>` : ""}${reactions(e)}</div>
+    <div class="entry-footer"><time class="entry-time" datetime="${new Date(e.time).toISOString()}">${clock(e.time)}</time>${!photo && e.photos?.length ? `<button class="entry-photo-link" data-open="${esc(e.id)}">${icon("photo", "ic sm")}<span>${e.photos.length} ${e.photos.length === 1 ? "photo" : "photos"}</span></button>` : ""}${reactions(e)}</div>
   </div>`;
 }
 

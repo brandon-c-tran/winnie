@@ -1,11 +1,11 @@
 // Photo picking, resizing, and saving.
-import { $, clock, dateLabel, dateTime, esc, uid } from "./format.js?v=4.9";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.9";
-import { facts, sync } from "./services.js?v=4.9";
-import { detail, eventLabel } from "./entries.js?v=4.9";
+import { $, clock, dateLabel, dateTime, esc, uid } from "./format.js?v=4.10";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.10";
+import { facts, sync } from "./services.js?v=4.10";
+import { detail, eventLabel } from "./entries.js?v=4.10";
 import { icon } from "../icons.js?v=4.0";
-import { render } from "./today.js?v=4.9";
-import { state } from "./state.js?v=4.9";
+import { render } from "./today.js?v=4.10";
+import { state } from "./state.js?v=4.10";
 
 // The photo composer owns its previews; they never enter the shared log before Save.
 let draft = null;
