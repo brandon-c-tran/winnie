@@ -40,7 +40,7 @@ test("History and Gallery keep independent filters and actual photos", async ({
   const errors = await join(page, code(info));
   // Isolated fixture through the actual offline queue and photo upload pipeline.
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.6");
+    const { sync } = await import("/app/services.js?v=4.7");
     const image = new Image();
     image.src = "/photos/winnie-smile.png";
     await image.decode();
@@ -64,7 +64,10 @@ test("History and Gallery keep independent filters and actual photos", async ({
   await page.locator("#story-search").fill("Photo poop");
   await expect(page.locator("#story-count")).toHaveText("1 entry");
   await page.locator("#photos-tab").click();
-  await expect(page.locator("#photo-album")).toHaveValue("winnie");
+  await expect(page.locator('[data-filter="moments"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
   await expect(page.locator("#photo-items .memory-card img")).toHaveAttribute(
     "src",
@@ -74,8 +77,8 @@ test("History and Gallery keep independent filters and actual photos", async ({
     path: info.outputPath("gallery.png"),
     fullPage: true,
   });
-  await page.locator("#photo-album").selectOption("all");
-  await expect(page.locator("#photo-count")).toHaveText("3 photos");
+  await page.locator('[data-filter="care-photos"]').click();
+  await expect(page.locator("#photo-count")).toHaveText("2 photos");
   await page.locator("#photo-search").fill("Photo meal");
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
   await page.locator("#history-tab").click();
@@ -91,12 +94,12 @@ test("History and Gallery keep independent filters and actual photos", async ({
   expect(errors).toEqual([]);
 });
 
-test("Places selects cities, zooms and pans without losing entries", async ({
+test("Places opens destinations and their source logs without losing the list", async ({
   page,
 }, info) => {
   const errors = await join(page, code(info));
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.6");
+    const { sync } = await import("/app/services.js?v=4.7");
     for (const [lat, lng] of [
       [37.7749, -122.4194],
       [37.8044, -122.2712],
@@ -118,11 +121,15 @@ test("Places selects cities, zooms and pans without losing entries", async ({
   });
   await page.locator(".place-city", { hasText: "San Francisco" }).click();
   await expect(page.locator(".place-history")).toContainText("San Francisco");
-  await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  await page.locator(".place-day summary").click();
   await expect(page.locator(".place-history .entry")).toHaveCount(1);
-  await page.locator(".map-canvas").focus();
-  await page.keyboard.press("ArrowRight");
-  await page.getByRole("button", { name: "Fit all", exact: true }).click();
+  await expect(page.getByRole("link", { name: "City map" })).toHaveAttribute(
+    "href",
+    /google.com\/maps/,
+  );
+  await page
+    .getByRole("button", { name: "Back to places", exact: true })
+    .click();
   await expect(page.locator(".place-city")).toHaveCount(3);
   expect(errors).toEqual([]);
 });
@@ -132,7 +139,7 @@ test("new room poses render, settle after interruption and respect reduced motio
 }, info) => {
   const errors = await join(page, code(info));
   const result = await page.evaluate(async () => {
-    const { room } = await import("/app/services.js?v=4.6");
+    const { room } = await import("/app/services.js?v=4.7");
     for (const pose of [
       "belly",
       "roll",
@@ -158,10 +165,14 @@ test("new room poses render, settle after interruption and respect reduced motio
   await page.screenshot({ path: info.outputPath("today.png"), fullPage: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
   // WebKit dispatches the media-query change on a later rendering turn.
-  await expect.poll(() => page.evaluate(async () => {
-    const { room } = await import("/app/services.js?v=4.6");
-    room.react("toy");
-    return { pose: room.dog.pose, toy: room.dog.toy };
-  })).toEqual({ pose: "sit", toy: false });
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const { room } = await import("/app/services.js?v=4.7");
+        room.react("toy");
+        return { pose: room.dog.pose, toy: room.dog.toy };
+      }),
+    )
+    .toEqual({ pose: "sit", toy: false });
   expect(errors).toEqual([]);
 });

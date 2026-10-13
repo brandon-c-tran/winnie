@@ -73,6 +73,24 @@
         ],
         "createdAt": "2026-10-13T14:08:24.373Z",
         "reason": "Agent: city thumbnails use the verified data-photo/hydratePhotos authenticated blob URL pipeline, not missing assets."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/app/library.js"
+        ],
+        "createdAt": "2026-10-13T17:03:25.997Z",
+        "reason": "Agent: gallery data-photo images load authenticated blob URLs through hydratePhotos; browser tests verify src after hydration."
+      },
+      {
+        "rule": "repeated-container-text",
+        "value": "*",
+        "files": [
+          "public/index.html"
+        ],
+        "createdAt": "2026-10-13T17:10:30.871Z",
+        "reason": "Agent: detector flags Winnie across three mutually exclusive screens: connect heading, Today room HUD, and Photos album tab. These are distinct screen labels, not repeated messaging in a visible panel."
       }
     ]
   }

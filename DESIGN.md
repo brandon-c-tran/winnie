@@ -374,8 +374,8 @@ One line under the room that states the room's state in words.
 Square labels floating over the room: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings.
 
 ### People (Brandon and Kim)
-Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). Use the full `brandon-pixel.png` and `kim-pixel.png` artwork with `object-fit: contain` and a bottom baseline. Small author portraits occupy 28×32px, sheet portraits 44×52px, and the room's settings portrait 32×36px inside a 44px target. Entries and care tiles give the author a dedicated line beside the portrait, separate from timestamps.
-- Sizes: `xs` 16px in entry times, tile meta and the status line; `sm` 20px in plan owners and magnets; `md` 28px on the join screen; `chip` 26px fills the Settings pill in the HUD.
+Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). History and Care photos use the existing `brandon-face.png` and `kim-face.png` head portraits at their native 40×40px size, with the name beneath in a dedicated left rail. Entry details use the full `brandon-pixel.png` and `kim-pixel.png` artwork in a 64×64px area beside the title and logger attribution. Both treatments show the artwork whole with `object-fit: contain`, a bottom baseline and pixelated rendering; neither crops or enlarges a head from the full portrait.
+- Other placements retain the full artwork: `xs`, `sm` and magnets occupy 28×32px, `md` occupies 44×52px, and the room's Settings portrait occupies 32×36px inside a 44px target. Names remain separate text and portraits are decorative.
 - **Dialogue box.** When the other phone logs something, a game dialogue box rises over the bottom of the room: the 48px full portrait, the name in Pixelify 700, "Logged meal 12:40 PM" in Rubik. Cream paper, 3px ink edge, gold inner rim. Tap opens the entry; it leaves on its own after 7 seconds. It replaces the old "Kim logged" toast.
 - The weekly postcard puts both faces on the footer line with each person's count for the week.
 
@@ -478,23 +478,53 @@ All motion is stepped. CSS uses `steps()` timing only: button press `60ms steps(
 ## History, photos and reactions
 
 Do not flatten metadata into strings separated by bullets or middle dots.
-Use placement and hierarchy: consistency and place are separate labeled entry
-fields, timestamps have their own alignment, notes are prose, and portraits sit
-with author names. Detail sheets use labeled date/time fields. Prefer concise
+Use placement and hierarchy: the row's useful result has its own line,
+timestamps have their own alignment, notes are prose, and portraits sit with
+author names. Consistency and place have separate sections in detail sheets,
+which also use labeled date/time fields. Prefer concise
 sentences when a relationship genuinely needs prose. This is a standing user
 preference for future interfaces as well as the care log.
 
-History owns its Log and Trends sections, search, type and date filters. Entries
-are grouped by day; last-care counters live in an expandable summary. Photos
-owns Gallery, Memories and Places with its own search and collection selection.
-Gallery groups real photos by month. Winnie is the default collection; meal and
-poop photos have explicit collections and remain available in All photos.
-Switching tabs preserves each tab's filters.
+History owns its Daily log and Trends sections, search, type and date filters.
+Entries are grouped by day as signed records. A native 40px head portrait with
+the name beneath occupies the left rail. Beside it, event and time share the
+heading, followed by one useful result when recorded (such as stool consistency,
+food or duration) and an optional note limited to two visible lines. The footer
+contains only a photo-count link when applicable and reactions. Place, tags and
+full notes belong in the entry detail. Last-care counters live in an expandable
+summary.
 
-Places pairs an offline city map with a chronological city list. Pins have names,
-nearby cities cluster, and the map supports zoom, pan and Fit all. Selecting a
-city shows its entries in place. City centers and recorded days are explicitly
-distinguished from precise coordinates and visits in Map details.
+Entry details pair an uncropped full portrait in a 64px area with the event title
+in Pixelify Sans 700 at 24px and logger attribution. Labeled date/time fields,
+full notes, recorded facts, consistency, place and photos follow. Logger and
+care-provider attribution remain distinct.
+
+Photos has Winnie and Care photos tabs, with Memories and Places as secondary
+links. Winnie groups photos by month in a two-column album and excludes poop
+and meal entries. Care photos groups those entries by day, using the same signed
+record heading with a large uncropped photo below, rather than a thumbnail or
+miniature form. Its type filter offers All care photos, Poop photos and Meal
+photos. Switching tabs preserves each tab's filters.
+
+Adding Winnie photos opens a photo-first composer: choose photos or take a
+photo, review removable previews, then enter an optional caption and date taken
+before saving. From Care photos, adding opens a searchable picker of existing
+poop and meal entries so each photo stays attached to its care record. Entry
+detail sheets also offer Take photo and Choose photo beside the Photos heading.
+
+Places uses a divided destination list grouped by region. Its own heading and
+Back to photos link precede search, year and order controls. Flat rows pair a
+Rubik place name and last recorded date with a right-aligned Pixelify recorded-day
+count; thin dividers and spacing carry the hierarchy without destination cards
+or photo thumbnails. Region headings and detail titles retain Pixelify Sans.
+
+Selecting a place replaces the list with its heading, first/latest recorded
+dates, an optional named-spot selector and expandable recorded days containing
+the original signed entry rows. Back to places restores the list's search and
+scroll position. The City map text link opens an external map; original entries
+retain their saved-pin links. Places saved by name without a pin stay separate.
+Recorded days use San Francisco dates and do not imply visits or trips. Optional
+detail photos exclude pee, poop and meal records; care evidence stays with its log.
 
 There is one reaction picker owned by the exact entry button that opens it.
 Within a sheet it belongs to that dialog and uses the popover top layer. Escape

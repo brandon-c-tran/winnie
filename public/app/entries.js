@@ -1,14 +1,14 @@
-import { createReactionPicker } from "./reaction-picker.js?v=4.6";
+import { createReactionPicker } from "./reaction-picker.js?v=4.7";
 // Entry rows, reactions, the entry detail sheet, and photo loading.
-import { QUALITY } from "../pantry.js?v=4.6";
-import { placeLabel } from "../places.js?v=4.6";
+import { QUALITY } from "../pantry.js?v=4.7";
+import { placeLabel } from "../places.js?v=4.7";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { photoCaption } from "../everyday.js?v=4.6";
-import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.6";
-import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.6";
-import { openDialog, safe, toast } from "./ui.js?v=4.6";
-import { placeSummary } from "./forms.js?v=4.6";
-import { state } from "./state.js?v=4.6";
+import { photoCaption } from "../everyday.js?v=4.7";
+import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.7";
+import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.7";
+import { openDialog, safe, toast } from "./ui.js?v=4.7";
+import { placeSummary } from "./forms.js?v=4.7";
+import { state } from "./state.js?v=4.7";
 
 const pendingReactions = new Set();
 const picker = createReactionPicker({
@@ -103,18 +103,39 @@ function entryDate(e) {
   return `<dl class="entry-dates"><div><dt>Date</dt><dd>${dateLabel(e.time)}</dd></div><div><dt>${e.end_time != null ? "Started" : "Time"}</dt><dd>${clock(e.time)}</dd></div>${e.end_time != null ? `<div><dt>Ended</dt><dd>${dateLabel(e.end_time) !== dateLabel(e.time) ? dateLabel(e.end_time) + "<br>" : ""}${clock(e.end_time)}</dd></div>` : ""}</dl>`;
 }
 
-export function entry(e) {
-  const duration =
-    e.end_time != null
-      ? e.end_time < e.time
-        ? "Time needs review"
-        : `${Math.round((e.end_time - e.time) / 60000)} min`
-      : ["nap", "slumber", "walk"].includes(e.type)
-        ? "In progress"
-        : "";
-  const detail = entryFacts(e, duration);
-  return `<div class="feed-entry${e.id === state.freshEntry ? " fresh" : ""}"><button class="entry" data-open="${esc(e.id)}"><span class="entry-symbol sq" style="--c:${typeColor(e.type)}" aria-hidden="true">${icon(typeIcon(e.type, e.careTitle), "ic sm")}</span><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span>${detail ? `<span class="entry-facts">${detail}</span>` : ""}${e.note && e.note !== eventLabel(e) ? `<span class="entry-note">${esc(e.note)}</span>` : ""}${e.loggedBy ? `<span class="entry-author">${face(e.loggedBy, "sm")}<span>${esc(person(e.loggedBy))}</span></span>` : ""}</span><span class="entry-time">${clock(e.time)}${e.pending ? '<br><span class="pending-dot">Not sent</span>' : ""}</span></button>${e.photos?.length ? `<div class="feed-photos">${e.photos.map((p) => `<button data-open="${esc(e.id)}" aria-label="Open photo from ${esc(eventLabel(e))}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"></button>`).join("")}</div>` : ""}${reactions(e)}</div>`;
+function rowResult(e) {
+  if (e.type === "poop") {
+    const quality = (e.tags || []).filter((tag) => QUALITY.includes(tag));
+    if (quality.length)
+      return (
+        quality.map((q) => q[0].toUpperCase() + q.slice(1)).join(", ") +
+        " stool"
+      );
+  }
+  if (e.type === "meal" && e.foods?.length) return e.foods.join(", ");
+  if (e.end_time != null)
+    return e.end_time < e.time
+      ? "Time needs review"
+      : `${Math.round((e.end_time - e.time) / 60000)} min`;
+  if (["nap", "slumber", "walk"].includes(e.type)) return "In progress";
+  return "";
 }
+
+export function entry(e, { photoRecord = false } = {}) {
+  const result = rowResult(e);
+  const author = person(e.loggedBy);
+  const portrait = face(e.loggedBy, "record");
+  const signature = portrait
+    ? `<span class="record-author" aria-label="Logged by ${esc(author)}">${portrait}<span>${esc(author)}</span></span>`
+    : `<span class="record-author"><span class="sq" style="--c:${typeColor(e.type)}" aria-hidden="true">${icon(typeIcon(e.type, e.careTitle), "ic sm")}</span></span>`;
+  const photo = photoRecord && e.photos?.length ? e.photos[0] : null;
+  return `<div class="feed-entry signed-entry${photo ? " care-photo-record" : ""}${e.id === state.freshEntry ? " fresh" : ""}">
+    ${signature}<button class="entry" data-open="${esc(e.id)}"><span class="entry-body"><span class="entry-heading"><span class="entry-title">${esc(eventLabel(e))}</span><time class="entry-time" datetime="${new Date(e.time).toISOString()}">${clock(e.time)}</time></span>${result ? `<span class="entry-result">${esc(result)}</span>` : ""}${e.note && e.note !== eventLabel(e) ? `<span class="entry-note">${esc(e.note)}</span>` : ""}${e.pending ? '<span class="pending-dot">Not sent</span>' : ""}</span></button>
+    ${photo ? `<button class="record-photo" data-open="${esc(e.id)}" aria-label="Open ${e.photos.length} ${e.photos.length === 1 ? "photo" : "photos"} from ${esc(eventLabel(e))}"><img data-photo="${esc(photo.id)}" alt="${esc(photoCaption(e))}" loading="lazy">${e.photos.length > 1 ? `<span>${e.photos.length} photos</span>` : ""}</button>` : ""}
+    <div class="entry-footer">${!photo && e.photos?.length ? `<button class="entry-photo-link" data-open="${esc(e.id)}">${icon("photo", "ic sm")}<span>${e.photos.length} ${e.photos.length === 1 ? "photo" : "photos"}</span></button>` : ""}${reactions(e)}</div>
+  </div>`;
+}
+
 export async function hydratePhotos() {
   for (const img of document.querySelectorAll("img[data-photo]")) {
     const id = img.dataset.photo;
@@ -151,7 +172,19 @@ export function detail(id) {
     return;
   }
   openDialog(
-    `<div class="detail-head"><span class="sq" style="--c:${typeColor(e.type)}">${icon(typeIcon(e.type, e.careTitle), "ic sm")}</span><h2 id="dialog-title">${esc(eventLabel(e))}</h2></div>${entryDate(e)}<p class="fine detail-author">${e.loggedBy ? `${face(e.loggedBy, "md")}Logged by ${esc(person(e.loggedBy))}` : "Person not recorded in the original log"}</p>${e.pending ? '<p class="pending-dot">Not sent yet</p>' : ""}${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. You can correct it below; its original value has been preserved.</p>' : ""}${reactions(e)}<div class="detail-meta">${e.tags?.length ? `<div class="entry-facts">${entryFacts({ tags: e.tags }, "")}</div>` : ""}${e.who && e.who !== "us" ? `<span class="pill">Care by ${esc(e.who)}</span>` : ""}${e.signal ? `<span class="pill">${esc(e.signal)}</span>` : ""}</div>${e.foods?.length ? `<p class="detail-notes">Ate ${esc(e.foods.join(" + "))}</p>` : ""}${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}${placeSummary(e)}<button class="text-button" data-place="${esc(id)}">⌖ ${placeLabel(e) ? "Edit place" : "Add place"}</button><div class="button-row"><button class="primary small" data-photo-camera="${esc(id)}">Take photo</button><button class="secondary small" data-photo-library="${esc(id)}">Choose photo</button><button class="text-button" data-edit="${esc(id)}">Edit entry</button></div>${e.type === "poop" ? `<h3>How was it?</h3><div class="signal-buttons">${QUALITY.map((q) => `<button data-quality="${q}" data-id="${esc(id)}" class="${e.tags?.includes(q) ? "selected" : ""}">${q[0].toUpperCase() + q.slice(1)}</button>`).join("")}</div>` : ""}${["pee", "poop"].includes(e.type) ? `<h3>Who started it?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div>` : ""}${(e.photos || []).map((p) => `<img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(e.type === "poop" ? "Winnie’s poop photo" : "A moment with Winnie")}"><div class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove from entry</button></div>`).join("")}<div class="button-row"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></div><p id="form-error" class="error" role="alert"></p>`,
+    `<article class="entry-detail">
+      <div class="detail-intro">${face(e.loggedBy, "detail-portrait") || `<span class="sq" style="--c:${typeColor(e.type)}">${icon(typeIcon(e.type, e.careTitle), "ic sm")}</span>`}<div class="detail-intro-copy"><header class="detail-heading"><h2 id="dialog-title">${esc(eventLabel(e))}</h2><button class="text-button" data-edit="${esc(id)}">Edit entry</button></header><p class="detail-author">${person(e.loggedBy) ? `Logged by <strong>${esc(person(e.loggedBy))}</strong>` : "Person not recorded"}</p></div></div>
+      <div class="detail-byline">${entryDate(e)}${reactions(e)}</div>
+      ${e.pending ? '<p class="pending-dot">Not sent yet</p>' : ""}
+      ${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. Edit the entry to correct it; its original value has been preserved.</p>' : ""}
+      ${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}
+      ${e.foods?.length || (e.who && e.who !== "us") || e.tags?.some((t) => !QUALITY.includes(t)) ? `<div class="detail-facts">${entryFacts({ foods: e.foods, tags: (e.tags || []).filter((t) => !QUALITY.includes(t)) }, "")}${e.who && e.who !== "us" ? `<span class="entry-fact"><span class="fact-label">Care by</span><span>${esc(e.who)}</span></span>` : ""}</div>` : ""}
+      ${e.type === "poop" ? `<section class="detail-section"><h3>Consistency</h3><div class="signal-buttons">${QUALITY.map((q) => `<button aria-pressed="${e.tags?.includes(q) || false}" data-quality="${q}" data-id="${esc(id)}" class="${e.tags?.includes(q) ? "selected" : ""}">${q[0].toUpperCase() + q.slice(1)}</button>`).join("")}</div></section>` : ""}
+      <section class="detail-section detail-place"><div class="detail-section-heading"><h3>Place</h3><button class="text-button" data-place="${esc(id)}">${placeLabel(e) ? "Edit place" : "Add place"}</button></div>${placeLabel(e) ? placeSummary(e) : '<p class="fine">No place recorded</p>'}</section>
+      <section class="detail-section"><div class="detail-section-heading"><h3>Photos${e.photos?.length ? ` <span class="fine">${e.photos.length}</span>` : ""}</h3><div class="detail-photo-add"><button class="text-button" data-photo-camera="${esc(id)}">Take photo</button><button class="text-button" data-photo-library="${esc(id)}">Choose photo</button></div></div>${(e.photos || []).map((p) => `<figure class="detail-image"><img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}"><figcaption class="photo-actions"><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove photo</button></figcaption></figure>`).join("")}${!e.photos?.length ? '<p class="fine">No photos attached</p>' : ""}</section>
+      ${["pee", "poop"].includes(e.type) ? `<section class="detail-section"><h3>Who started it?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button aria-pressed="${e.signal === s}" data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div></section>` : e.signal ? `<p>${esc(e.signal)}</p>` : ""}
+      <footer class="detail-section"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></footer><p id="form-error" class="error" role="alert"></p>
+    </article>`,
   );
   state.detailId = id;
   hydratePhotos();
