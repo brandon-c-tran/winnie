@@ -1,14 +1,14 @@
 // Entry, shared plan, and place forms.
-import { eventPosition, placeName, placeLabel } from "../places.js?v=4.8";
+import { eventPosition, placeName, placeLabel } from "../places.js?v=4.9";
 import {
   validPin,
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "../care-state.js?v=4.8";
+} from "../care-state.js?v=4.9";
 import { GROOMING } from "../icons.js?v=4.0";
-import { normalizeFood } from "../everyday.js?v=4.8";
-import { autoPlace, facts, fridge, sync } from "./services.js?v=4.8";
+import { normalizeFood } from "../everyday.js?v=4.9";
+import { autoPlace, facts, fridge, sync } from "./services.js?v=4.9";
 import {
   $,
   TYPES,
@@ -17,11 +17,11 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.8";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.8";
-import { render } from "./today.js?v=4.8";
-import { detail, eventLabel } from "./entries.js?v=4.8";
-import { state } from "./state.js?v=4.8";
+} from "./format.js?v=4.9";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.9";
+import { render } from "./today.js?v=4.9";
+import { detail, eventLabel } from "./entries.js?v=4.9";
+import { state } from "./state.js?v=4.9";
 
 export function editForm(type = "note", id = null, defaults = {}) {
   if (id) autoPlace.cancel(id);

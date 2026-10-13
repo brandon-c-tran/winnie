@@ -1,5 +1,6 @@
 import { validateFridge } from "../../public/fridge-model.js";
 import { validatePantry } from "../../public/pantry.js";
+import { validateSupplies } from "../../public/routine.js";
 import {
   validateCarePlans,
   planState,
@@ -346,6 +347,13 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         doc.profile.trainerSchedule = validateTrainerImport(
           payload.trainerSchedule,
         );
+      } catch (err) {
+        throw new Fault(400, err.message);
+      }
+    }
+    if (Object.hasOwn(payload, "supplies")) {
+      try {
+        doc.profile.supplies = validateSupplies(payload.supplies);
       } catch (err) {
         throw new Fault(400, err.message);
       }

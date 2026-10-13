@@ -20,9 +20,10 @@ Keep Winnie's day, care, and memories together. The current app combines a share
 
 ## Operating Context
 
-- **Today:** latest pee, poop, meal, and sleep records; logging now or earlier; additional care and moments; a dated shared timeline; and an “Our fridge” board with notes, plans, a pinned photo, and upcoming care. An active walk exposes its finish action.
-- **Care:** Upcoming, Trends, and History. Upcoming includes one-time or recurring care plans, claims, completions, paused plans, and trainer visits. History and trends use saved records.
-- **His story:** Photos and Places, with photo collections and memories drawn from saved entries. Places groups coordinate-bearing entries by approximate nearby city using an on-device directory, with named spots within each city; places saved by name without a pin remain separate. Recorded days lead to the original logs. External city maps and each entry's saved pin provide geographic context.
+- **Today:** room, recorded status, frequent logging, and permanent Care rows for Brush, Teeth, Ears, Nails, Bath and Haircut; additional care, Up next, Notes, memories when available, and the dated shared timeline follow. Each Care row offers Done and the actual last-done age linked to its entry, or “Not logged yet.” An active walk exposes its finish action.
+- **Plans:** Supplies, Training visits, then Reminders. Supplies contains wipes, poop bags, Heartgard stock and existing food inventory. Reminders support one-time or recurring plans, claims, completions, and paused or finished plans.
+- **History:** Daily log and Trends, with search, type and date filters grounded in saved records.
+- **Photos:** Winnie and Care photos, with Memories and Places as secondary destinations. Places groups coordinate-bearing entries by approximate nearby city using an on-device directory, with named spots within each city; places saved by name without a pin remain separate. Recorded days lead to the original logs. External city maps and each entry's saved pin provide geographic context.
 - **Settings:** device identity, partner notifications, automatic location, shared handoff notes, trainer visits, exports, saved-phone-history review, and connected devices.
 - Care schedules and recorded-day grouping use San Francisco dates. The sleep action switches between nap and night sleep using San Francisco sunrise and sunset.
 
@@ -32,7 +33,9 @@ Keep Winnie's day, care, and memories together. The current app combines a share
 - Existing stack: vanilla JavaScript PWA, Netlify Functions, and Netlify Blobs. Browser modules and the service worker live in `public/`; backend code lives in `netlify/`.
 - Care entries support editing, undo, occurrence times, care-provider attribution, notes, tags, and relevant additional fields. Preserve the distinction between who logs an entry and who provided care.
 - Photos can accompany entries or standalone moments. Existing collections include poop and meal photos. Preserve stored photos and their associations with entries.
-- Shared fridge notes can be archived and revisited. Care plans support claiming and recording completion; upcoming trainer visits are imported calendar snapshots and become care entries when confirmed.
+- Shared fridge notes can be archived and revisited. Care plans support claiming and recording completion. Trainer visits are imported calendar snapshots labeled with when the calendar was checked and how far it was saved; schedule changes require another import. A scheduled visit becomes a care entry only when explicitly confirmed after its end. Live calendar sync is not implemented.
+- Wipes, poop bags and Heartgard have explicit stock states: Not checked, In stock, Running low and Ordered, with optional HTTPS reorder links. Updating or ordering Heartgard stock does not record a dose. Food retains its meal-based inventory and restocking controls.
+- Reminder creation starts with Heartgard, one of the six grooming tasks, or Other reminder. Known tasks carry their entry kind without a “Logs as” selector. Heartgard starts with a monthly repeat because the user specified monthly use; grooming starts as one-time, with no inferred care cadence.
 - Devices keep pending changes locally and show whether they are waiting to share or need review. Server-validated, versioned commands and recovery preserve concurrent changes and older phone history.
 - Preserve original event IDs, historical fields, attribution, migration backups, and the legacy store. Never replace live history with seed data or restore the old writable backend. Follow `docs/release-v3.md` for recovery.
 - Partner push follows committed events. Notification permission and subscription belong to each device; actual display and timing remain OS-dependent. Keep visible synchronization state accurate.
@@ -49,6 +52,8 @@ Observed logging habits (Brandon, October 12, 2026): pee and poop are logged mos
 Photo collection preference (Brandon, October 13, 2026): prompting naturally when poop is logged helps collect care photos. Offer an optional photo prompt after saving a quick poop log, keep consistency available there, and show attached photos in Today. Skipping the prompt must preserve the log.
 
 Places intent (Brandon, October 13, 2026): pee and poop logs are also proxies for places Winnie has been. Place browsing should lead with destinations and group their source records, rather than lead with a care-event map. Recorded days remain distinct from inferred visits or trips.
+
+Care and planning intent (Brandon, October 13, 2026): keep all six grooming tasks visible with their last recorded completion, and organize Plans around supplies, training visits and optional reminders. Stock and medication administration remain separate facts. Forms must fit the iPhone sheet; the room's bed rim may cover Winnie only while he is sleeping in the bed.
 
 ## Evidence on Hand
 

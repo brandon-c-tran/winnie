@@ -1070,6 +1070,7 @@ export function createRoom(canvas, opts = {}) {
     }
     s.drawImage(beamLayer, 0, 0);
     paintBed(s, false);
+    if (!dog.bed) paintBed(s, true);
     if (!dog.bed && !dog.toy) bitmap(s, "puppy", L.bed.x + 9, L.bed.y - 3);
     paintEnvelope(s);
     if (!dog.bed) {
@@ -1079,7 +1080,7 @@ export function createRoom(canvas, opts = {}) {
       paintBowl(s);
       paintDog(s);
     }
-    paintBed(s, true);
+    if (dog.bed) paintBed(s, true);
     // light
     o.globalCompositeOperation = "source-over";
     o.drawImage(scene, 0, 0);

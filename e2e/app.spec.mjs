@@ -44,7 +44,7 @@ test("a bath from More shows up in History's last-time counters", async ({
 }, info) => {
   await join(page, code(info));
   await page.locator('[data-act="more"]').click();
-  await page.locator('[data-groom="Bath"]').click();
+  await page.locator('#dialog [data-groom="Bath"]').click();
   await expect(toast(page)).toContainText("Bath logged");
   await page.locator("#history-tab").click();
   await expect(page.locator("#last-times")).toContainText("Bath");
@@ -92,13 +92,12 @@ test("a recurring bath plan shows in Up next and Done logs it", async ({
   await join(page, code(info));
   await page.locator("#plans-tab").click();
   await page.locator('#plans-view .view-head [data-care-action="new"]').click();
+  await page.locator('[data-care-template="Bath"]').click();
   const form = page.locator("#care-plan-form");
-  await form.locator('[name="title"]').fill("Bath");
-  await form.locator('[name="type"]').selectOption("grooming");
-  await form.locator('[name="every"]').fill("3");
   await form.locator('[name="unit"]').selectOption("week");
+  await form.locator('[name="every"]').fill("3");
   await form.locator(".primary").click();
-  await expect(toast(page)).toContainText("Plan saved");
+  await expect(toast(page)).toContainText("Reminder saved");
   await page.locator("#today-tab").click();
   await expect(page.locator("#up-next")).toContainText("Bath");
   await page.locator('#up-next [data-care-action="complete"]').click();
@@ -168,7 +167,7 @@ test("a bath makes Winnie shake off, and Memories counts it", async ({
 }, info) => {
   await join(page, code(info));
   await page.locator('[data-act="more"]').click();
-  await page.locator('[data-groom="Bath"]').click();
+  await page.locator('#dialog [data-groom="Bath"]').click();
   await expect(toast(page)).toContainText("Bath logged");
   await page.locator("#photos-tab").click();
   await page.locator('[data-filter="memories"]').click();

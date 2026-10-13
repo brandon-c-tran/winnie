@@ -214,7 +214,7 @@ components:
 
 The app is a 16-bit game bedroom dressed in Winnie's bandana colours: blue gingham, apricot Winnie, navy ink outlines, honey-wood floor, periwinkle wallpaper. The top of Today is a living pixel diorama in which pixel Winnie acts out only what the shared log has recorded, under the real San Francisco sky. Everything below it is game UI from the same world: big pixel-edged buttons that press down, square HUD pills, cards drawn with a 2px ink line, sticky notes pinned with a square magnet. Nothing is rounded.
 
-Density is phone-first and one-handed. The first viewport is room, one status line, two big log tiles, a row of four chips, and the start of Up next, inside a 560px column. Colour is loud but disciplined: each care type owns exactly one saturated colour and that colour means that type everywhere it appears (tile, chip, timeline square, strip tick, chart bar, sheet button). Neutrals are cool periwinkle-tinted paper and navy ink, never warm grey or brown.
+Density is phone-first and one-handed. Today starts with the room, one status line, two big log tiles, a row of four chips, then permanent Care rows, inside a 560px column. Colour is loud but disciplined: each care type owns exactly one saturated colour and that colour means that type everywhere it appears (tile, chip, timeline square, strip tick, chart bar, sheet button). Neutrals are cool periwinkle-tinted paper and navy ink, never warm grey or brown.
 
 Personality lives in the room, the motion, and the family's own words. The interface copy is a label maker. Winnie never speaks; he emotes in pixel bubbles. Rejected and retired: the pastel card-grid pet dashboard with a hero photo and serif headline, and warm taglines ("our good boy", "His story", "A life worth remembering").
 
@@ -303,7 +303,7 @@ A single phone column, `max-width: 560px`, centred. Above 640px the page behind 
 
 The side gutter is `gut` (16px), dropping to `gut-narrow` (12px) under 370px. Vertical rhythm on Today: 12px above the log rows, 14px between the two big tiles and 12px between the four chips, 18px above each card, 26px above the day log. Inside cards, 10px gaps; rows use a three-column grid of icon square, flexible text, trailing action.
 
-**Today's first viewport, top to bottom:** the room (full-bleed, 112 art px tall, about 224 CSS px on a phone) with the HUD overlaid; the status line; the two big log tiles (Pee, Poop) in a 2-column grid; the four-chip row (Meal, Photo, Earlier, More); then Up next, Notes and the day log. The tab bar is fixed to the bottom and the shell pads `76px + safe-area` under it. Safe-area insets are respected at the top of the room and the bottom of the tab bar, toast and sheet.
+**Today's order, top to bottom:** the room (full-bleed, 112 art px tall, about 224 CSS px on a phone) with the HUD overlaid; the status line; the two big log tiles (Pee, Poop) in a 2-column grid; the optional post-poop controls; the four-chip row (Meal, Photo, Earlier, More); permanent Care rows; Also today when present; Up next; Notes; On this day when present; and the day log. The tab bar is fixed to the bottom and the shell pads `76px + safe-area` under it. Safe-area insets are respected at the top of the room and the bottom of the tab bar, toast and sheet.
 
 Grids elsewhere: 3-column type and food grids in sheets (14px gap), 2-column notes, 2-column photo grid (3 columns at 520px and up).
 
@@ -402,6 +402,14 @@ Every form and detail opens in the same native `<dialog>` as a bottom sheet: ful
 - **Labels:** Pixelify 600 14px above the field.
 - **Focus:** 3px Focus Pink ring at 0 offset, border goes to ink.
 - **Person radios:** hidden native radio over a bordered Pixelify label; checked fills Sun Yellow.
+- **Containment:** labels and controls allow shrinking with `min-width: 0`; controls occupy their column with `width: 100%` and `max-width: 100%`. Date and date-time inputs also use `min-inline-size: 0`, and native WebKit values align left. Keep native fields within the phone sheet without reducing their 16px text.
+
+### Permanent Care and Plans rows
+Care uses a two-column divided list inside Today's card. Each row aligns an icon, a flexible text column and a 44px-minimum Done target. Rubik carries the task name and smaller underlined last-entry age; missing history reads “Not logged yet.” Below 370px, the gap narrows and the icon hides so text and actions retain room.
+
+Plans orders Supplies, Training visits and Reminders as flat sections. Supplies pair a Rubik name and stock state with right-aligned update and optional reorder actions; food inventory follows within the same section. The Heartgard dose-reminder link is separate from its stock state. Visits align a compact month/day block with title, date, time, state and available action on separate lines. Reminder rows use thin bottom dividers and separate due date, cadence and owner placement.
+
+Reminder creation uses a two-column named-task chooser. Known tasks omit the entry-kind selector; custom reminders label it Kind. Stock editing uses a two-column radio grid with a distinct selected border and sunk fill. These extensions reuse the incumbent palette, square edges and type families.
 
 ### Navigation (tab bar)
 Fixed bottom bar, ink fill, four equal tabs (Today, Plans, History, Photos), 24px pixel icons over Pixelify 600 12.5px labels in pale periwinkle (`tabbar-text`), min 52px. The current tab's label turns white and its icon sits in a gingham square with a 2px white outline.
@@ -419,7 +427,7 @@ A canvas diorama, the centre of the identity. It shows only recorded facts.
 **Scene objects and what they mean.**
 - **Window:** the real San Francisco sky from solar position (suncalc): sun arc and drifting clouds by day, stars and the actual moon phase at night, a dark skyline with Sutro Tower and lit windows after dusk. Live San Francisco weather from Open-Meteo (cached 20 minutes, optional): overcast greys the sky and hides the sun, fog drifts in over the skyline and Sutro Tower, rain and snow fall in the glass; grey days dim the room and drop the sunbeam. During an active walk a tiny Winnie trots across the skyline. Tapping it toasts the weather, sunrise and sunset.
 - **Door, leash and doormat:** the walk. The leash hangs on its hook unless a walk is active. Tapping the door logs a walk, or finishes the active one.
-- **Bed:** sleep. Winnie is in it only during an active nap or night sleep, breathing one art px, with z particles. Tapping logs sleep.
+- **Bed:** sleep. Winnie is in it only during an active nap or night sleep, breathing one art px, with z particles. Its front rim paints over Winnie only in that in-bed state; when he is awake or walking, the complete bed paints before him. Tapping logs sleep.
 - **Bowl:** meal. Fills with kibble when a meal is logged and empties as he eats. Tapping logs a meal.
 - **Fridge:** shared notes; shows up to two sticky notes matching the live note count. Tapping opens notes.
 - **Calendar:** today's SF date in a 3x5 pixel font; a red corner dot when care is due today; flashes when a plan is done. Tapping opens Plans.

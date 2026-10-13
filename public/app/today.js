@@ -1,22 +1,22 @@
 // Today: the room's state, the log buttons, Also today, the day strip, and partner greetings.
-import { careStates, careDay } from "../care-plans.js?v=4.8";
-import { fridgeState, onFridge } from "../fridge-model.js?v=4.8";
-import { latestCare, elapsed } from "../care-state.js?v=4.8";
-import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
+import { careStates, careDay } from "../care-plans.js?v=4.9";
+import { fridgeState, onFridge } from "../fridge-model.js?v=4.9";
+import { latestCare, elapsed } from "../care-state.js?v=4.9";
+import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
 import { getTimes } from "../vendor/suncalc.js";
-import { weatherKind } from "../room.js?v=4.8";
+import { weatherKind } from "../room.js?v=4.9";
 import {
   cachedWeather,
   refreshWeather,
   weatherWords,
-} from "./weather.js?v=4.8";
-import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.8";
-import { rhythmInsights, durationLabel } from "../insights.js?v=4.8";
-import { care, facts, fridge, room, sync } from "./services.js?v=4.8";
-import { setTab, showPhotos } from "./nav.js?v=4.8";
-import { pantryHTML } from "./pantry-view.js?v=4.8";
-import { QUALITY } from "../pantry.js?v=4.8";
-import { finishWalk, log } from "./logging.js?v=4.8";
+} from "./weather.js?v=4.9";
+import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.9";
+import { rhythmInsights, durationLabel } from "../insights.js?v=4.9";
+import { care, facts, fridge, room, sync } from "./services.js?v=4.9";
+import { setTab, showPhotos } from "./nav.js?v=4.9";
+import { pantryHTML } from "./pantry-view.js?v=4.9";
+import { QUALITY } from "../pantry.js?v=4.9";
+import { finishWalk, log } from "./logging.js?v=4.9";
 import {
   $,
   TYPES,
@@ -27,12 +27,15 @@ import {
   esc,
   person,
   when,
-} from "./format.js?v=4.8";
-import { html, toast } from "./ui.js?v=4.8";
-import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.8";
-import { legacyDiff } from "./settings.js?v=4.8";
-import { renderLastTimes, renderStory } from "./library.js?v=4.8";
-import { state } from "./state.js?v=4.8";
+} from "./format.js?v=4.9";
+import { html, toast } from "./ui.js?v=4.9";
+import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.9";
+import { legacyDiff } from "./settings.js?v=4.9";
+import { renderLastTimes, renderStory } from "./library.js?v=4.9";
+import { state } from "./state.js?v=4.9";
+import { ROUTINE, lastRoutine } from "../routine.js?v=4.9";
+import { suppliesHTML } from "./supplies-view.js?v=4.9";
+import { trainingHTML } from "./trainer.js?v=4.9";
 
 let shownWeather = 0;
 let roomReady = false,
@@ -235,6 +238,8 @@ export function render() {
   greetPartner(events);
   hydratePhotos();
   if (state.tab === "plans") {
+    html("supplies", suppliesHTML());
+    html("training-visits", trainingHTML());
     html("pantry", pantryHTML());
     care.render();
   }
@@ -291,6 +296,30 @@ function renderToday(events, sleeping, walk) {
     ].join(""),
   );
   renderAlso(events);
+  html(
+    "routine-care",
+    `<div class="card-head"><h2 id="routine-title">Care</h2><button class="text-button" data-care-action="new">Set reminder</button></div><div class="routine-list">${ROUTINE.map(
+      ([title, glyph]) => {
+        const last = lastRoutine(events, title),
+          days = last
+            ? Math.round(
+                (Date.parse(dayKey(now) + "T12:00Z") -
+                  Date.parse(dayKey(last.time) + "T12:00Z")) /
+                  86400000,
+              )
+            : null,
+          age =
+            days === null
+              ? "Not logged yet"
+              : days === 0
+                ? "Today"
+                : days === 1
+                  ? "Yesterday"
+                  : `${days} days ago`;
+        return `<div class="routine-row">${icon(glyph, "ic sm")}<div class="routine-copy"><b>${title}</b>${last ? `<button class="routine-last" data-open="${esc(last.id)}" aria-label="Last ${title.toLowerCase()}: ${age}">${age}</button>` : `<span class="muted">${age}</span>`}</div><button class="routine-done" data-groom="${title}" aria-label="Log ${title.toLowerCase()} now">Done</button></div>`;
+      },
+    ).join("")}</div>`,
+  );
   fridge.render();
   onThisDayToday(events);
   renderDay(events);
@@ -306,7 +335,6 @@ function renderAlso(events) {
   if (!show) return;
   const today = events.filter((e) => dayKey(e.time) === key);
   const items = [
-    ...GROOMING.slice(0, 3).map(([t, i]) => ["grooming", t, i]),
     ["medication", "Meds", "pill"],
     ["enrichment", "Training", "star"],
   ];
