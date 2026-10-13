@@ -7,7 +7,9 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "dev": "node scripts/dev.mjs",
-    "check": "node --check public/app.js && node --check public/sync.js && node --check public/sw.js"
+    "check": "node scripts/check.mjs",
+    "test:e2e": "playwright test",
+    "dev:large": "WINNIE_DEV_SEED=large node scripts/dev.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "11.0.3",
@@ -15,6 +17,7 @@
     "web-push": "3.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "fake-indexeddb": "6.2.5",
     "prettier": "3.9.6"
   }

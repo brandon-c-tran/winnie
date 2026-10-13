@@ -4,16 +4,18 @@ Shared care and photos for Winnie Bernard. Vanilla JavaScript PWA, Netlify Funct
 
 ## Develop
 
-Run `npm ci`, then `npm run dev`. Open http://localhost:4173 and use the isolated test code `winnie-local-demo`. Local development uses an in-memory store; it never calls the production data store. `npm test` covers concurrency, migration preservation, offline IndexedDB recovery, photo attachment, and notification retries.
+Run `npm ci`, then `npm run dev` (or `npm run dev:large` for a log about the size of the real one). Open http://localhost:4173 and use the isolated test code `winnie-local-demo`. Local development uses an in-memory store; it never calls the production data store. `npm test` covers concurrency, migration preservation, offline IndexedDB recovery, photo attachment, and notification retries.
 
 ## Project
 
-- `public/`: Today (with Winnie's Room, `room.js`), Plans, History, Photos, the pixel icon set (`icons.js`), offline client, and service worker.
+- `public/app.js`: startup only. `public/app/`: one module per job (format, state, services, ui, nav, today, logging, entries, forms, library, settings, photos, trainer, clicks).
+- `public/`: the room engine (`room.js`), pixel icons (`icons.js`), offline client (`sync.js`), shared logic modules, and the service worker. Versioned files are cached on the phone: when you change one, bump its `?v=` tag everywhere it is imported and bump `CACHE` in `sw.js`.
 - Adding a device: Settings, Add a device shows an 8-character join code that works once for 15 minutes. The long shared code still works.
 - `docs/pixel-winnie-poses.md`: how to make and clean new pixel Winnie poses.
 - `netlify/lib/`: server-validated commands, conditional storage adapter, authentication, uploads, and push delivery.
 - `netlify/functions/`: API, read-only legacy compatibility, scheduled notifications, and backups.
-- `tests/`: deterministic store, API, IndexedDB, and history-pattern tests.
+- `tests/`: deterministic store, API, IndexedDB, and history-pattern tests (`npm test`).
+- `e2e/`: browser tests in iPhone WebKit and Chrome (`npm run test:e2e`). CI runs everything on each pull request.
 - `docs/release-v3.md`: migration, release validation, and recovery procedure.
 - `seed/`: frozen historical source imports. Do not edit or re-seed over live history.
 

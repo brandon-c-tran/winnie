@@ -79,7 +79,7 @@ export function createRoom(canvas, opts = {}) {
   const out = document.createElement("canvas"), o = out.getContext("2d");
   const relit = document.createElement("canvas"), r = relit.getContext("2d");
   const mask = document.createElement("canvas"), mk = mask.getContext("2d");
-  const pic = document.createElement("canvas"), pc = pic.getContext("2d");
+  const pic = document.createElement("canvas"), pc = pic.getContext("2d", { willReadFrequently: true });
   const tiny = document.createElement("canvas"), tc = tiny.getContext("2d");
   const roomCache = document.createElement("canvas"), rc = roomCache.getContext("2d");
   const skyLayer = document.createElement("canvas"), skc = skyLayer.getContext("2d");
