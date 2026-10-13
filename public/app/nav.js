@@ -1,12 +1,13 @@
 // Tabs and day navigation.
 import { icon } from "../icons.js?v=4.0";
-import { $, dayKey } from "./format.js?v=4.10";
-import { render } from "./today.js?v=4.10";
-import { state } from "./state.js?v=4.10";
+import { $, dayKey } from "./format.js?v=4.11";
+import { render } from "./today.js?v=4.11";
+import { state } from "./state.js?v=4.11";
 
 $("day-picker").value = dayKey(Date.now());
 let historySection = "care",
-  photosSection = "moments";
+  photosSection = "moments",
+  photoCollection = "moments";
 
 const TAB_IDS = ["today", "plans", "history", "photos"];
 document
@@ -39,16 +40,21 @@ export function setTab(next) {
         String(b.dataset.filter === photosSection),
       ),
     );
+  $("places-home").setAttribute(
+    "aria-pressed",
+    String(["moments", "care-photos"].includes(photosSection)),
+  );
   window.scrollTo(0, 0);
   render();
 }
 // Switch the Photos tab between Photos, Places and Memories.
 export function showPhotos(section) {
+  if (["moments", "care-photos"].includes(section)) photoCollection = section;
   photosSection = section;
   state.limit = 60;
   setTab("photos");
 }
-$("places-home").onclick = () => showPhotos("moments");
+$("places-home").onclick = () => showPhotos(photoCollection);
 document
   .querySelectorAll("[data-filter]")
   .forEach((b) => (b.onclick = () => showPhotos(b.dataset.filter)));

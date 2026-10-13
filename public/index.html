@@ -49,38 +49,38 @@
       type="font/woff2"
       crossorigin
     />
-    <link rel="stylesheet" href="/styles.css?v=4.10" />
+    <link rel="stylesheet" href="/styles.css?v=4.11" />
     <!-- Fetch every module in parallel instead of discovering them one import at a time. -->
-    <link rel="modulepreload" href="/app.js?v=4.10" />
-    <link rel="modulepreload" href="/app/format.js?v=4.10" />
-    <link rel="modulepreload" href="/app/state.js?v=4.10" />
-    <link rel="modulepreload" href="/app/services.js?v=4.10" />
-    <link rel="modulepreload" href="/app/ui.js?v=4.10" />
-    <link rel="modulepreload" href="/app/nav.js?v=4.10" />
-    <link rel="modulepreload" href="/app/today.js?v=4.10" />
-    <link rel="modulepreload" href="/app/library.js?v=4.10" />
-    <link rel="modulepreload" href="/app/entries.js?v=4.10" />
-    <link rel="modulepreload" href="/app/logging.js?v=4.10" />
-    <link rel="modulepreload" href="/app/forms.js?v=4.10" />
-    <link rel="modulepreload" href="/app/settings.js?v=4.10" />
-    <link rel="modulepreload" href="/app/photos.js?v=4.10" />
-    <link rel="modulepreload" href="/app/clicks.js?v=4.10" />
-    <link rel="modulepreload" href="/app/trainer.js?v=4.10" />
-    <link rel="modulepreload" href="/sync.js?v=4.10" />
-    <link rel="modulepreload" href="/room.js?v=4.10" />
+    <link rel="modulepreload" href="/app.js?v=4.11" />
+    <link rel="modulepreload" href="/app/format.js?v=4.11" />
+    <link rel="modulepreload" href="/app/state.js?v=4.11" />
+    <link rel="modulepreload" href="/app/services.js?v=4.11" />
+    <link rel="modulepreload" href="/app/ui.js?v=4.11" />
+    <link rel="modulepreload" href="/app/nav.js?v=4.11" />
+    <link rel="modulepreload" href="/app/today.js?v=4.11" />
+    <link rel="modulepreload" href="/app/library.js?v=4.11" />
+    <link rel="modulepreload" href="/app/entries.js?v=4.11" />
+    <link rel="modulepreload" href="/app/logging.js?v=4.11" />
+    <link rel="modulepreload" href="/app/forms.js?v=4.11" />
+    <link rel="modulepreload" href="/app/settings.js?v=4.11" />
+    <link rel="modulepreload" href="/app/photos.js?v=4.11" />
+    <link rel="modulepreload" href="/app/clicks.js?v=4.11" />
+    <link rel="modulepreload" href="/app/trainer.js?v=4.11" />
+    <link rel="modulepreload" href="/sync.js?v=4.11" />
+    <link rel="modulepreload" href="/room.js?v=4.11" />
     <link rel="modulepreload" href="/icons.js?v=4.0" />
-    <link rel="modulepreload" href="/care-view.js?v=4.10" />
-    <link rel="modulepreload" href="/care-plans.js?v=4.10" />
-    <link rel="modulepreload" href="/fridge.js?v=4.10" />
-    <link rel="modulepreload" href="/fridge-model.js?v=4.10" />
-    <link rel="modulepreload" href="/places.js?v=4.10" />
-    <link rel="modulepreload" href="/places-view.js?v=4.10" />
-    <link rel="modulepreload" href="/insights.js?v=4.10" />
-    <link rel="modulepreload" href="/insight-view.js?v=4.10" />
-    <link rel="modulepreload" href="/everyday.js?v=4.10" />
-    <link rel="modulepreload" href="/care-state.js?v=4.10" />
-    <link rel="modulepreload" href="/auto-place.js?v=4.10" />
-    <link rel="modulepreload" href="/selection.js?v=4.10" />
+    <link rel="modulepreload" href="/care-view.js?v=4.11" />
+    <link rel="modulepreload" href="/care-plans.js?v=4.11" />
+    <link rel="modulepreload" href="/fridge.js?v=4.11" />
+    <link rel="modulepreload" href="/fridge-model.js?v=4.11" />
+    <link rel="modulepreload" href="/places.js?v=4.11" />
+    <link rel="modulepreload" href="/places-view.js?v=4.11" />
+    <link rel="modulepreload" href="/insights.js?v=4.11" />
+    <link rel="modulepreload" href="/insight-view.js?v=4.11" />
+    <link rel="modulepreload" href="/everyday.js?v=4.11" />
+    <link rel="modulepreload" href="/care-state.js?v=4.11" />
+    <link rel="modulepreload" href="/auto-place.js?v=4.11" />
+    <link rel="modulepreload" href="/selection.js?v=4.11" />
     <link rel="modulepreload" href="/vendor/suncalc.js" />
   </head>
   <body>
@@ -234,13 +234,12 @@
             </div>
           </section>
           <section id="photos-view" hidden aria-labelledby="photos-title">
-            <button id="places-home" class="text-button" hidden>Back to photos</button>
             <header class="view-head"><h1 id="photos-title">Photos</h1><button id="story-add" class="px btn ink">Add photos</button></header>
-            <div class="seg view-seg section-tabs" role="group" aria-label="Photos view">
-              <button class="px btn" data-filter="moments">Winnie</button><button class="px btn" data-filter="care-photos">Care photos</button>
+            <div class="seg view-seg section-tabs photo-navigation" role="group" aria-label="Explore Winnie">
+              <button id="places-home" class="px btn" data-photo-library>Photos</button><button class="px btn" data-filter="memories">Memories</button><button class="px btn" data-filter="places">Places</button>
             </div>
-            <div class="photo-navigation"><button class="text-button" data-filter="memories">Memories</button><button class="text-button" data-filter="places">Places</button></div>
             <div id="photos-library">
+              <div id="photo-kinds" class="photo-kinds" role="group" aria-label="Photo collection"><button data-filter="moments">Winnie</button><button data-filter="care-photos">Care photos</button></div>
               <div id="photo-tools" class="photo-tools">
                 <label id="album-label" hidden><span class="sr-only">Care photo type</span><select id="photo-album" aria-label="Care photo type"><option value="all">All care photos</option><option value="poop">Poop photos</option><option value="meal">Meal photos</option></select></label>
                 <label class="search-box"><span class="sr-only">Search photos</span><input id="photo-search" type="search" placeholder="Search photos" aria-label="Search photos"></label>
@@ -292,6 +291,6 @@
       accept="application/json,.json"
       hidden
     />
-    <script type="module" src="/app.js?v=4.10"></script>
+    <script type="module" src="/app.js?v=4.11"></script>
   </body>
 </html>

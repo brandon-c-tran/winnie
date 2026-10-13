@@ -1,10 +1,10 @@
 // Food on hand: the Food section in Plans, "Order food" in Up next, restocking and editing.
-import { pantryState, emptyPantry, lastEaten } from "../pantry.js?v=4.10";
+import { pantryState, emptyPantry, lastEaten } from "../pantry.js?v=4.11";
 import { icon } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.10";
-import { $, esc, face, person } from "./format.js?v=4.10";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.10";
-import { render } from "./today.js?v=4.10";
+import { facts, sync } from "./services.js?v=4.11";
+import { $, esc, face, person } from "./format.js?v=4.11";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.11";
+import { render } from "./today.js?v=4.11";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });

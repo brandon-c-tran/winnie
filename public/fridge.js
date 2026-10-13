@@ -1,4 +1,4 @@
-import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=4.10";
+import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=4.11";
 import { icon } from "./icons.js?v=4.0";
 const face = (id, size = "sm") =>
   id === "brandon" || id === "kim"

@@ -1,9 +1,9 @@
 // Delegated click handling for buttons rendered as HTML strings.
 // A button is matched by the first data attribute in BY_ATTRIBUTE it carries, otherwise by
 // its data-act name in ACTIONS. Handlers receive the button.
-import { sleepContext } from "../everyday.js?v=4.10";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.10";
-import { $, active, clock, dayKey, esc } from "./format.js?v=4.10";
+import { sleepContext } from "../everyday.js?v=4.11";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.11";
+import { $, active, clock, dayKey, esc } from "./format.js?v=4.11";
 import {
   earlierSheet,
   endSleep,
@@ -13,11 +13,11 @@ import {
   moreCare,
   saveEarlier,
   saveMeal,
-} from "./logging.js?v=4.10";
-import { editForm, nextCareForm, placePicker, plan } from "./forms.js?v=4.10";
-import { confirmVisit, trainerSchedule } from "./trainer.js?v=4.10";
-import { renderPatterns, showEvidence } from "./library.js?v=4.10";
-import { detail } from "./entries.js?v=4.10";
+} from "./logging.js?v=4.11";
+import { editForm, nextCareForm, placePicker, plan } from "./forms.js?v=4.11";
+import { confirmVisit, trainerSchedule } from "./trainer.js?v=4.11";
+import { renderPatterns, showEvidence } from "./library.js?v=4.11";
+import { detail } from "./entries.js?v=4.11";
 import {
   autoPlace,
   autoPlaceEnabled,
@@ -25,14 +25,14 @@ import {
   photoURLs,
   room,
   sync,
-} from "./services.js?v=4.10";
-import { addPhotos, choosePhoto, download } from "./photos.js?v=4.10";
-import { review, settings, updatePushStatus } from "./settings.js?v=4.10";
-import { openHistory } from "./nav.js?v=4.10";
-import { render } from "./today.js?v=4.10";
-import { state } from "./state.js?v=4.10";
-import { QUALITY } from "../pantry.js?v=4.10";
-import { postcard, setRecapYear } from "./memories-view.js?v=4.10";
+} from "./services.js?v=4.11";
+import { addPhotos, choosePhoto, download } from "./photos.js?v=4.11";
+import { review, settings, updatePushStatus } from "./settings.js?v=4.11";
+import { openHistory } from "./nav.js?v=4.11";
+import { render } from "./today.js?v=4.11";
+import { state } from "./state.js?v=4.11";
+import { QUALITY } from "../pantry.js?v=4.11";
+import { postcard, setRecapYear } from "./memories-view.js?v=4.11";
 
 // Disable the button while an async handler runs, so a double tap can't repeat it.
 const busy = (fn) => async (b) => {

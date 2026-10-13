@@ -1,4 +1,4 @@
-import { eventPosition, placeName } from "./places.js?v=4.10";
+import { eventPosition, placeName } from "./places.js?v=4.11";
 export function latestCare(events, now = Date.now()) {
   const actual = events
     .filter((e) => !e.deletedAt && Number.isFinite(e.time) && e.time <= now)
