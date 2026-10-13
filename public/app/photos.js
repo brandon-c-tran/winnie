@@ -1,10 +1,131 @@
 // Photo picking, resizing, and saving.
-import { $ } from "./format.js?v=4.6";
-import { closeDialog, safe, toast } from "./ui.js?v=4.6";
-import { sync } from "./services.js?v=4.6";
-import { detail } from "./entries.js?v=4.6";
-import { render } from "./today.js?v=4.6";
-import { state } from "./state.js?v=4.6";
+import { $, clock, dateLabel, dateTime, esc, uid } from "./format.js?v=4.7";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.7";
+import { facts, sync } from "./services.js?v=4.7";
+import { detail, eventLabel } from "./entries.js?v=4.7";
+import { icon } from "../icons.js?v=4.0";
+import { render } from "./today.js?v=4.7";
+import { state } from "./state.js?v=4.7";
+
+// The photo composer owns its previews; they never enter the shared log before Save.
+let draft = null;
+function clearDraft() {
+  draft?.items.forEach((item) => URL.revokeObjectURL(item.url));
+  draft = null;
+}
+document.addEventListener("winnie:surface-change", clearDraft);
+$("dialog").addEventListener("close", clearDraft);
+
+export function addPhotos(care = false) {
+  if (care) {
+    openDialog(
+      `<h2 id="dialog-title">Attach to care entry</h2><label class="search-box"><span class="sr-only">Find care entry</span><input id="attach-search" type="search" placeholder="Search date, note or type"></label><div id="attach-entries" class="attach-entries"></div><button class="text-button" data-act="earlier">Add a care entry</button><p id="form-error" class="error" role="alert"></p>`,
+    );
+    const show = () => {
+      const query = $("attach-search").value.trim().toLowerCase();
+      const entries = facts().filter(
+        (e) =>
+          ["poop", "meal"].includes(e.type) &&
+          `${eventLabel(e)} ${dateLabel(e.time)} ${e.note || ""}`
+            .toLowerCase()
+            .includes(query),
+      );
+      $("attach-entries").innerHTML =
+        entries
+          .slice(0, 40)
+          .map(
+            (e) =>
+              `<button class="attach-entry" data-attach-entry="${esc(e.id)}"><span><strong>${esc(eventLabel(e))}</strong><small>${dateLabel(e.time)}</small>${e.note ? `<span>${esc(e.note)}</span>` : ""}</span><span class="entry-time">${clock(e.time)}</span></button>`,
+          )
+          .join("") || '<p class="fine">No matching care entries.</p>';
+    };
+    $("attach-search").oninput = show;
+    show();
+    return;
+  }
+  openDialog(
+    `<h2 id="dialog-title">Add photos</h2><form id="photo-composer"><div class="photo-composer-pick"><button type="button" class="primary" data-album-library>${icon("photo", "ic sm")} Choose photos</button><button type="button" class="secondary" data-album-camera>Take photo</button></div><div id="photo-draft" class="photo-draft"></div><p id="photo-draft-status" class="fine" role="status">No photos selected</p><label>Caption <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Add a caption"></textarea></label><label>Date taken<input name="time" type="datetime-local" value="${dateTime(Date.now())}" required></label><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary" type="submit" disabled>Save photos</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+  );
+  draft = { id: uid(), items: [], saved: false, busy: false };
+  const current = draft;
+  $("photo-composer").onsubmit = safe(async (event) => {
+    event.preventDefault();
+    if (current.busy || current.preparing || !current.items.length) return;
+    current.busy = true;
+    const form = event.target;
+    const data = new FormData(form);
+    form
+      .querySelectorAll("button, input, textarea")
+      .forEach((el) => (el.disabled = true));
+    try {
+      if (!current.saved) {
+        await sync.enqueue("create", current.id, {
+          type: "moment",
+          time: new Date(data.get("time")).getTime(),
+          note: String(data.get("note")).trim(),
+          who: "us",
+          tags: [],
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          retroactive: true,
+        });
+        current.saved = true;
+      }
+      while (current.items.length) {
+        const item = current.items[0];
+        await sync.addPhoto(current.id, item.blob);
+        current.items.shift();
+        URL.revokeObjectURL(item.url);
+      }
+      closeDialog();
+      render();
+      toast("Photos saved", () => sync.enqueue("delete", current.id));
+    } finally {
+      current.busy = false;
+      if (form.isConnected) {
+        form
+          .querySelectorAll("button, input, textarea")
+          .forEach((el) => (el.disabled = false));
+        // A retry finishes attachments to the same saved entry.
+        form.elements.note.disabled = current.saved;
+        form.elements.time.disabled = current.saved;
+        renderDraft();
+      }
+    }
+  });
+}
+function renderDraft() {
+  if (!draft || !$("photo-draft")) return;
+  $("photo-draft").innerHTML = draft.items
+    .map(
+      (item, index) =>
+        `<figure><img src="${item.url}" alt="Selected photo ${index + 1}"><button type="button" data-remove-draft="${index}" aria-label="Remove selected photo ${index + 1}">Remove</button></figure>`,
+    )
+    .join("");
+  $("photo-draft-status").textContent =
+    `${draft.items.length} ${draft.items.length === 1 ? "photo" : "photos"} selected`;
+  $("photo-composer").querySelector('[type="submit"]').disabled =
+    !draft.items.length || draft.busy || draft.preparing;
+  $("photo-composer")
+    .querySelectorAll(
+      "[data-album-library], [data-album-camera], [data-remove-draft]",
+    )
+    .forEach((button) => (button.disabled = draft.busy || draft.preparing));
+}
+document.addEventListener("click", (event) => {
+  const b = event.target.closest("button");
+  if (!b) return;
+  if (b.hasAttribute("data-album-library")) choosePhoto("album");
+  if (b.hasAttribute("data-album-camera")) choosePhoto("album", true);
+  if (b.hasAttribute("data-remove-draft") && draft && !draft.busy) {
+    const [item] = draft.items.splice(Number(b.dataset.removeDraft), 1);
+    if (item) URL.revokeObjectURL(item.url);
+    renderDraft();
+  }
+  if (b.dataset.attachEntry) {
+    detail(b.dataset.attachEntry);
+    choosePhoto(b.dataset.attachEntry);
+  }
+});
 
 async function photoFile(file) {
   if (file.size > 40000000)
@@ -54,26 +175,48 @@ export function choosePhoto(target, camera = false) {
 for (const id of ["camera-input", "library-input"])
   $(id).onchange = safe(async (e) => {
     const files = Array.from(e.target.files || []).slice(0, 20),
-      target = state.photoTarget;
+      target = state.photoTarget,
+      albumDraft = draft;
     if (!files.length) return;
-    toast("Preparing photo");
-    for (const file of files) {
-      const blob = await photoFile(file);
-      if (target === "form") {
-        if (!$("event-form")) return;
-        state.formPhotos.push(blob);
-        $("form-photo-status").textContent =
-          `${state.formPhotos.length} ${state.formPhotos.length === 1 ? "photo" : "photos"} ready to keep.`;
-      } else await sync.addPhoto(target, blob);
+    if (target === "album") {
+      if (!albumDraft || albumDraft.busy || albumDraft.preparing) return;
+      albumDraft.preparing = true;
+      $("form-error").textContent = "";
+      renderDraft();
     }
-    if (target !== "form") {
-      toast(`${files.length === 1 ? "Photo" : "Photos"} saved on this device.`);
-      if (state.quickPhotoId === target) {
-        state.quickPhotoId = null;
-        closeDialog();
-      } else if ($("dialog").open && state.detailId === target) detail(target);
-      render();
-    } else toast("Photo attached. Save to keep it.");
+    toast("Preparing photo");
+    try {
+      for (const file of files) {
+        const blob = await photoFile(file);
+        if (target === "album") {
+          if (!albumDraft || draft !== albumDraft || albumDraft.busy) return;
+          albumDraft.items.push({ blob, url: URL.createObjectURL(blob) });
+          renderDraft();
+        } else if (target === "form") {
+          if (!$("event-form")) return;
+          state.formPhotos.push(blob);
+          $("form-photo-status").textContent =
+            `${state.formPhotos.length} ${state.formPhotos.length === 1 ? "photo" : "photos"} ready to keep.`;
+        } else await sync.addPhoto(target, blob);
+      }
+      if (target === "album") toast("Photos ready to save");
+      else if (target !== "form") {
+        toast(
+          `${files.length === 1 ? "Photo" : "Photos"} saved on this device.`,
+        );
+        if (state.quickPhotoId === target) {
+          state.quickPhotoId = null;
+          closeDialog();
+        } else if ($("dialog").open && state.detailId === target)
+          detail(target);
+        render();
+      } else toast("Photo attached. Save to keep it.");
+    } finally {
+      if (target === "album" && albumDraft === draft) {
+        albumDraft.preparing = false;
+        renderDraft();
+      }
+    }
   });
 export function download(value, name, type = "application/json") {
   const blob =

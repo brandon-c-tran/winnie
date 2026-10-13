@@ -116,6 +116,68 @@ const recordedDay = new Intl.DateTimeFormat("en-CA", {
   month: "2-digit",
   day: "2-digit",
 });
+export const placeDay = (time) => recordedDay.format(time);
+
+// A browsing index, not visit detection. Names without coordinates remain useful.
+export function placeDirectory(events, resolve = lookup, now = Date.now()) {
+  const groups = new Map();
+  let missing = 0;
+  for (const event of events) {
+    if (event.deletedAt || !Number.isFinite(event.time) || event.time > now)
+      continue;
+    const city = cityFor(event, resolve),
+      name = placeName(event);
+    if (!city && !name) {
+      missing++;
+      continue;
+    }
+    const id = city ? `city:${city.id}` : `name:${name.toLocaleLowerCase()}`;
+    if (!groups.has(id))
+      groups.set(id, {
+        ...(city || {}),
+        id,
+        name: city ? cityLabel(city) : name,
+        located: Boolean(city),
+        events: [],
+        spots: new Map(),
+        days: new Set(),
+        first: event.time,
+        last: event.time,
+      });
+    const group = groups.get(id);
+    group.events.push(event);
+    group.days.add(placeDay(event.time));
+    group.first = Math.min(group.first, event.time);
+    group.last = Math.max(group.last, event.time);
+    const spotName =
+      city && name.toLocaleLowerCase() !== city.name.toLocaleLowerCase()
+        ? name
+        : "";
+    const spotKey = spotName.toLocaleLowerCase();
+    if (!group.spots.has(spotKey))
+      group.spots.set(spotKey, {
+        id: spotKey,
+        name: spotName,
+        events: [],
+        days: new Set(),
+      });
+    group.spots.get(spotKey).events.push(event);
+    group.spots.get(spotKey).days.add(placeDay(event.time));
+  }
+  return {
+    groups: [...groups.values()]
+      .map((group) => ({
+        ...group,
+        events: group.events.sort((a, b) => b.time - a.time),
+        spots: [...group.spots.values()].sort(
+          (a, b) =>
+            Number(!a.name) - Number(!b.name) || a.name.localeCompare(b.name),
+        ),
+      }))
+      .sort((a, b) => b.last - a.last || a.name.localeCompare(b.name)),
+    missing,
+  };
+}
 export function groupPlaces(events, resolve = lookup, now = Date.now()) {
   const groups = new Map();
   let missing = 0,

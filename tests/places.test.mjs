@@ -8,9 +8,10 @@ import {
   createCityLookup,
   groupPlaces,
   distanceKm,
+  placeDirectory,
+  placeDay,
 } from "../public/places.js";
 import { mapURL } from "../public/care-state.js";
-import { mapFrame } from "../public/places-view.js";
 const rows = JSON.parse(
   await fs.readFile(new URL("../public/geo/cities.json", import.meta.url)),
 );
@@ -104,15 +105,36 @@ test("places count recorded days, exclude deleted/future entries and preserve hi
     mapped: 0,
   });
 });
-test("map bounds support a single city and widely separated locations", () => {
-  const f = mapFrame([sf]);
-  assert(
-    f.west < sf.lng && f.east > sf.lng && f.south < sf.lat && f.north > sf.lat,
-  );
-  const global = mapFrame([
-    { lat: 0, lng: 179 },
-    { lat: 0, lng: -179 },
-  ]);
-  assert.equal(global.west, -180);
-  assert.equal(global.east, 180);
+
+test("destination index keeps named spots, unnamed pins and name-only history without inventing visits", () => {
+  const time = Date.parse("2026-01-02T07:00:00Z");
+  const events = [
+    { id: "a", type: "pee", time, coords: sf, location: "The park" },
+    {
+      id: "b",
+      type: "poop",
+      time: time + 1000,
+      coords: sf,
+      location: " the PARK ",
+    },
+    { id: "c", time: time + 86400000, coords: sf },
+    { id: "d", time, location: "Grandma's" },
+    { id: "e", time, coords: la, placePin: null, location: "Grandma's" },
+    { id: "missing", time },
+    { id: "future", time: time + 1e9, coords: sf },
+    { id: "deleted", time, coords: sf, deletedAt: time },
+  ];
+  const original = JSON.stringify(events);
+  const { groups, missing } = placeDirectory(events, lookup, time + 86400001);
+  assert.equal(groups.length, 2);
+  assert.equal(missing, 1);
+  const city = groups.find((g) => g.located);
+  assert.equal(city.days.size, 2);
+  assert.equal(city.events.length, 3);
+  assert.equal(city.spots.length, 2);
+  assert.equal(city.spots[0].events.length, 2);
+  assert.equal(city.spots[0].days.size, 1);
+  assert.equal(groups.find((g) => !g.located).events.length, 2);
+  assert.equal(placeDay(time), "2026-01-01");
+  assert.equal(JSON.stringify(events), original);
 });

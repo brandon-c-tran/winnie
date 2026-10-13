@@ -25,7 +25,11 @@ export function createReactionPicker({ choices, getMine, choose }) {
     const width = viewport?.width || innerWidth,
       height = viewport?.height || innerHeight;
     panel.style.left = `${Math.max(left + 10, Math.min(r.right - p.width, left + width - p.width - 10))}px`;
-    panel.style.top = `${Math.max(top + 10, Math.min(r.top - p.height - 8 >= top + 10 ? r.top - p.height - 8 : r.bottom + 8, top + height - p.height - 10))}px`;
+    const below = r.bottom + 8,
+      above = r.top - p.height - 8,
+      preferBelow =
+        anchor.closest("dialog") && below + p.height <= top + height - 10;
+    panel.style.top = `${Math.max(top + 10, Math.min(preferBelow || above < top + 10 ? below : above, top + height - p.height - 10))}px`;
   }
   function open(button) {
     if (anchor === button) return close(true);

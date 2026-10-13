@@ -1,25 +1,25 @@
 // Winnie: startup. Everything else lives in ./app/.
-import { loadCities } from "./places.js?v=4.6";
-import { protectAppSelection } from "./selection.js?v=4.6";
-import { sync } from "./app/services.js?v=4.6";
-import { render } from "./app/today.js?v=4.6";
-import { detail, refreshReactions } from "./app/entries.js?v=4.6";
-import { $ } from "./app/format.js?v=4.6";
-import { setTab } from "./app/nav.js?v=4.6";
-import { error } from "./app/ui.js?v=4.6";
-import "./app/format.js?v=4.6";
-import "./app/services.js?v=4.6";
-import "./app/ui.js?v=4.6";
-import "./app/nav.js?v=4.6";
-import "./app/today.js?v=4.6";
-import "./app/library.js?v=4.6";
-import "./app/entries.js?v=4.6";
-import "./app/logging.js?v=4.6";
-import "./app/forms.js?v=4.6";
-import "./app/settings.js?v=4.6";
-import "./app/photos.js?v=4.6";
-import "./app/clicks.js?v=4.6";
-import "./app/trainer.js?v=4.6";
+import { loadCities } from "./places.js?v=4.7";
+import { protectAppSelection } from "./selection.js?v=4.7";
+import { sync } from "./app/services.js?v=4.7";
+import { render } from "./app/today.js?v=4.7";
+import { detail, refreshReactions } from "./app/entries.js?v=4.7";
+import { $ } from "./app/format.js?v=4.7";
+import { setTab } from "./app/nav.js?v=4.7";
+import { error } from "./app/ui.js?v=4.7";
+import "./app/format.js?v=4.7";
+import "./app/services.js?v=4.7";
+import "./app/ui.js?v=4.7";
+import "./app/nav.js?v=4.7";
+import "./app/today.js?v=4.7";
+import "./app/library.js?v=4.7";
+import "./app/entries.js?v=4.7";
+import "./app/logging.js?v=4.7";
+import "./app/forms.js?v=4.7";
+import "./app/settings.js?v=4.7";
+import "./app/photos.js?v=4.7";
+import "./app/clicks.js?v=4.7";
+import "./app/trainer.js?v=4.7";
 
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {

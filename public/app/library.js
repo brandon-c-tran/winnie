@@ -1,23 +1,23 @@
-import { renderMemories } from "./memories-view.js?v=4.6";
-import { foodPoopStats } from "../pantry.js?v=4.6";
+import { renderMemories } from "./memories-view.js?v=4.7";
+import { foodPoopStats } from "../pantry.js?v=4.7";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.6";
-import { elapsed } from "../care-state.js?v=4.6";
+import { placeLabel } from "../places.js?v=4.7";
+import { elapsed } from "../care-state.js?v=4.7";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.6";
-import { insightsView } from "../insight-view.js?v=4.6";
-import { photoCaption } from "../everyday.js?v=4.6";
-import { html, openDialog } from "./ui.js?v=4.6";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.6";
-import { facts, places } from "./services.js?v=4.6";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.6";
-import { editForm } from "./forms.js?v=4.6";
-import { state } from "./state.js?v=4.6";
+} from "../insights.js?v=4.7";
+import { insightsView } from "../insight-view.js?v=4.7";
+import { photoCaption } from "../everyday.js?v=4.7";
+import { html, openDialog } from "./ui.js?v=4.7";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.7";
+import { facts, places } from "./services.js?v=4.7";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.7";
+import { addPhotos } from "./photos.js?v=4.7";
+import { state } from "./state.js?v=4.7";
 
 let patternDays = 28,
   insightData = null,
@@ -107,9 +107,20 @@ function matches(e, query) {
   );
 }
 function renderGallery() {
-  const gallery = state.filter === "moments",
+  const care = state.filter === "care-photos",
+    gallery = state.filter === "moments" || care,
     map = state.filter === "places";
+  $("photos-view").classList.toggle("is-places", map);
+  $("photos-title").textContent = map ? "Places" : "Photos";
+  $("places-home").hidden = !map;
+  $("story-add").hidden = map;
+  $("photos-library").hidden = map;
   $("photo-tools").hidden = !gallery;
+  $("album-label").hidden = !care;
+  $("photo-tools").classList.toggle("care-tools", care);
+  $("photo-clear").hidden =
+    !gallery ||
+    (!$("photo-search").value && (!care || $("photo-album").value === "all"));
   $("photo-count").hidden = !gallery;
   $("photo-items").hidden = map;
   $("places-view").hidden = !map;
@@ -128,31 +139,42 @@ function renderGallery() {
     (e) =>
       e.photos?.length &&
       matches(e, query) &&
-      (album === "all" ||
-        (album === "winnie"
-          ? !["poop", "meal"].includes(e.type)
-          : e.type === album)),
+      (care
+        ? ["poop", "meal"].includes(e.type) &&
+          (album === "all" || e.type === album)
+        : !["poop", "meal"].includes(e.type)),
   );
   const photos = events.flatMap((e) => e.photos.map((p) => ({ e, p })));
   $("photo-count").textContent =
     photos.length + (photos.length === 1 ? " photo" : " photos");
-  $("photo-more").hidden = photos.length <= state.limit;
-  const month = new Intl.DateTimeFormat([], { month: "long", year: "numeric" });
+  $("photo-more").hidden =
+    (care ? events.length : photos.length) <= state.limit;
+  const month = new Intl.DateTimeFormat([], {
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Los_Angeles",
+  });
   html(
     "photo-items",
     photos.length
-      ? '<div class="photo-grid">' +
+      ? care
+        ? events
+            .slice(0, state.limit)
+            .map(
+              (e, i, a) =>
+                `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? '<h2 class="history-day">' + dateLabel(e.time) + "</h2>" : ""}${entry(e, { photoRecord: true })}`,
+            )
+            .join("")
+        : '<div class="photo-grid">' +
           photos
             .slice(0, state.limit)
             .map(
               ({ e, p }, i, a) =>
-                `${i === 0 || month.format(e.time) !== month.format(a[i - 1].e.time) ? '<h2 class="photo-month">' + month.format(e.time) + "</h2>" : ""}<button class="memory-card" data-open="${esc(e.id)}" aria-label="${esc(photoCaption(e))}, ${dateLabel(e.time)}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"><span class="photo-caption"><strong>${esc(e.note || dateLabel(e.time))}</strong><small>${e.note ? dateLabel(e.time) : esc(person(e.loggedBy))}${e.pending ? " · Not sent" : ""}</small></span></button>`,
+                `${i === 0 || month.format(e.time) !== month.format(a[i - 1].e.time) ? '<h2 class="photo-month">' + month.format(e.time) + "</h2>" : ""}<button class="memory-card" data-open="${esc(e.id)}" aria-label="${esc(photoCaption(e))}, ${dateLabel(e.time)}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"><span class="photo-caption">${e.note ? `<strong>${esc(e.note)}</strong>` : ""}<small>${dateLabel(e.time)}</small>${e.pending ? '<span class="pending-dot">Not sent</span>' : ""}</span></button>`,
             )
             .join("") +
           "</div>"
-      : '<div class="empty"><h3>' +
-          (query ? "No matching photos" : "No photos in this collection") +
-          '</h3><button class="px btn ink" data-act="moment">Add photo</button></div>',
+      : `<div class="album-empty">${icon(care ? "poop" : "photo", "ic")}<h3>${query || (care && album !== "all") ? "No matching photos" : care ? "No care photos yet" : "Add a photo of Winnie"}</h3><p>${query || (care && album !== "all") ? "Try another search or clear the filters." : care ? "Attach a photo to a poop or meal entry." : "Poop and meal photos are in Care photos."}</p><button class="px btn ink" data-add-photos>${care ? "Attach to entry" : "Choose photos"}</button></div>`,
   );
   hydratePhotos();
 }
@@ -203,7 +225,17 @@ $("load-more").onclick = () => {
   state.limit += 60;
   renderStory();
 };
-$("story-add").onclick = () => editForm("moment");
+$("story-add").onclick = () => addPhotos(state.filter === "care-photos");
+document.addEventListener("click", (event) => {
+  if (event.target.closest("[data-add-photos]"))
+    addPhotos(state.filter === "care-photos");
+});
+$("photo-clear").onclick = () => {
+  $("photo-search").value = "";
+  $("photo-album").value = "all";
+  state.limit = 60;
+  renderStory();
+};
 export function renderPatterns() {
   insightData = rhythmInsights(facts(), patternDays);
   $("story-count").textContent = "";

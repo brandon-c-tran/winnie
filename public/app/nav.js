@@ -1,8 +1,8 @@
 // Tabs and day navigation.
 import { icon } from "../icons.js?v=4.0";
-import { $, dayKey } from "./format.js?v=4.6";
-import { render } from "./today.js?v=4.6";
-import { state } from "./state.js?v=4.6";
+import { $, dayKey } from "./format.js?v=4.7";
+import { render } from "./today.js?v=4.7";
+import { state } from "./state.js?v=4.7";
 
 $("day-picker").value = dayKey(Date.now());
 let historySection = "care",
@@ -48,6 +48,7 @@ export function showPhotos(section) {
   state.limit = 60;
   setTab("photos");
 }
+$("places-home").onclick = () => showPhotos("moments");
 document
   .querySelectorAll("[data-filter]")
   .forEach((b) => (b.onclick = () => showPhotos(b.dataset.filter)));

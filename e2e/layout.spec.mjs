@@ -75,6 +75,7 @@ test("no state scrolls sideways", async ({ page }, info) => {
     ['[data-filter="places"]', "Places"],
     ['[data-filter="memories"]', "Memories"],
   ]) {
+    if (label === "Memories") await page.locator("#places-home").click();
     await page.locator(tab).click();
     await noSideways(page, label);
   }
