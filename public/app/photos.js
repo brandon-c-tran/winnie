@@ -1,10 +1,10 @@
 // Photo picking, resizing, and saving.
-import { $ } from "./format.js?v=4.4";
-import { closeDialog, safe, toast } from "./ui.js?v=4.4";
-import { sync } from "./services.js?v=4.4";
-import { detail } from "./entries.js?v=4.4";
-import { render } from "./today.js?v=4.4";
-import { state } from "./state.js?v=4.4";
+import { $ } from "./format.js?v=4.6";
+import { closeDialog, safe, toast } from "./ui.js?v=4.6";
+import { sync } from "./services.js?v=4.6";
+import { detail } from "./entries.js?v=4.6";
+import { render } from "./today.js?v=4.6";
+import { state } from "./state.js?v=4.6";
 
 async function photoFile(file) {
   if (file.size > 40000000)

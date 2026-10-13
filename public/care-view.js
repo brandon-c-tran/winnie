@@ -4,7 +4,7 @@ import {
   planState,
   completionId,
   validateCarePlans,
-} from "./care-plans.js?v=4.4";
+} from "./care-plans.js?v=4.6";
 import { icon } from "./icons.js?v=4.0";
 
 export function createCare({
@@ -41,7 +41,7 @@ export function createCare({
         : `${s.overdue ? "Overdue · " : ""}${date(s.due)}`;
   function row(s, compact = false) {
     const p = s.plan;
-    return `<article class="care-plan-row ${s.overdue ? "overdue" : ""} ${compact ? "compact" : ""}"><span class="care-plan-icon" aria-hidden="true">${icon(p.type === "medication" ? "pill" : p.type === "appointment" ? "vet" : p.type === "grooming" ? "bath" : p.type === "enrichment" ? "star" : "check", "ic sm")}</span><div class="care-plan-body"><button class="care-plan-title" data-care-action="open" data-plan="${esc(p.id)}">${esc(p.title)}</button><p>${s.paused ? "Paused" : dueText(s)}${!compact ? " · " + cadence(p) : ""}</p>${s.claimedBy && !s.paused ? `<span class="care-owner"><img class="face xs" src="/photos/${s.claimedBy}-face.png" alt="" aria-hidden="true">${esc(person(s.claimedBy))} has it</span>` : ""}</div>${!p.paused && s.due ? `<button class="${compact ? "fridge-done" : "secondary small"}" data-care-action="complete" data-plan="${esc(p.id)}">Done</button>` : ""}</article>`;
+    return `<article class="care-plan-row ${s.overdue ? "overdue" : ""} ${compact ? "compact" : ""}"><span class="care-plan-icon" aria-hidden="true">${icon(p.type === "medication" ? "pill" : p.type === "appointment" ? "vet" : p.type === "grooming" ? "bath" : p.type === "enrichment" ? "star" : "check", "ic sm")}</span><div class="care-plan-body"><button class="care-plan-title" data-care-action="open" data-plan="${esc(p.id)}">${esc(p.title)}</button><p>${s.paused ? "Paused" : dueText(s)}${!compact ? " · " + cadence(p) : ""}</p>${s.claimedBy && !s.paused ? `<span class="care-owner"><img class="face xs" src="/photos/${s.claimedBy}-pixel.png" alt="" aria-hidden="true">${esc(person(s.claimedBy))} has it</span>` : ""}</div>${!p.paused && s.due ? `<button class="${compact ? "fridge-done" : "secondary small"}" data-care-action="complete" data-plan="${esc(p.id)}">Done</button>` : ""}</article>`;
   }
   let lastContent = "";
   function render() {

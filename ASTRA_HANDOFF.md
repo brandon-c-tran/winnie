@@ -1,5 +1,10 @@
 # Handoff for Astra: pixel Winnie poses
 
+Completed 2026-10-13: the poses are generated and wired into the room. Sources,
+generation brief and reproducible packing instructions are in
+`assets/animation/README.md`; the runtime uses `winnie-room-v3.png`.
+The original generation brief below is retained for reference.
+
 You are making new pixel-art frames of Winnie, a small apricot cavapoo, for the room on the Today screen of this app. A script then cleans your frames into the room's pixel grid. Read this whole file before generating anything.
 
 ## The character (match exactly)

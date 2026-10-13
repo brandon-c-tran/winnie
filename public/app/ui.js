@@ -1,8 +1,8 @@
 // Toasts, the sheet (one <dialog>), error handling, and memoised HTML writes.
 import { icon } from "../icons.js?v=4.0";
-import { $ } from "./format.js?v=4.4";
-import { room } from "./services.js?v=4.4";
-import { state } from "./state.js?v=4.4";
+import { $ } from "./format.js?v=4.6";
+import { room } from "./services.js?v=4.6";
+import { state } from "./state.js?v=4.6";
 
 let toastTimer;
 export function toast(message, undo = null, actions = []) {
@@ -54,6 +54,7 @@ export function safe(fn) {
 }
 let closingTimer = 0;
 export function openDialog(html) {
+  document.dispatchEvent(new Event("winnie:surface-change"));
   const d = $("dialog");
   clearTimeout(closingTimer);
   d.classList.remove("closing");
@@ -66,6 +67,7 @@ export function openDialog(html) {
   }
 }
 export function closeDialog() {
+  document.dispatchEvent(new Event("winnie:surface-change"));
   const d = $("dialog");
   if (d.open && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
     d.classList.add("closing");

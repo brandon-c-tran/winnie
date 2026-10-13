@@ -1,23 +1,23 @@
-import { renderMemories } from "./memories-view.js?v=4.4";
-import { foodPoopStats } from "../pantry.js?v=4.4";
+import { renderMemories } from "./memories-view.js?v=4.6";
+import { foodPoopStats } from "../pantry.js?v=4.6";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.4";
-import { elapsed } from "../care-state.js?v=4.4";
+import { placeLabel } from "../places.js?v=4.6";
+import { elapsed } from "../care-state.js?v=4.6";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.4";
-import { insightsView } from "../insight-view.js?v=4.4";
-import { photoCaption } from "../everyday.js?v=4.4";
-import { html, openDialog } from "./ui.js?v=4.4";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.4";
-import { facts, places } from "./services.js?v=4.4";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.4";
-import { editForm } from "./forms.js?v=4.4";
-import { state } from "./state.js?v=4.4";
+} from "../insights.js?v=4.6";
+import { insightsView } from "../insight-view.js?v=4.6";
+import { photoCaption } from "../everyday.js?v=4.6";
+import { html, openDialog } from "./ui.js?v=4.6";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.6";
+import { facts, places } from "./services.js?v=4.6";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.6";
+import { editForm } from "./forms.js?v=4.6";
+import { state } from "./state.js?v=4.6";
 
 let patternDays = 28,
   insightData = null,
@@ -48,96 +48,135 @@ export function renderLastTimes(events) {
   );
 }
 export function renderStory() {
-  $("story-tools").hidden = ["patterns", "places", "memories"].includes(state.filter);
-  $("places-view").hidden = state.filter !== "places";
-  $("story-items").hidden = state.filter === "places";
-  $("story-count").hidden = ["places", "memories"].includes(state.filter);
-  if (state.filter === "memories") {
-    $("load-more").hidden = true;
-    renderMemories();
-    return;
-  }
-  if (state.filter === "places") {
-    $("load-more").hidden = true;
-    places.render(facts());
-    return;
-  }
-  $("album-label").hidden = state.filter !== "moments";
-  document.querySelector(".history-filters label:first-child").hidden =
-    state.filter === "moments";
-  if (state.filter === "patterns") {
-    renderPatterns();
-    return;
-  }
-  let events = facts();
-  const album = $("photo-album").value,
-    query = $("story-search").value.toLowerCase().trim();
-  if (state.filter === "moments")
-    events = events.filter(
-      (e) =>
-        (e.type === "moment" || e.photos?.length) &&
-        (album === "all" || (e.type === album && e.photos?.length)),
+  const isPhotos = state.tab === "photos";
+  if (isPhotos) return renderGallery();
+  const patterns = state.filter === "patterns";
+  $("story-tools").hidden = patterns;
+  $("last-care").hidden = patterns || !$("last-times").children.length;
+  $("history-clear").hidden =
+    patterns ||
+    !["story-search", "history-type", "history-from", "history-to"].some(
+      (id) => $(id).value,
     );
-  if (query)
-    events = events.filter((e) =>
-      [
-        e.note,
-        eventLabel(e),
-        placeLabel(e),
-        (e.tags || []).join(" "),
-        (e.foods || []).join(" "),
-        person(e.loggedBy),
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(query),
-    );
-  if (state.filter === "care" && $("history-type").value)
+  $("story-count").hidden = patterns;
+  if (patterns) return renderPatterns();
+  const query = $("story-search").value.toLowerCase().trim();
+  let events = facts().filter((e) => matches(e, query));
+  if ($("history-type").value)
     events = events.filter((e) => e.type === $("history-type").value);
   if ($("history-from").value)
     events = events.filter((e) => dayKey(e.time) >= $("history-from").value);
   if ($("history-to").value)
     events = events.filter((e) => dayKey(e.time) <= $("history-to").value);
-  const count = events.length,
-    photos = events.reduce((n, e) => n + (e.photos?.length || 0), 0);
+  const count = events.length;
   $("story-count").textContent =
-    state.filter === "care"
-      ? count.toLocaleString() + " " + (count === 1 ? "entry" : "entries")
-      : photos + " " + (photos === 1 ? "photo" : "photos");
+    count.toLocaleString() + (count === 1 ? " entry" : " entries");
   $("load-more").hidden = count <= state.limit;
-  if (!count) {
-    html(
-      "story-items",
-      `<div class="empty"><h3>${query || $("history-from").value || $("history-to").value ? "No matches." : state.filter === "care" ? "Nothing logged yet." : "No photos yet."}</h3>${query || $("history-from").value || $("history-to").value ? "<p>Try another search or date range.</p>" : state.filter === "moments" ? '<button class="px btn ink" data-act="moment">Add photo</button>' : ""}</div>`,
-    );
-    return;
-  }
-  if (state.filter === "care")
-    html(
-      "story-items",
-      events
-        .slice(0, state.limit)
-        .map(
-          (e, i, a) =>
-            `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? '<p class="eyebrow history-day">' + dateLabel(e.time) + "</p>" : ""}${entry(e)}`,
-        )
-        .join(""),
-    );
-  else
-    html(
-      "story-items",
-      `<div class="photo-grid">${events
-        .slice(0, state.limit)
-        .flatMap((e) =>
-          (e.photos?.length ? e.photos : [null]).map(
-            (p) =>
-              `<button class="memory-card" data-open="${esc(e.id)}">${p ? `<img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy">` : '<div class="empty big">♡</div>'}<div><strong>${esc(photoCaption(e))}</strong><small>${dateLabel(e.time)}${e.loggedBy ? " · " + person(e.loggedBy) : ""}${e.pending ? " · Pending" : ""}</small></div></button>`,
-          ),
-        )
-        .join("")}</div>`,
-    );
+  html(
+    "story-items",
+    count
+      ? events
+          .slice(0, state.limit)
+          .map(
+            (e, i, a) =>
+              `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? '<h2 class="history-day">' + dateLabel(e.time) + "</h2>" : ""}${entry(e)}`,
+          )
+          .join("")
+      : '<div class="empty"><h3>' +
+          ($("history-clear").hidden
+            ? "Nothing logged yet"
+            : "No matching entries") +
+          "</h3></div>",
+  );
   hydratePhotos();
 }
+function matches(e, query) {
+  return (
+    !query ||
+    [
+      e.note,
+      eventLabel(e),
+      placeLabel(e),
+      (e.tags || []).join(" "),
+      (e.foods || []).join(" "),
+      person(e.loggedBy),
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(query)
+  );
+}
+function renderGallery() {
+  const gallery = state.filter === "moments",
+    map = state.filter === "places";
+  $("photo-tools").hidden = !gallery;
+  $("photo-count").hidden = !gallery;
+  $("photo-items").hidden = map;
+  $("places-view").hidden = !map;
+  $("photo-more").hidden = true;
+  if (map) {
+    places.render(facts());
+    return;
+  }
+  if (!gallery) {
+    renderMemories();
+    return;
+  }
+  const album = $("photo-album").value,
+    query = $("photo-search").value.toLowerCase().trim();
+  const events = facts().filter(
+    (e) =>
+      e.photos?.length &&
+      matches(e, query) &&
+      (album === "all" ||
+        (album === "winnie"
+          ? !["poop", "meal"].includes(e.type)
+          : e.type === album)),
+  );
+  const photos = events.flatMap((e) => e.photos.map((p) => ({ e, p })));
+  $("photo-count").textContent =
+    photos.length + (photos.length === 1 ? " photo" : " photos");
+  $("photo-more").hidden = photos.length <= state.limit;
+  const month = new Intl.DateTimeFormat([], { month: "long", year: "numeric" });
+  html(
+    "photo-items",
+    photos.length
+      ? '<div class="photo-grid">' +
+          photos
+            .slice(0, state.limit)
+            .map(
+              ({ e, p }, i, a) =>
+                `${i === 0 || month.format(e.time) !== month.format(a[i - 1].e.time) ? '<h2 class="photo-month">' + month.format(e.time) + "</h2>" : ""}<button class="memory-card" data-open="${esc(e.id)}" aria-label="${esc(photoCaption(e))}, ${dateLabel(e.time)}"><img data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}" loading="lazy"><span class="photo-caption"><strong>${esc(e.note || dateLabel(e.time))}</strong><small>${e.note ? dateLabel(e.time) : esc(person(e.loggedBy))}${e.pending ? " · Not sent" : ""}</small></span></button>`,
+            )
+            .join("") +
+          "</div>"
+      : '<div class="empty"><h3>' +
+          (query ? "No matching photos" : "No photos in this collection") +
+          '</h3><button class="px btn ink" data-act="moment">Add photo</button></div>',
+  );
+  hydratePhotos();
+}
+$("history-clear").onclick = () => {
+  for (const id of [
+    "story-search",
+    "history-type",
+    "history-from",
+    "history-to",
+  ])
+    $(id).value = "";
+  for (const id of ["history-from", "history-to"])
+    $(id).dispatchEvent(new Event("change"));
+  state.limit = 60;
+  renderStory();
+};
+$("photo-search").oninput = () => {
+  state.limit = 60;
+  renderStory();
+};
+$("photo-more").onclick = () => {
+  state.limit += 60;
+  renderStory();
+};
 for (const [type, [, label]] of Object.entries(TYPES))
   $("history-type").insertAdjacentHTML(
     "beforeend",
@@ -182,16 +221,23 @@ export function renderPatterns() {
   };
 }
 function foodPoopHTML(events) {
-  const rows = foodPoopStats(events);
+  const start = new Date();
+  start.setDate(start.getDate() - patternDays + 1);
+  const rows = foodPoopStats(
+    events.filter(
+      (e) => e.time <= Date.now() && dayKey(e.time) >= dayKey(+start),
+    ),
+  );
   const total = rows.reduce((n, r) => n + r.tagged, 0);
-  const body = total < 3
-    ? `<p class="muted">Not enough tagged poops yet.</p>`
-    : rows
-        .map((r) => {
-          const pct = (n) => ((n / r.tagged) * 100).toFixed(0);
-          return `<div class="by-food"><b>${esc(r.food)}</b><span class="q-bar" role="img" aria-label="${esc(r.food)}: ${r.firm} firm, ${r.soft} soft, ${r.loose} loose"><i class="firm" style="width:${pct(r.firm)}%"></i><i class="soft" style="width:${pct(r.soft)}%"></i><i class="loose" style="width:${pct(r.loose)}%"></i></span><span class="muted">${r.soft + r.loose} of ${r.tagged} soft or loose</span></div>`;
-        })
-        .join("");
+  const body =
+    total < 3
+      ? `<p class="muted">Not enough tagged poops yet.</p>`
+      : rows
+          .map((r) => {
+            const pct = (n) => ((n / r.tagged) * 100).toFixed(0);
+            return `<div class="by-food"><b>${esc(r.food)}</b><span class="q-bar" role="img" aria-label="${esc(r.food)}: ${r.firm} firm, ${r.soft} soft, ${r.loose} loose"><i class="firm" style="width:${pct(r.firm)}%"></i><i class="soft" style="width:${pct(r.soft)}%"></i><i class="loose" style="width:${pct(r.loose)}%"></i></span><span class="muted">${r.soft + r.loose} of ${r.tagged} soft or loose</span></div>`;
+          })
+          .join("");
   return `<section class="rhythm-answer"><h3>Poop by food</h3><p class="muted">The first poop within a day after each meal.</p>${body}<div class="legend"><span><i class="firm"></i>Firm</span><span><i class="soft"></i>Soft</span><span><i class="loose"></i>Loose</span></div></section>`;
 }
 function countsHTML(events) {

@@ -76,8 +76,9 @@ test("old logs and opt-out never request location", async () => {
 test("permission failure and failed attachment do not reject or block care logging", async () => {
   for (const failCapture of [true, false]) {
     const reports = [];
+    const event = { time: Date.now(), revision: 1 };
     const auto = createAutoPlace({
-      getEvent: () => ({ time: Date.now(), revision: 1 }),
+      getEvent: () => event,
       enabled: () => true,
       capture: async () => {
         if (failCapture) throw Error("Denied");

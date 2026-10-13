@@ -1,7 +1,7 @@
-import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=4.4";
+import { fridgeState, onFridge, fridgeDay } from "./fridge-model.js?v=4.6";
 import { icon } from "./icons.js?v=4.0";
 const face = (id, size = "sm") =>
-  id === "brandon" || id === "kim" ? `<img class="face ${size}" src="/photos/${id}-face.png" alt="" aria-hidden="true">` : "";
+  id === "brandon" || id === "kim" ? `<img class="face ${size}" src="/photos/${id}-pixel.png" alt="" aria-hidden="true">` : "";
 
 export function createFridge({
   extraNext = () => "",

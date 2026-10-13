@@ -88,6 +88,40 @@ async function client(person = "brandon", reuse) {
 async function settled(s) {
   while (s.busy) await new Promise((r) => setTimeout(r, 5));
 }
+
+test("photos keep their bytes across reload and still read older Blob records", async () => {
+  navigator.onLine = false;
+  const first = await client();
+  const bytes = new Uint8Array([255, 216, 255, 224, 7, 8, 9]);
+  const original = new Blob([bytes], { type: "image/jpeg" });
+  const id = await first.addPhoto("old", original);
+  await new Promise((resolve, reject) => {
+    const tx = first.db.transaction("photos", "readwrite");
+    tx.objectStore("photos").put(
+      original,
+      `${first.session.home}/legacy-photo`,
+    );
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  const reopened = await client("brandon", {
+    session: first.session,
+    db: first.db,
+  });
+  for (const photoId of [id, "legacy-photo"]) {
+    const photo = await reopened.photo(photoId);
+    assert.equal(photo.type, "image/jpeg");
+    assert.deepEqual(new Uint8Array(await photo.arrayBuffer()), bytes);
+  }
+  assert.deepEqual(
+    reopened
+      .view()
+      .events.find((e) => e.id === "old")
+      .photos.map((p) => p.id),
+    [id],
+  );
+  first.db.close();
+});
 test("durable offline create, edit, and Undo survive a new client instance", async () => {
   navigator.onLine = false;
   const first = await client();

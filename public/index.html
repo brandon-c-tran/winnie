@@ -49,38 +49,38 @@
       type="font/woff2"
       crossorigin
     />
-    <link rel="stylesheet" href="/styles.css?v=4.4" />
+    <link rel="stylesheet" href="/styles.css?v=4.6" />
     <!-- Fetch every module in parallel instead of discovering them one import at a time. -->
-    <link rel="modulepreload" href="/app.js?v=4.4" />
-    <link rel="modulepreload" href="/app/format.js?v=4.4" />
-    <link rel="modulepreload" href="/app/state.js?v=4.4" />
-    <link rel="modulepreload" href="/app/services.js?v=4.4" />
-    <link rel="modulepreload" href="/app/ui.js?v=4.4" />
-    <link rel="modulepreload" href="/app/nav.js?v=4.4" />
-    <link rel="modulepreload" href="/app/today.js?v=4.4" />
-    <link rel="modulepreload" href="/app/library.js?v=4.4" />
-    <link rel="modulepreload" href="/app/entries.js?v=4.4" />
-    <link rel="modulepreload" href="/app/logging.js?v=4.4" />
-    <link rel="modulepreload" href="/app/forms.js?v=4.4" />
-    <link rel="modulepreload" href="/app/settings.js?v=4.4" />
-    <link rel="modulepreload" href="/app/photos.js?v=4.4" />
-    <link rel="modulepreload" href="/app/clicks.js?v=4.4" />
-    <link rel="modulepreload" href="/app/trainer.js?v=4.4" />
-    <link rel="modulepreload" href="/sync.js?v=4.4" />
-    <link rel="modulepreload" href="/room.js?v=4.4" />
+    <link rel="modulepreload" href="/app.js?v=4.6" />
+    <link rel="modulepreload" href="/app/format.js?v=4.6" />
+    <link rel="modulepreload" href="/app/state.js?v=4.6" />
+    <link rel="modulepreload" href="/app/services.js?v=4.6" />
+    <link rel="modulepreload" href="/app/ui.js?v=4.6" />
+    <link rel="modulepreload" href="/app/nav.js?v=4.6" />
+    <link rel="modulepreload" href="/app/today.js?v=4.6" />
+    <link rel="modulepreload" href="/app/library.js?v=4.6" />
+    <link rel="modulepreload" href="/app/entries.js?v=4.6" />
+    <link rel="modulepreload" href="/app/logging.js?v=4.6" />
+    <link rel="modulepreload" href="/app/forms.js?v=4.6" />
+    <link rel="modulepreload" href="/app/settings.js?v=4.6" />
+    <link rel="modulepreload" href="/app/photos.js?v=4.6" />
+    <link rel="modulepreload" href="/app/clicks.js?v=4.6" />
+    <link rel="modulepreload" href="/app/trainer.js?v=4.6" />
+    <link rel="modulepreload" href="/sync.js?v=4.6" />
+    <link rel="modulepreload" href="/room.js?v=4.6" />
     <link rel="modulepreload" href="/icons.js?v=4.0" />
-    <link rel="modulepreload" href="/care-view.js?v=4.4" />
-    <link rel="modulepreload" href="/care-plans.js?v=4.4" />
-    <link rel="modulepreload" href="/fridge.js?v=4.4" />
-    <link rel="modulepreload" href="/fridge-model.js?v=4.4" />
-    <link rel="modulepreload" href="/places.js?v=4.4" />
-    <link rel="modulepreload" href="/places-view.js?v=4.4" />
-    <link rel="modulepreload" href="/insights.js?v=4.4" />
-    <link rel="modulepreload" href="/insight-view.js?v=4.4" />
-    <link rel="modulepreload" href="/everyday.js?v=4.4" />
-    <link rel="modulepreload" href="/care-state.js?v=4.4" />
-    <link rel="modulepreload" href="/auto-place.js?v=4.4" />
-    <link rel="modulepreload" href="/selection.js?v=4.4" />
+    <link rel="modulepreload" href="/care-view.js?v=4.6" />
+    <link rel="modulepreload" href="/care-plans.js?v=4.6" />
+    <link rel="modulepreload" href="/fridge.js?v=4.6" />
+    <link rel="modulepreload" href="/fridge-model.js?v=4.6" />
+    <link rel="modulepreload" href="/places.js?v=4.6" />
+    <link rel="modulepreload" href="/places-view.js?v=4.6" />
+    <link rel="modulepreload" href="/insights.js?v=4.6" />
+    <link rel="modulepreload" href="/insight-view.js?v=4.6" />
+    <link rel="modulepreload" href="/everyday.js?v=4.6" />
+    <link rel="modulepreload" href="/care-state.js?v=4.6" />
+    <link rel="modulepreload" href="/auto-place.js?v=4.6" />
+    <link rel="modulepreload" href="/selection.js?v=4.6" />
     <link rel="modulepreload" href="/vendor/suncalc.js" />
   </head>
   <body>
@@ -112,11 +112,11 @@
                     value="brandon"
                     required
                   /><span
-                    ><img class="face md" src="/photos/brandon-face.png" alt="" />Brandon</span
+                    ><img class="face md" src="/photos/brandon-pixel.png" alt="" />Brandon</span
                   ></label
                 ><label class="radio-person"
                   ><input type="radio" name="person" value="kim" /><span
-                    ><img class="face md" src="/photos/kim-face.png" alt="" />Kim</span
+                    ><img class="face md" src="/photos/kim-pixel.png" alt="" />Kim</span
                   ></label
                 >
               </div>
@@ -213,64 +213,35 @@
           </section>
 
           <section id="history-view" hidden aria-labelledby="history-title">
-            <header class="view-head">
-              <h1 id="history-title">History</h1>
-              <div class="seg" role="group" aria-label="History view">
-                <button class="px btn" data-history="care">Log</button
-                ><button class="px btn" data-history="patterns">Trends</button>
+            <header class="view-head"><h1 id="history-title">History</h1><button class="px btn" data-act="earlier">Add entry</button></header>
+            <div class="seg view-seg section-tabs" role="group" aria-label="History view">
+              <button class="px btn" data-history="care">Log</button><button class="px btn" data-history="patterns">Trends</button>
+            </div>
+            <div id="history-library">
+              <div id="story-tools">
+                <label class="search-box"><span class="sr-only">Search history</span><input id="story-search" type="search" placeholder="Search entries" aria-label="Search history"></label>
+                <div class="history-filters"><label>Type<select id="history-type"><option value="">All types</option></select></label>
+                <details id="history-date-filters" class="date-filters"><summary>Date range</summary><div class="date-range">
+                  <label class="date-label px btn"><span data-date-text="history-from">From: any day</span><input type="date" id="history-from" aria-label="From date"></label>
+                  <label class="date-label px btn"><span data-date-text="history-to">To: any day</span><input type="date" id="history-to" aria-label="To date"></label>
+                </div></details></div>
               </div>
-            </header>
-            <div id="last-times" class="last-times"></div>
-            <div id="history-library"></div>
+              <details id="last-care" class="last-care"><summary>Last care</summary><div id="last-times" class="last-times"></div></details>
+              <div class="library-count"><p id="story-count" class="fine" role="status"></p><button id="history-clear" class="text-button" hidden>Clear filters</button></div>
+              <div id="story-items"></div><button id="load-more" class="px btn" hidden>Show more entries</button>
+            </div>
           </section>
-
           <section id="photos-view" hidden aria-labelledby="photos-title">
-            <header class="view-head">
-              <h1 id="photos-title">Photos</h1>
-              <button id="story-add" class="px btn ink">Add photo</button>
-            </header>
-            <div class="seg view-seg" role="group" aria-label="Photos view">
-              <button class="px btn" data-filter="moments">Photos</button
-              ><button class="px btn" data-filter="places">Places</button
-              ><button class="px btn" data-filter="memories">Memories</button>
+            <header class="view-head"><h1 id="photos-title">Photos</h1><button id="story-add" class="px btn ink">Add photo</button></header>
+            <div class="seg view-seg section-tabs" role="group" aria-label="Photos view">
+              <button class="px btn" data-filter="moments">Gallery</button><button class="px btn" data-filter="memories">Memories</button><button class="px btn" data-filter="places">Places</button>
             </div>
             <div id="photos-library">
-              <div id="story-tools">
-                <label id="album-label"
-                  >Collection<select id="photo-album">
-                    <option value="all">All photos</option>
-                    <option value="poop">Poop photos</option>
-                    <option value="meal">Meal photos</option>
-                  </select></label
-                >
-                <label class="search-box"
-                  ><span class="sr-only">Search</span
-                  ><input
-                    id="story-search"
-                    type="search"
-                    placeholder="Search notes, foods, places"
-                    aria-label="Search history"
-                /></label>
-                <div class="history-filters">
-                  <label
-                    >Type<select id="history-type">
-                      <option value="">All types</option>
-                    </select></label
-                  ><label class="date-label px btn"
-                    ><span data-icon="calendar"></span
-                    ><span data-date-text="history-from">From: any day</span
-                    ><input type="date" id="history-from" aria-label="From date"
-                  /></label
-                  ><label class="date-label px btn"
-                    ><span data-icon="calendar"></span
-                    ><span data-date-text="history-to">To: any day</span
-                    ><input type="date" id="history-to" aria-label="To date"
-                  /></label>
-                </div>
+              <div id="photo-tools" class="photo-tools">
+                <label id="album-label">Collection<select id="photo-album"><option value="winnie">Winnie</option><option value="all">All photos</option><option value="meal">Meal photos</option><option value="poop">Poop photos</option></select></label>
+                <label class="search-box"><span class="sr-only">Search photos</span><input id="photo-search" type="search" placeholder="Search photos" aria-label="Search photos"></label>
               </div>
-              <p id="story-count" class="fine"></p>
-              <div id="story-items"></div>
-              <button id="load-more" class="px btn" hidden>Show more</button>
+              <p id="photo-count" class="fine" role="status"></p><div id="photo-items"></div><button id="photo-more" class="px btn" hidden>Show more photos</button>
             </div>
             <div id="places-view" hidden></div>
           </section>
@@ -317,6 +288,6 @@
       accept="application/json,.json"
       hidden
     />
-    <script type="module" src="/app.js?v=4.4"></script>
+    <script type="module" src="/app.js?v=4.6"></script>
   </body>
 </html>

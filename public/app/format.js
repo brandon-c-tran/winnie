@@ -13,10 +13,10 @@ export const esc = (value) =>
   );
 export const person = (id) => ({ brandon: "Brandon", kim: "Kim" })[id] || "";
 export const by = (id) => (person(id) ? " · " + person(id) : "");
-// Brandon's and Kim's Stardew portraits, cropped to the face. Decorative: names stay in text.
+// Brandon's and Kim's Stardew portraits, shown uncropped. Decorative: names stay in text.
 export const face = (id, size = "sm") =>
   id === "brandon" || id === "kim"
-    ? `<img class="face ${size}" src="/photos/${id}-face.png" alt="" aria-hidden="true">`
+    ? `<img class="face ${size}" src="/photos/${id}-pixel.png" alt="" aria-hidden="true">`
     : "";
 export const dayKey = (time) => {
   const d = new Date(time);

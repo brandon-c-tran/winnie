@@ -52,7 +52,7 @@ test("a bath from More shows up in History's last-time counters", async ({
 
 test("Earlier logs poop 30 minutes ago", async ({ page }, info) => {
   await join(page, code(info));
-  await page.locator('[data-act="earlier"]').click();
+  await page.locator('#log-row [data-act="earlier"]').click();
   await page.locator('[data-early-type="poop"]').click();
   await page.locator('[data-early-ago="30"]').click();
   await page.locator("[data-early-save]").click();
@@ -172,7 +172,7 @@ test("a bath makes Winnie shake off, and Memories counts it", async ({
   await page.locator("#photos-tab").click();
   await page.locator('[data-filter="memories"]').click();
   await expect(page.locator("#week-title")).toHaveText("This week");
-  await expect(page.locator("#story-items")).toContainText("First bath logged");
+  await expect(page.locator("#photo-items")).toContainText("First bath logged");
   // the postcard canvas has been drawn
   await expect
     .poll(() =>
@@ -211,7 +211,7 @@ test("a join code adds Kim's phone, and her log shows as a dialogue box", async 
     await browser.newContext({ ...info.project.use })
   ).newPage();
   await join(kim, joinCode, "kim");
-  await expect(kim.locator("#person-name img")).toHaveAttribute("src", /kim-face/);
+  await expect(kim.locator("#person-name img")).toHaveAttribute("src", /kim-pixel/);
   await kim.locator('#care-actions [data-log="poop"]').click();
   await expect(kim.locator("#sync-status")).toHaveText("Up to date");
 

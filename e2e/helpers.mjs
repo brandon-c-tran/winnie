@@ -1,8 +1,10 @@
 import { expect } from "@playwright/test";
 
+const run = Date.now().toString(36);
+
 // Each test gets its own isolated shared log on the dev server.
 export function code(testInfo, suffix = "") {
-  return `winnie-e2e-${testInfo.project.name}-${testInfo.testId}${suffix}`;
+  return `winnie-e2e-${run}-${testInfo.project.name}-${testInfo.testId}${suffix}`;
 }
 
 export async function join(page, shared, who = "brandon") {
