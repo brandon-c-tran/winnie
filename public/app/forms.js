@@ -1,14 +1,14 @@
 // Entry, shared plan, and place forms.
-import { eventPosition, placeName, placeLabel } from "../places.js?v=3.10";
+import { eventPosition, placeName, placeLabel } from "../places.js?v=4.3";
 import {
   validPin,
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "../care-state.js?v=3.10";
+} from "../care-state.js?v=4.3";
 import { GROOMING } from "../icons.js?v=4.0";
-import { normalizeFood } from "../everyday.js?v=3.10";
-import { autoPlace, facts, fridge, sync } from "./services.js?v=4.2";
+import { normalizeFood } from "../everyday.js?v=4.3";
+import { autoPlace, facts, fridge, sync } from "./services.js?v=4.3";
 import {
   $,
   TYPES,
@@ -17,11 +17,11 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.2";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.2";
-import { render } from "./today.js?v=4.2";
-import { detail, eventLabel } from "./entries.js?v=4.2";
-import { state } from "./state.js?v=4.2";
+} from "./format.js?v=4.3";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.3";
+import { render } from "./today.js?v=4.3";
+import { detail, eventLabel } from "./entries.js?v=4.3";
+import { state } from "./state.js?v=4.3";
 
 export function editForm(type = "note", id = null, defaults = {}) {
   if (id) autoPlace.cancel(id);
@@ -52,7 +52,7 @@ export function editForm(type = "note", id = null, defaults = {}) {
       )
       .join(
         "",
-      )}</select></label><label id="title-label" ${e.type === "grooming" ? "" : "hidden"}>What was done<input name="careTitle" maxlength="60" value="${esc(e.careTitle || "")}" placeholder="Bath" list="groom-titles"><datalist id="groom-titles">${GROOMING.map(([t]) => `<option value="${t}"></option>`).join("")}</datalist></label><label id="foods-label" ${e.type === "meal" ? "" : "hidden"}>What he ate<input name="foods" maxlength="500" value="${esc((e.foods || []).join(", "))}" placeholder="Chicken, sardine…"></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>End time <span class="fine">(leave empty if in progress)</span><input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Optional">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags <span class="fine">(separate with commas)</span><input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(placeName(e))}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+      )}</select></label><label id="title-label" ${e.type === "grooming" ? "" : "hidden"}>What was done<input name="careTitle" maxlength="60" value="${esc(e.careTitle || "")}" placeholder="Bath" list="groom-titles"><datalist id="groom-titles">${GROOMING.map(([t]) => `<option value="${t}"></option>`).join("")}</datalist></label><label id="foods-label" ${e.type === "meal" ? "" : "hidden"}>What he ate<input name="foods" maxlength="500" value="${esc((e.foods || []).join(", "))}" placeholder="Chicken, sardine…"></label><label>When<input name="time" type="datetime-local" value="${dateTime(e.time)}" required></label><label id="end-label" ${["nap", "slumber", "walk", "outing", "episode", "appointment", "travel", "covered_gap"].includes(e.type) ? "" : "hidden"}>Ended<input name="end_time" type="datetime-local" value="${e.end_time ? dateTime(e.end_time) : ""}"></label><label>${e.type === "moment" ? "Caption" : "Note"} <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Optional">${esc(e.note || "")}</textarea></label><details><summary class="fine">More details</summary><label>Who provided care?<select name="who">${["us", "trainer", "sitter", "unknown"].map((w) => `<option value="${w}" ${e.who === w ? "selected" : ""}>${w === "us" ? "Us" : w}</option>`).join("")}</select></label><label>Tags<input name="tags" value="${esc((e.tags || []).join(", "))}" placeholder="outdoors, self-signaled"></label><label>Place<input name="location" maxlength="500" value="${esc(placeName(e))}"></label><label>Time accuracy<select name="time_precision">${["exact", "approx", "unknown"].map((t) => `<option ${e.time_precision === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></details>${!id ? '<div class="button-row"><button type="button" class="secondary small" data-form-camera>Take photo</button><button type="button" class="secondary small" data-form-library>Choose photos</button></div><p id="form-photo-status" class="fine"></p>' : ""}<p id="form-error" class="error" role="alert"></p><div class="button-row"><button type="submit" class="primary">${id ? "Save changes" : "Save entry"}</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
   );
   const f = $("event-form");
   f.elements.type.addEventListener("change", () => {
@@ -162,14 +162,11 @@ export function editForm(type = "note", id = null, defaults = {}) {
 export function plan() {
   fridge.edit();
 }
-function renderHandoff() {
-  fridge.render();
-}
 export function nextCareForm() {
   const p = sync.view().profile,
     n = p.nextCare;
   openDialog(
-    `<h2 id="dialog-title">Shared plan</h2><form id="next-care-form"><label>Next step<input name="label" maxlength="200" required placeholder="e.g. Evening walk" value="${esc(n?.label || "")}"></label><label>When <span class="fine">(optional)</span><input name="due" type="datetime-local" value="${n?.dueAt ? dateTime(n.dueAt) : ""}"></label><label>Who’s doing it?<select name="person"><option value="">Not decided</option><option value="brandon" ${n?.claimedBy === "brandon" ? "selected" : ""}>Brandon</option><option value="kim" ${n?.claimedBy === "kim" ? "selected" : ""}>Kim</option></select></label><p class="fine">A shared plan, not a reminder notification. Log the care when it happens.</p><div class="button-row"><button class="primary">Save plan</button><button type="button" class="secondary" data-act="close">Cancel</button>${n ? '<button type="button" class="text-button" id="clear-care-plan">Clear plan</button>' : ""}</div><p id="form-error" class="error" role="alert"></p></form>`,
+    `<h2 id="dialog-title">Shared plan</h2><form id="next-care-form"><label>Next step<input name="label" maxlength="200" required placeholder="e.g. Evening walk" value="${esc(n?.label || "")}"></label><label>When <span class="fine">(optional)</span><input name="due" type="datetime-local" value="${n?.dueAt ? dateTime(n.dueAt) : ""}"></label><label>Who’s doing it?<select name="person"><option value="">Not decided</option><option value="brandon" ${n?.claimedBy === "brandon" ? "selected" : ""}>Brandon</option><option value="kim" ${n?.claimedBy === "kim" ? "selected" : ""}>Kim</option></select></label><div class="button-row"><button class="primary">Save plan</button><button type="button" class="secondary" data-act="close">Cancel</button>${n ? '<button type="button" class="text-button" id="clear-care-plan">Clear plan</button>' : ""}</div><p id="form-error" class="error" role="alert"></p></form>`,
   );
   $("next-care-form").onsubmit = safe(async (ev) => {
     ev.preventDefault();
@@ -213,7 +210,7 @@ export function placePicker(id) {
     12,
   );
   openDialog(
-    `<h2 id="dialog-title">Place</h2><p class="fine">${esc(eventLabel(e))} · ${dateLabel(e.time)} · ${clock(e.time)}</p><form id="place-form"><label>Place name<input name="place" maxlength="500" list="recent-places" placeholder="Home, the park, the beach" value="${esc(placeName(e))}"></label><datalist id="recent-places">${recent.map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist>${canCaptureHere(e) ? '<button type="button" class="secondary small" id="capture-place">Use current location</button><p class="fine">Only if you’re still where this happened. Saved with this entry and shared with each other.</p>' : '<p class="fine">Name the original place for this older entry. Your current location won’t be attached.</p>'}<p id="pin-status" class="fine" role="status">${pin ? `${placeLabel(e)}${Number.isFinite(pin.accuracy) ? ` · accuracy about ${Math.round(pin.accuracy)} m` : ""}` : "No map pin attached."}</p><button type="button" class="text-button" id="remove-pin" ${pin ? "" : "hidden"}>Remove map pin</button><div class="button-row"><button class="primary" id="save-place">Save place</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
+    `<h2 id="dialog-title">Place</h2><p class="fine">${esc(eventLabel(e))} · ${dateLabel(e.time)} · ${clock(e.time)}</p><form id="place-form"><label>Place name<input name="place" maxlength="500" list="recent-places" placeholder="Home, the park, the beach" value="${esc(placeName(e))}"></label><datalist id="recent-places">${recent.map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist>${canCaptureHere(e) ? '<button type="button" class="secondary small" id="capture-place">Use current location</button>' : ""}<p id="pin-status" class="fine" role="status">${pin ? `${placeLabel(e)}${Number.isFinite(pin.accuracy) ? ` · accuracy about ${Math.round(pin.accuracy)} m` : ""}` : "No map pin attached."}</p><button type="button" class="text-button" id="remove-pin" ${pin ? "" : "hidden"}>Remove map pin</button><div class="button-row"><button class="primary" id="save-place">Save place</button><button type="button" class="secondary" data-act="close">Cancel</button></div><p id="form-error" class="error" role="alert"></p></form>`,
   );
   const form = $("place-form"),
     status = $("pin-status"),

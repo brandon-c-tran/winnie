@@ -135,13 +135,54 @@ test("History searches and Trends draws the 14-day chart", async ({
   );
 });
 
-test("All entries in Trends opens the full History log", async ({ page }, info) => {
+test("All entries in Trends opens the full History log", async ({
+  page,
+}, info) => {
   await join(page, code(info));
   await page.locator("#history-tab").click();
   await page.locator('[data-history="patterns"]').click();
   await page.locator('[data-act="all-history"]').click();
-  await expect(page.locator('[data-history="care"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-history="care"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(page.locator("#story-count")).toContainText("entries");
+});
+
+test("Photos switches to Places and back", async ({ page }, info) => {
+  await join(page, code(info));
+  await page.locator("#photos-tab").click();
+  await page.locator('[data-filter="places"]').click();
+  await expect(page.locator("#places-view")).toBeVisible();
+  await expect(page.locator('[data-filter="places"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.locator('[data-filter="moments"]').click();
+  await expect(page.locator("#places-view")).toBeHidden();
+});
+
+test("a bath makes Winnie shake off, and Memories counts it", async ({
+  page,
+}, info) => {
+  await join(page, code(info));
+  await page.locator('[data-act="more"]').click();
+  await page.locator('[data-groom="Bath"]').click();
+  await expect(toast(page)).toContainText("Bath logged");
+  await page.locator("#photos-tab").click();
+  await page.locator('[data-filter="memories"]').click();
+  await expect(page.locator("#week-title")).toHaveText("This week");
+  await expect(page.locator("#story-items")).toContainText("First bath logged");
+  // the postcard canvas has been drawn
+  await expect
+    .poll(() =>
+      page
+        .locator("#postcard")
+        .evaluate(
+          (c) => c.getContext("2d").getImageData(540, 120, 1, 1).data[3],
+        ),
+    )
+    .toBe(255);
 });
 
 test("sheets close by tapping outside them", async ({ page }, info) => {

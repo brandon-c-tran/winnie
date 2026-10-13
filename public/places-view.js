@@ -1,4 +1,4 @@
-import { groupPlaces, loadCities, cityLabel } from "./places.js?v=3.10";
+import { groupPlaces, loadCities, cityLabel } from "./places.js?v=4.3";
 
 export function mapFrame(cities, minimum = 0.9) {
   let west = Math.min(...cities.map((c) => c.lng)),
@@ -120,7 +120,7 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
       })
       .join(
         "",
-      )}</div><div class="map-caption">${chosen ? esc(cityLabel(chosen)) : focus ? "A closer look" : "All places"}${chosen || focus ? '<button class="text-button" data-map-all>Show all</button>' : '<span class="fine">Tap a group to zoom</span>'}</div></div>`;
+      )}</div><div class="map-caption">${chosen ? esc(cityLabel(chosen)) : focus ? "A closer look" : "All places"}${chosen || focus ? '<button class="text-button" data-map-all>Show all</button>' : ""}</div></div>`;
   }
 
   function render() {
@@ -160,7 +160,7 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
         groups.length
           ? `${map(groups, chosen)}<div class="places-cities" aria-label="Cities">${groups.map((g, i) => `<button class="place-city ${g.id === selected ? "selected" : ""}" data-city="${esc(g.id)}" aria-pressed="${g.id === selected}"><span class="place-number">${i + 1}</span><span><strong>${esc(cityLabel(g))}</strong><span class="fine">${esc(region(g))} · ${g.days.size} recorded ${g.days.size === 1 ? "day" : "days"} · ${g.events.length} ${g.events.length === 1 ? "entry" : "entries"}</span><span class="fine">First ${date(g.first)} · Latest ${date(g.last)}</span></span><span aria-hidden="true">↗</span></button>`).join("")}</div>${
               chosen
-                ? `<section class="place-history"><div class="section-heading"><h3>${esc(cityLabel(chosen))}</h3><button class="text-button" data-map-all>All places</button></div><p class="fine">Saved entries, newest first</p>${chosen.events
+                ? `<section class="place-history"><div class="section-heading"><h3>${esc(cityLabel(chosen))}</h3><button class="text-button" data-map-all>All places</button></div>${chosen.events
                     .slice(0, limit)
                     .map(
                       (e) =>
@@ -169,9 +169,9 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
                     .join(
                       "",
                     )}${chosen.events.length > limit ? '<button class="secondary" data-more-places>Show more entries</button>' : ""}</section>`
-                : '<p class="fine">Choose a city to revisit his entries and photos.</p>'
+                : ""
             }`
-          : '<div class="card empty"><p>New logs add a location automatically when this phone allows it. Older entries with coordinates appear here too.</p><p class="fine">Named places without coordinates stay on their entries.</p></div>'
+          : '<div class="card empty"><p>New logs add a location automatically when this phone allows it. Older entries with coordinates appear here too.</p></div>'
       }
       <details class="places-about"><summary>About this map</summary><p>City names are the nearest city in our offline directory, not exact city boundaries. Small towns may be labeled with a nearby city. Dots mark city centers, not individual stops. Recorded days use San Francisco time and count only days with saved entries; they aren’t a count of visits.</p><p>Place names are worked out on your device. No location history is sent to a geocoding service. Original coordinates stay with each entry; open an entry for its exact map link.</p><p>City data: <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. Land: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a>, public domain.</p></details>`;
     const history = root.querySelector(".place-history");

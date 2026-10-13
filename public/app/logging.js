@@ -1,30 +1,30 @@
 // Logging: one-tap logs, sleep and walks, grooming, Earlier, meals, More, press-and-hold.
-import { elapsed } from "../care-state.js?v=3.10";
+import { elapsed } from "../care-state.js?v=4.3";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { durationLabel } from "../insights.js?v=3.10";
+import { durationLabel } from "../insights.js?v=4.3";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
-} from "../everyday.js?v=3.10";
+} from "../everyday.js?v=4.3";
 import {
   autoPlace,
   autoPlaceEnabled,
   facts,
   room,
   sync,
-} from "./services.js?v=4.2";
-import { $, TYPES, active, clock, esc, uid } from "./format.js?v=4.2";
+} from "./services.js?v=4.3";
+import { $, TYPES, active, clock, esc, uid } from "./format.js?v=4.3";
 import {
   closeDialog,
   openDialog,
   renderedHTML,
   safe,
   toast,
-} from "./ui.js?v=4.2";
-import { editForm } from "./forms.js?v=4.2";
-import { render } from "./today.js?v=4.2";
-import { state } from "./state.js?v=4.2";
+} from "./ui.js?v=4.3";
+import { editForm } from "./forms.js?v=4.3";
+import { render } from "./today.js?v=4.3";
+import { state } from "./state.js?v=4.3";
 
 let mealSubmitting = false;
 let pressTimer = 0;
@@ -77,10 +77,10 @@ export async function log(type, extra = {}) {
     ["nap", "slumber", "walk"].includes(type)
       ? []
       : [
-          ["+ Photo", () => pottyPhoto(eventId, type)],
+          ["Add photo", () => pottyPhoto(eventId, type), "photo"],
           ...(type === "poop"
             ? []
-            : [["+ Note", () => editForm(null, eventId)]]),
+            : [["Add note", () => editForm(null, eventId), "note"]]),
         ],
   );
   await saved;
@@ -131,11 +131,11 @@ export async function logCare(type, title, approx = false) {
     time_precision: approx ? "approx" : "exact",
     ...(type === "grooming" ? { careTitle: title } : {}),
   });
-  room.react("heart");
+  room.react(type !== "grooming" ? "heart" : /^bath$/i.test(title) ? "bath" : "groom");
   toast(
     `${type === "grooming" ? title : TYPES[type][1]} logged${approx ? " for today" : " · " + clock(Date.now())}`,
     () => sync.enqueue("delete", eventId),
-    [["+ Photo", () => pottyPhoto(eventId, type)]],
+    [["Add photo", () => pottyPhoto(eventId, type), "photo"]],
   );
   if (!approx) void autoPlace.attach(eventId);
 }

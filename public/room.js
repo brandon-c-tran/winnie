@@ -61,7 +61,44 @@ const glyphW = (s) => [...s].reduce((w, ch) => w + (GLYPH[ch] ? GLYPH[ch][0].len
 const FRAMES = {
   sit: [0, 0, 0, 0], blink: [1, 0, 2, 0], sleep: [2, 0, 0, -1],
   walkA: [0, 1, -1, 4], walkB: [1, 1, -1, 4], happy: [2, 1, 1, 3],
+  wag: [0, 2, 0, 0], eatA: [1, 2, 0, 0], eatB: [2, 2, 0, 0],
+  sniffA: [0, 3, -1, 4], sniffB: [1, 3, -1, 4], yawn: [2, 3, 2, 0],
+  wet: [0, 4, 0, 0], toy: [1, 4, 1, 3], sleepToy: [2, 4, 0, -1],
 };
+// Small hand-drawn objects. Each character is one art pixel; "." is clear.
+const BITMAPS = {
+  puppy: [["...oooooo...", "..ollllllo..", ".eollllllloe", "eeolkllkloee", "eeollnnlloee", ".eollllllle.", "..oottttoo..", ".otthhtttto.", ".otthhtttto.", ".otttttttto.", "..oo....oo.."],
+    { o: "#6b4426", l: "#f0dcb8", t: "#dcbc8e", e: "#9c6a3c", k: "#241612", n: "#3a2216", h: "#e8505b" }],
+  ribbon: [["...bbb...", ".bbBBBbb.", "bBBByBBBb", "bBByyyBBb", "bBBByBBBb", ".bbBBBbb.", "...bbb...", "..bB.Bb..", "..bB.Bb..", ".bBB.BBb.", ".bB...Bb.", ".b.....b."],
+    { b: "#2b4ea8", B: "#5c86e6", y: "#ffd84a" }],
+  pumpkin: [["....gg....", "...gg.....", ".oOOOOOOo.", "oOOoOOoOOo", "oOOoOOoOOo", "oOOoOOoOOo", ".oOOOOOOo."],
+    { o: "#c4541c", O: "#f08a2c", g: "#4f8a3a" }],
+  trophy: [["y...y", "yyyyy", "yYYYy", ".yYy.", "..y..", ".yyy.", "ooooo"],
+    { y: "#ffd84a", Y: "#fff1a6", o: "#8a5a33" }],
+};
+function bitmap(c, name, x, y) {
+  const [rows, colors] = BITMAPS[name];
+  rows.forEach((row, j) => { for (let i = 0; i < row.length; i++) if (colors[row[i]]) { c.fillStyle = colors[row[i]]; c.fillRect(x + i, y + j, 1, 1); } });
+}
+// Window weather from a WMO weather code (Open-Meteo).
+export function weatherKind(w) {
+  if (!w || !Number.isFinite(w.code)) return "clear";
+  const c = w.code;
+  if (c === 45 || c === 48) return "fog";
+  if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return "rain";
+  if ((c >= 71 && c <= 77) || c === 85 || c === 86) return "snow";
+  if (c === 3 || (w.cloud ?? 0) >= 85) return "overcast";
+  if (c === 1 || c === 2) return "partly";
+  return "clear";
+}
+// Seasonal decorations by date (local time).
+function season(epoch) {
+  const d = new Date(epoch), m = d.getMonth() + 1, day = d.getDate();
+  if (m === 10) return "halloween";
+  if (m === 12 || (m === 1 && day <= 6)) return "lights";
+  if ((m === 3 && day >= 20) || m === 4 || m === 5 || (m === 6 && day <= 20)) return "spring";
+  return "";
+}
 
 export function sfEpoch(minute, base = Date.now()) {
   const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
@@ -101,6 +138,7 @@ export function createRoom(canvas, opts = {}) {
       win: { x: 37, y: 12, w: 32, h: 30 }, cal: { x: 80, y: 15, w: 13, h: 16 }, frame: { x: 97, y: 13, w: 22, h: 18 },
       door, hook, sconce: { x: Math.min(W - 9, hook.x + 9), y: 27 },
       bed: { x: W - 53, y: 88, w: 47, h: 18 }, bowl: { x: 88, y: 100, w: 12, h: 6 }, toy: { x: 56, y: 103 },
+      ribbon: { x: 104, y: 34, w: 9, h: 12 }, shelf: { x: 77, y: 44, w: 22, h: 6 },
     };
     L.spot = { door: door.x + door.w / 2 - 32, bowl: L.bowl.x + 6 - 32, bed: L.bed.x + L.bed.w / 2 - 31, min: 14, max: door.x - 30 };
   }
@@ -201,6 +239,30 @@ export function createRoom(canvas, opts = {}) {
     const t = L.toy;
     [[0, 1, C.cat2], [3, 0, C.cat1], [6, 1, C.cat2], [9, 0, C.cat1]].forEach(([x, y, col]) => { R(c, t.x + x, t.y + y, 3, 3, col); R(c, t.x + x, t.y + y + 3, 3, 1, C.ink); });
     R(c, t.x + 11, t.y + 1, 1, 1, C.ink);
+    // his Canine Good Citizen ribbon, under the picture
+    bitmap(c, "ribbon", L.ribbon.x, L.ribbon.y);
+    // a shelf of trophies, one per recent milestone (up to three)
+    if (st.trophies > 0) {
+      const s = L.shelf;
+      R(c, s.x, s.y, s.w, 2, C.frame); R(c, s.x, s.y + 2, s.w, 1, C.frameLo); R(c, s.x + 2, s.y + 3, 1, 2, C.frameLo); R(c, s.x + s.w - 3, s.y + 3, 1, 2, C.frameLo);
+      for (let i = 0; i < Math.min(3, st.trophies); i++) bitmap(c, "trophy", s.x + 2 + i * 7, s.y - 7);
+    }
+    const sn = season(st.epoch);
+    if (sn === "halloween") bitmap(c, "pumpkin", L.door.x - 13, 70);
+    if (sn === "spring") for (const [x, y, col] of [[2, -2, "#ff8fb8"], [7, -3, "#ffe066"], [4, 0, "#ff8fb8"], [1, 2, "#ffe066"]]) R(c, L.plant.x + x, L.plant.y + y, 2, 2, col);
+    if (sn === "lights") { R(c, 0, 49, W, 1, "#3d4a7a"); }
+  }
+  // bright things drawn after the room is lit for the time of day
+  function paintGlow(c, night) {
+    const sn = season(st.epoch);
+    if (sn === "lights") {
+      const colors = ["#ff5a6a", "#7fe0a6", "#ffe066", "#7fa8ff"];
+      for (let x = 3, i = 0; x < W; x += 7, i++) {
+        const on = !night || ((i + (tick >> 4)) % 5 !== 0);
+        R(c, x, 50, 2, 2, on ? colors[i % 4] : "#3d4a7a");
+      }
+    }
+    if (sn === "halloween" && night) { const px = L.door.x - 13; R(c, px + 2, 73, 2, 1, "#ffe066"); R(c, px + 6, 73, 2, 1, "#ffe066"); R(c, px + 3, 75, 4, 1, "#ffe066"); }
   }
   function paintDoor(c) {
     const d = L.door;
@@ -264,14 +326,21 @@ export function createRoom(canvas, opts = {}) {
   function paintSky(c) {
     const wn = L.win, gx = wn.x + 2, gy = wn.y + 2, gw = wn.w - 4, gh = wn.h - 4, now = st.epoch;
     const alt = getPosition(new Date(now), ...SF).altitude;
-    const [top, bottom] = keyed(SKY, alt);
+    let [top, bottom] = keyed(SKY, alt);
+    const wk = weatherKind(st.weather), grey = ["overcast", "fog", "rain", "snow"].includes(wk);
+    if (grey) {
+      const g = hx(alt > 0 ? "#aab3c8" : "#2a2f55"), k = wk === "overcast" ? 0.5 : wk === "fog" ? 0.7 : 0.62;
+      top = mix(top, g, k); bottom = mix(bottom, g, k);
+    }
     sky = [top, bottom];
     for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
       const band = Math.min(4, Math.max(0, Math.floor((y / (gh - 1)) * 4 + bay(x, y) - 0.25)));
       R(c, gx + x, gy + y, 1, 1, css(mix(top, bottom, band / 4)));
     }
     const times = getTimes(new Date(now), ...SF);
-    if (alt < -4) {
+    if (grey) {
+      // no sun, moon or stars behind cloud
+    } else if (alt < -4) {
       for (let i = 0; i < 14; i++) {
         const sx = (i * 37 + 11) % gw, sy = (i * 23 + 5) % Math.max(1, gh - 9);
         if ((tick >> 3) % 7 !== i % 7) R(c, gx + sx, gy + sy, 1, 1, i % 3 ? "#fff8d6" : "#cfd8ff");
@@ -290,8 +359,10 @@ export function createRoom(canvas, opts = {}) {
       const f = Math.min(1, Math.max(0, (now - +times.sunrise) / (+times.sunset - +times.sunrise)));
       const sx = gx + 1 + Math.round(f * (gw - 6)), sy = gy + gh - 9 - Math.round(Math.min(1, Math.max(0, alt / 45)) * (gh - 12));
       R(c, sx, sy + 1, 4, 2, "#fff1a6"); R(c, sx + 1, sy, 2, 4, "#fff1a6"); R(c, sx + 1, sy + 1, 2, 2, "#ffe066");
-      const cloud = alt < 4 ? "#ffc6b0" : "#ffffff", drift = Math.floor(tick / 24);
-      for (const [ox, oy] of [[0, 4], [17, 9]]) {
+    }
+    if (alt >= -4 || grey) {
+      const cloud = grey ? (alt > 0 ? "#d6dbe7" : "#454c7e") : alt < 4 ? "#ffc6b0" : "#ffffff", drift = Math.floor(tick / 24);
+      for (const [ox, oy] of grey ? [[0, 2], [11, 6], [20, 3], [6, 9]] : wk === "clear" ? [[0, 4]] : [[0, 4], [17, 9]]) {
         const cx = gx + ((ox + drift) % (gw + 12)) - 6;
         for (const [x, y, w] of [[1, 0, 4], [0, 1, 8], [2, 2, 3]]) for (let i = 0; i < w; i++) if (cx + x + i >= gx && cx + x + i < gx + gw) R(c, cx + x + i, gy + oy + y, 1, 1, cloud);
       }
@@ -302,6 +373,17 @@ export function createRoom(canvas, opts = {}) {
     const tx = gx + gw - 9;
     R(c, tx, hz - 9, 1, 10, dark); R(c, tx + 3, hz - 10, 1, 11, dark); R(c, tx + 6, hz - 9, 1, 10, dark); R(c, tx, hz - 6, 7, 1, dark); R(c, tx + 1, hz - 3, 5, 1, dark);
     if (lit) for (let i = 0; i < 6; i++) R(c, gx + ((i * 7 + 3) % (gw - 10)), hz + 2 + (i % 2), 1, 1, "#ffd96a");
+    if (wk === "fog" && !reduced) { // the fog rolls in over the skyline and Sutro Tower
+      const fog = alt > 0 ? "#e3e7f0" : "#4b5384", drift = Math.floor(tick / 10);
+      for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) if (bay(x + drift, y) < 0.15 + 0.7 * (y / gh)) R(c, gx + x, gy + y, 1, 1, fog);
+    }
+    if ((wk === "rain" || wk === "snow") && !reduced) {
+      const drop = wk === "snow" ? "#ffffff" : alt > 0 ? "#c9dcff" : "#8090cc";
+      for (let i = 0; i < 12; i++) {
+        const y = (i * 13 + tick * (wk === "snow" ? 0.5 : 2)) % gh, x = (i * 9 + Math.floor(tick * (wk === "snow" ? 0.1 : 0.6)) - Math.floor(y / 3) + gw * 2) % gw;
+        R(c, gx + Math.floor(x), gy + Math.floor(y), 1, wk === "snow" ? 1 : 2, drop);
+      }
+    }
     if (st.walk && !reduced) {
       const span = gw + 16, px = ((tick * 0.35) % span) - 14;
       tc.clearRect(0, 0, 14, 14); tc.imageSmoothingEnabled = false;
@@ -315,6 +397,7 @@ export function createRoom(canvas, opts = {}) {
   function paintBeam(c, alt) {
     const wn = L.win, morning = new Date(st.epoch).getHours() < 13, lean = morning ? 0.55 : -0.55;
     let strength = 0, col = "#fff4d8";
+    if (["overcast", "fog", "rain", "snow"].includes(weatherKind(st.weather))) return;
     if (alt > 0) strength = Math.min(0.34, alt / 30 + 0.14);
     else if (alt < -6) { strength = 0.14; col = "#c9d4ff"; }
     if (!strength) return;
@@ -325,26 +408,31 @@ export function createRoom(canvas, opts = {}) {
     }
   }
   function frameOf() {
-    if (dog.pose === "walk") return (tick >> 2) % 2 ? "walkB" : "walkA";
-    if (dog.pose === "sit" && tick < blinkAt) return "blink";
-    return dog.pose === "eat" ? "sit" : dog.pose;
+    const p = dog.pose;
+    if (p === "walk") return (tick >> 2) % 2 ? "walkB" : "walkA";
+    if (p === "sit" && tick < blinkAt) return "blink";
+    if (p === "eat") return (tick >> 2) % 2 ? "eatB" : "eatA";
+    if (p === "sniff") return (tick >> 3) % 2 ? "sniffB" : "sniffA";
+    if (p === "wag") return (tick >> 2) % 2 ? "wag" : "sit";
+    if (p === "sleep") return "sleepToy";
+    return p;
   }
   function paintDog(c) {
     if (dog.hidden || dog.alpha <= 0) return;
     const name = frameOf(), [fx, fy, dx, dy] = FRAMES[name];
     let x = Math.round(dog.x), y = Math.round(dog.y - 57 + dy + dog.bob);
-    if (dog.pose === "eat") y += (tick >> 2) % 2;
     c.save();
     c.globalAlpha = dog.alpha < 1 ? Math.round(dog.alpha * 4) / 4 : 1;
     const draw = (sx, sy, sw, sh, ox, oy) => {
       if (dog.face < 0) { c.save(); c.translate(x + 64 - dx, y); c.scale(-1, 1); c.drawImage(sprite, fx * 64 + sx, fy * 64 + sy, sw, sh, sx + ox, sy + oy, sw, sh); c.restore(); }
       else c.drawImage(sprite, fx * 64 + sx, fy * 64 + sy, sw, sh, x + dx + sx + ox, y + sy + oy, sw, sh);
     };
-    if (name === "sleep" && !reduced) {
+    if (name === "sleepToy" && !reduced) {
       const breathe = (tick % 48) < 24 ? 1 : 0;
       draw(0, 42, 64, 22, 0, 0); draw(0, 0, 64, 43, 0, -breathe);
-    } else if ((name === "sit" || name === "blink") && dog.tail) {
-      draw(20, 0, 44, 64, 0, 0); draw(0, 0, 20, 27, 0, 0); draw(0, 27, 20, 37, 0, -dog.tail);
+    } else if (dog.shake && !reduced) {
+      // shaking off: alternate bands of rows jitter left and right
+      for (let band = 0; band < 8; band++) draw(0, band * 8, 64, 8, ((band + tick) % 2 ? 1 : -1) * (band > 1 ? 1 : 0), 0);
     } else draw(0, 0, 64, 64, 0, 0);
     c.restore();
   }
@@ -361,13 +449,14 @@ export function createRoom(canvas, opts = {}) {
       else if (p.k === "z") glyphs(c, "z", x, y, "#ffffff");
       else if (p.k === "spark") { R(c, x, y - 1, 1, 3, "#fff3a0"); R(c, x - 1, y, 3, 1, "#fff3a0"); }
       else if (p.k === "crumb") R(c, x, y, 1, 1, C.kib);
+      else if (p.k === "drop") { R(c, x, y, 1, 1, "#d8ecff"); R(c, x, y + 1, 1, 1, "#7fa8e8"); }
     }
     for (const pw of paws) { c.globalAlpha = Math.min(1, pw.life / 60) * 0.55; R(c, pw.x, pw.y, 2, 1, C.seam); R(c, pw.x - 1, pw.y - 1, 1, 1, C.seam); R(c, pw.x + 2, pw.y - 1, 1, 1, C.seam); c.globalAlpha = 1; }
     if (emote) bubble(c, emote.text, dog.x + 32 + dog.face * 6, (dog.bed ? 62 : dog.y - 62));
   }
   function draw() {
     if (!L || !sprite.complete) return;
-    const key = [W, st.notes, st.due, hasPhoto, photoRev, new Date(st.epoch).getDate()].join();
+    const key = [W, st.notes, st.due, hasPhoto, photoRev, new Date(st.epoch).getDate(), st.trophies, season(st.epoch)].join();
     if (key !== roomKey) { roomKey = key; rc.clearRect(0, 0, W, ROOM_H); paintRoom(rc); }
     s.clearRect(0, 0, W, ROOM_H);
     s.drawImage(roomCache, 0, 0);
@@ -376,17 +465,20 @@ export function createRoom(canvas, opts = {}) {
     s.drawImage(skyLayer, 0, 0);
     const alt = skyAlt;
     paintDoor(s);
-    const bk = [Math.floor(st.epoch / 60000), Math.round(alt)].join();
+    const bk = [Math.floor(st.epoch / 60000), Math.round(alt), weatherKind(st.weather)].join();
     if (bk !== beamKey) { beamKey = bk; bc.clearRect(0, 0, W, ROOM_H); paintBeam(bc, alt); }
     s.drawImage(beamLayer, 0, 0);
     paintBed(s, false);
+    if (!dog.bed && !dog.toy) bitmap(s, "puppy", L.bed.x + 9, L.bed.y - 3);
     paintEnvelope(s);
     if (!dog.bed) { paintDog(s); paintBowl(s); }
     else { paintBowl(s); paintDog(s); }
     paintBed(s, true);
     // light
     o.globalCompositeOperation = "source-over"; o.drawImage(scene, 0, 0);
-    const tint = keyed(TINT, alt);
+    let tint = keyed(TINT, alt);
+    // grey days are a little dimmer indoors (never mutate the shared table)
+    if (["overcast", "fog", "rain", "snow"].includes(weatherKind(st.weather)) && alt > 0) tint = mix(tint, [214, 220, 236], 0.6);
     if (tint[0] < 254) { o.globalCompositeOperation = "multiply"; o.fillStyle = css(tint); o.fillRect(0, 0, W, ROOM_H); o.globalCompositeOperation = "source-over"; }
     lampOn = alt < -2.5 && st.sleep !== "slumber";
     if (lampOn) {
@@ -396,6 +488,7 @@ export function createRoom(canvas, opts = {}) {
       o.drawImage(relit, 0, 0);
       const sc = L.sconce; R(o, sc.x, sc.y + 1, 6, 3, "#fff6cc");
     }
+    paintGlow(o, alt < -2);
     paintParts(o);
     if (calFlash > 0 && calFlash % 4 < 2) { const cl = L.cal; R(o, cl.x - 2, cl.y - 2, cl.w + 4, 1, "#ffe066"); R(o, cl.x - 2, cl.y + cl.h + 1, cl.w + 4, 1, "#ffe066"); R(o, cl.x - 2, cl.y - 2, 1, cl.h + 4, "#ffe066"); R(o, cl.x + cl.w + 1, cl.y - 2, 1, cl.h + 4, "#ffe066"); }
     if (flash > 0) { o.fillStyle = `rgba(255,255,255,${flash / 8})`; o.fillRect(0, 0, W, ROOM_H); }
@@ -406,7 +499,7 @@ export function createRoom(canvas, opts = {}) {
   // ---------- behaviour ----------
   const rnd = (a, b) => a + Math.random() * (b - a);
   const say = (text, ms = 1400) => { emote = { text, until: tick + Math.round(ms / 33) }; };
-  const burst = (kind, n, x, y) => { for (let i = 0; i < n; i++) parts.push({ k: kind, x: x + rnd(-6, 6), y: y + rnd(-4, 2), vx: rnd(-0.25, 0.25), vy: kind === "crumb" ? rnd(-0.6, -0.2) : rnd(-0.55, -0.3), life: kind === "z" ? 48 : 30 + i * 4 }); };
+  const burst = (kind, n, x, y) => { for (let i = 0; i < n; i++) parts.push(kind === "drop" ? { k: kind, x: x + rnd(-22, 22), y: y + rnd(-10, 10), vx: rnd(-0.9, 0.9), vy: rnd(-0.4, 0.6), life: 14 } : { k: kind, x: x + rnd(-6, 6), y: y + rnd(-4, 2), vx: rnd(-0.25, 0.25), vy: kind === "crumb" ? rnd(-0.6, -0.2) : rnd(-0.55, -0.3), life: kind === "z" ? 48 : 30 + i * 4 }); };
   function plan(steps, replace = true) { if (replace) { queue = []; step = null; } queue.push(...steps); wake(); }
   function placeInBed() { dog.bed = true; dog.pose = "sleep"; dog.face = 1; dog.x = L.spot.bed; dog.y = 101; dog.hidden = false; dog.clip = null; dog.alpha = 1; }
   function runStep() {
@@ -437,7 +530,13 @@ export function createRoom(canvas, opts = {}) {
       case "door": { const target = sp.open ? 1 : 0; doorOpen += Math.sign(target - doorOpen) * 0.12; if (Math.abs(doorOpen - target) < 0.12) { doorOpen = target; step = null; } return true; }
       case "eat": dog.pose = "eat"; if ((tick - sp.t0) % 10 === 0) { kibble = Math.max(0, kibble - 1); burst("crumb", 2, L.bowl.x + 6, L.bowl.y - 2); } if (tick - sp.t0 >= sp.ticks) { kibble = 0; step = null; } return true;
       case "hop": dog.pose = "happy"; dog.bob = -[0, 3, 5, 6, 5, 3, 0][Math.min(6, tick - sp.t0)] || 0; if (tick - sp.t0 >= 7) { dog.bob = 0; step = null; } return true;
-      case "wag": dog.pose = "sit"; dog.tail = ((tick - sp.t0) >> 2) % 2; if (tick - sp.t0 >= sp.ticks) { dog.tail = 0; step = null; } return true;
+      case "wag": dog.pose = "wag"; if (tick - sp.t0 >= sp.ticks) { dog.pose = "sit"; step = null; } return true;
+      case "sniff": dog.pose = "sniff"; if (tick - sp.t0 >= sp.ticks) { dog.pose = "sit"; step = null; } return true;
+      case "shake":
+        dog.pose = "wet"; dog.shake = 1;
+        if ((tick - sp.t0) % 4 === 0) burst("drop", 3, dog.x + 32, dog.y - 30);
+        if (tick - sp.t0 >= sp.ticks) { dog.shake = 0; step = null; }
+        return true;
     }
     step = null; return true;
   }
@@ -450,12 +549,22 @@ export function createRoom(canvas, opts = {}) {
     if (roll < 0.45) plan([{ do: "walk", x: rnd(L.spot.min, L.spot.max) }, { do: "pose", pose: "sit", ticks: 6 }], false);
     else if (roll < 0.7) plan([{ do: "wag", ticks: 36 }], false);
     else if (roll < 0.85) plan([{ do: "fn", fn: () => (dog.face = -dog.face) }, { do: "pose", pose: "sit", ticks: 30 }], false);
+    else if (roll < 0.9) plan([{ do: "walk", x: rnd(L.spot.min, L.spot.max) }, { do: "sniff", ticks: 48 }], false);
+    else if (roll < 0.96) plan([
+      { do: "walk", x: L.spot.bed - 22 }, { do: "fn", fn: () => { dog.toy = true; dog.face = 1; } },
+      { do: "pose", pose: "toy", ticks: 70 }, { do: "wag", ticks: 16 }, { do: "fn", fn: () => { dog.toy = false; } },
+    ], false);
+    else if (getPosition(new Date(st.epoch), ...SF).altitude < 0) plan([{ do: "pose", pose: "yawn", ticks: 26 }, { do: "pose", pose: "sit", ticks: 6 }], false);
     else plan([{ do: "walk", x: L.toy.x - 40 }, { do: "fn", fn: () => { dog.face = 1; say("?"); } }, { do: "wag", ticks: 30 }], false);
   }
-  const skyFrameKey = () => [Math.floor(st.epoch / 60000), Math.floor(tick / 24), (tick >> 3) % 7, st.walk && !reduced ? Math.floor(tick * 0.35) : 0].join();
+  const skyFrameKey = () => {
+    const wk = weatherKind(st.weather);
+    return [Math.floor(st.epoch / 60000), Math.floor(tick / 24), (tick >> 3) % 7, st.walk && !reduced ? Math.floor(tick * 0.35) : 0, wk,
+      wk === "rain" || wk === "snow" ? tick : wk === "fog" ? Math.floor(tick / 10) : 0].join();
+  };
   function frameSig() {
     return [
-      dog.x | 0, dog.y | 0, frameOf(), dog.alpha, dog.bob, dog.tail, dog.face, dog.hidden, dog.bed, dog.pose === "eat" ? (tick >> 2) % 2 : 0,
+      dog.x | 0, dog.y | 0, frameOf(), dog.alpha, dog.bob, dog.shake ? tick % 2 : 0, dog.toy, dog.face, dog.hidden, dog.bed, st.trophies,
       dog.pose === "sleep" && !reduced ? (tick % 48) < 24 : 0,
       parts.map((p) => `${p.k}${p.x | 0},${p.y | 0}${p.life > 6 || tick % 2}`).join(";"),
       paws.map((p) => Math.min(6, Math.ceil(p.life / 10))).join(""),
@@ -495,7 +604,7 @@ export function createRoom(canvas, opts = {}) {
     if (instant || reduced || still) settle();
     else {
       if (st.sleep && !prev.sleep) plan([
-        ...(prev.walk ? comeHome() : []), { do: "walk", x: L.spot.bed - 2 }, { do: "fn", fn: () => { placeInBed(); say("z"); } }, { do: "wait", ticks: 20 },
+        ...(prev.walk ? comeHome() : []), ...(st.sleep === "slumber" ? [{ do: "pose", pose: "yawn", ticks: 24 }] : []), { do: "walk", x: L.spot.bed - 2 }, { do: "fn", fn: () => { placeInBed(); say("z"); } }, { do: "wait", ticks: 20 },
       ]);
       else if (!st.sleep && prev.sleep) plan([
         { do: "fn", fn: () => { dog.bed = false; dog.y = 102; dog.x = L.spot.bed - 6; say("!"); } }, ...hop(), { do: "walk", x: L.spot.bed - 50 }, { do: "wag", ticks: 30 },
@@ -539,7 +648,13 @@ export function createRoom(canvas, opts = {}) {
     const head = () => dog.y - 52;
     switch (kind) {
       case "pee": case "poop":
-        plan([{ do: "walk", x: L.spot.door - 4 }, { do: "fn", fn: () => { dog.face = 1; burst("spark", 4, dog.x + 34, head()); } }, ...hop("~"), { do: "wag", ticks: 24 }]); break;
+        plan([{ do: "walk", x: L.spot.door - 4 }, { do: "fn", fn: () => { dog.face = 1; } }, { do: "sniff", ticks: 24 }, { do: "fn", fn: () => burst("spark", 4, dog.x + 34, head()) }, ...hop("~"), { do: "wag", ticks: 24 }]); break;
+      case "bath":
+        plan([{ do: "walk", x: L.spot.min + 36 }, { do: "fn", fn: () => { dog.face = 1; say("!"); } }, { do: "shake", ticks: 30 }, { do: "pose", pose: "wet", ticks: 80 }, ...hop("~"), { do: "wag", ticks: 20 }]); break;
+      case "groom":
+        plan([{ do: "fn", fn: () => burst("spark", 5, dog.x + 32, head()) }, ...hop("~"), { do: "wag", ticks: 24 }]); break;
+      case "toy":
+        plan([{ do: "walk", x: L.spot.bed - 22 }, { do: "fn", fn: () => { dog.toy = true; dog.face = 1; } }, { do: "pose", pose: "toy", ticks: 60 }, { do: "fn", fn: () => { dog.toy = false; } }, { do: "wag", ticks: 16 }]); break;
       case "meal":
         plan([{ do: "fn", fn: () => { kibble = 6; } }, { do: "walk", x: L.spot.bowl }, { do: "fn", fn: () => { dog.face = 1; say("nom", 1800); } }, { do: "eat", ticks: 60 }, ...hop("*")]); break;
       case "photo": flash = 8; plan([{ do: "fn", fn: () => (dog.face = -1) }, ...hop("!")]); break;
@@ -566,11 +681,14 @@ export function createRoom(canvas, opts = {}) {
     const inR = (b, pad = 2) => ax >= b.x - pad && ax <= b.x + b.w + pad && ay >= b.y - pad && ay <= b.y + b.h + pad;
     if (!dog.hidden && ax >= dog.x + 8 && ax <= dog.x + 56 && ay >= dog.y - 52 && ay <= dog.y) return "winnie";
     if (inR(L.bowl, 4)) return "bowl";
+    if (!dog.bed && !dog.toy && inR({ x: L.bed.x + 9, y: L.bed.y - 3, w: 12, h: 11 })) return "toy";
     if (inR(L.bed)) return "bed";
     if (inR(L.door) || inR({ x: L.door.x - 4, y: 77, w: L.door.w + 8, h: 6 })) return "door";
     if (inR(L.fridge)) return "fridge";
     if (inR(L.cal)) return "calendar";
     if (inR(L.frame)) return "photo";
+    if (inR(L.ribbon)) return "ribbon";
+    if (st.trophies > 0 && inR({ x: L.shelf.x, y: L.shelf.y - 8, w: L.shelf.w, h: 12 })) return "shelf";
     if (inR(L.win)) return "window";
     return null;
   }

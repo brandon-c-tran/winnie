@@ -1,8 +1,8 @@
 // Tabs and day navigation.
 import { icon } from "../icons.js?v=4.0";
-import { $, dayKey } from "./format.js?v=4.2";
-import { render } from "./today.js?v=4.2";
-import { state } from "./state.js?v=4.2";
+import { $, dayKey } from "./format.js?v=4.3";
+import { render } from "./today.js?v=4.3";
+import { state } from "./state.js?v=4.3";
 
 $("day-picker").value = dayKey(Date.now());
 let historySection = "care",
@@ -61,6 +61,16 @@ export function setTab(next) {
   window.scrollTo(0, 0);
   render();
 }
+// Switch the Photos tab between Photos, Places and Memories.
+export function showPhotos(section) {
+  photosSection = section;
+  state.limit = 60;
+  $("history-type").value = "";
+  setTab("photos");
+}
+document
+  .querySelectorAll("[data-filter]")
+  .forEach((b) => (b.onclick = () => showPhotos(b.dataset.filter)));
 // Open the History log with no filters, optionally narrowed to one type.
 export function openHistory({ type = "" } = {}) {
   historySection = "care";

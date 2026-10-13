@@ -49,38 +49,38 @@
       type="font/woff2"
       crossorigin
     />
-    <link rel="stylesheet" href="/styles.css?v=4.1.0" />
+    <link rel="stylesheet" href="/styles.css?v=4.3" />
     <!-- Fetch every module in parallel instead of discovering them one import at a time. -->
-    <link rel="modulepreload" href="/app.js?v=4.2.0" />
-    <link rel="modulepreload" href="/app/format.js?v=4.2" />
-    <link rel="modulepreload" href="/app/state.js?v=4.2" />
-    <link rel="modulepreload" href="/app/services.js?v=4.2" />
-    <link rel="modulepreload" href="/app/ui.js?v=4.2" />
-    <link rel="modulepreload" href="/app/nav.js?v=4.2" />
-    <link rel="modulepreload" href="/app/today.js?v=4.2" />
-    <link rel="modulepreload" href="/app/library.js?v=4.2" />
-    <link rel="modulepreload" href="/app/entries.js?v=4.2" />
-    <link rel="modulepreload" href="/app/logging.js?v=4.2" />
-    <link rel="modulepreload" href="/app/forms.js?v=4.2" />
-    <link rel="modulepreload" href="/app/settings.js?v=4.2" />
-    <link rel="modulepreload" href="/app/photos.js?v=4.2" />
-    <link rel="modulepreload" href="/app/clicks.js?v=4.2" />
-    <link rel="modulepreload" href="/app/trainer.js?v=4.2" />
-    <link rel="modulepreload" href="/sync.js?v=4.2" />
-    <link rel="modulepreload" href="/room.js?v=4.2" />
+    <link rel="modulepreload" href="/app.js?v=4.3" />
+    <link rel="modulepreload" href="/app/format.js?v=4.3" />
+    <link rel="modulepreload" href="/app/state.js?v=4.3" />
+    <link rel="modulepreload" href="/app/services.js?v=4.3" />
+    <link rel="modulepreload" href="/app/ui.js?v=4.3" />
+    <link rel="modulepreload" href="/app/nav.js?v=4.3" />
+    <link rel="modulepreload" href="/app/today.js?v=4.3" />
+    <link rel="modulepreload" href="/app/library.js?v=4.3" />
+    <link rel="modulepreload" href="/app/entries.js?v=4.3" />
+    <link rel="modulepreload" href="/app/logging.js?v=4.3" />
+    <link rel="modulepreload" href="/app/forms.js?v=4.3" />
+    <link rel="modulepreload" href="/app/settings.js?v=4.3" />
+    <link rel="modulepreload" href="/app/photos.js?v=4.3" />
+    <link rel="modulepreload" href="/app/clicks.js?v=4.3" />
+    <link rel="modulepreload" href="/app/trainer.js?v=4.3" />
+    <link rel="modulepreload" href="/sync.js?v=4.3" />
+    <link rel="modulepreload" href="/room.js?v=4.3" />
     <link rel="modulepreload" href="/icons.js?v=4.0" />
-    <link rel="modulepreload" href="/care-view.js?v=3.10" />
-    <link rel="modulepreload" href="/care-plans.js?v=3.10" />
-    <link rel="modulepreload" href="/fridge.js?v=3.10" />
-    <link rel="modulepreload" href="/fridge-model.js?v=3.10" />
-    <link rel="modulepreload" href="/places.js?v=3.10" />
-    <link rel="modulepreload" href="/places-view.js?v=3.10" />
-    <link rel="modulepreload" href="/insights.js?v=3.10" />
-    <link rel="modulepreload" href="/insight-view.js?v=3.10" />
-    <link rel="modulepreload" href="/everyday.js?v=3.10" />
-    <link rel="modulepreload" href="/care-state.js?v=3.10" />
-    <link rel="modulepreload" href="/auto-place.js?v=3.10" />
-    <link rel="modulepreload" href="/selection.js?v=3.10" />
+    <link rel="modulepreload" href="/care-view.js?v=4.3" />
+    <link rel="modulepreload" href="/care-plans.js?v=4.3" />
+    <link rel="modulepreload" href="/fridge.js?v=4.3" />
+    <link rel="modulepreload" href="/fridge-model.js?v=4.3" />
+    <link rel="modulepreload" href="/places.js?v=4.3" />
+    <link rel="modulepreload" href="/places-view.js?v=4.3" />
+    <link rel="modulepreload" href="/insights.js?v=4.3" />
+    <link rel="modulepreload" href="/insight-view.js?v=4.3" />
+    <link rel="modulepreload" href="/everyday.js?v=4.3" />
+    <link rel="modulepreload" href="/care-state.js?v=4.3" />
+    <link rel="modulepreload" href="/auto-place.js?v=4.3" />
+    <link rel="modulepreload" href="/selection.js?v=4.3" />
     <link rel="modulepreload" href="/vendor/suncalc.js" />
   </head>
   <body>
@@ -90,10 +90,7 @@
         <section id="connect" hidden class="connect">
           <div class="connect-dog" aria-hidden="true"></div>
           <h1>Winnie</h1>
-          <p class="connect-lede">
-            Enter a code from the other phone (Settings, Add a device), or
-            your shared code.
-          </p>
+          <p class="connect-lede">Code from Settings on the other phone.</p>
           <form id="connect-form">
             <label
               >Code<input
@@ -131,10 +128,7 @@
             ><button type="submit" class="px primary">Join</button>
             <p id="connect-error" class="error" role="alert"></p>
           </form>
-          <p class="fine">
-            Older entries saved on this phone stay here for review after you
-            join.
-          </p>
+          
         </section>
 
         <div id="experience" hidden>
@@ -180,6 +174,7 @@
               class="card notes-card"
               aria-labelledby="notes-title"
             ></section>
+            <section id="on-this-day" class="card" hidden></section>
             <section class="daylog" aria-labelledby="day-title">
               <div class="day-head">
                 <h2 id="day-title">Today</h2>
@@ -231,7 +226,8 @@
             </header>
             <div class="seg view-seg" role="group" aria-label="Photos view">
               <button class="px btn" data-filter="moments">Photos</button
-              ><button class="px btn" data-filter="places">Places</button>
+              ><button class="px btn" data-filter="places">Places</button
+              ><button class="px btn" data-filter="memories">Memories</button>
             </div>
             <div id="photos-library">
               <div id="story-tools">
@@ -316,6 +312,6 @@
       accept="application/json,.json"
       hidden
     />
-    <script type="module" src="/app.js?v=4.2.0"></script>
+    <script type="module" src="/app.js?v=4.3"></script>
   </body>
 </html>

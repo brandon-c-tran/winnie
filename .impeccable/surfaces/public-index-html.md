@@ -13,7 +13,7 @@ Audience and job: Brandon and Kim check what was recorded and log care in one ta
 
 Constraints: every existing capability and record survives (see PRODUCT.md). Winnie's state is shown only from recorded facts: no sad, hungry, or needy poses, nothing inferred from gaps in the log, no streaks or scores. Animation never blocks the next action or hides Undo. Reduced motion gets still poses.
 
-Copy decision (user-delegated, Oct 12 2026): label-maker voice. Nouns, verbs, times, names; sentence case; no taglines, no "our / together / moments / story / little", no exclamation marks, no em dashes, no rhetorical questions. Winnie never speaks words; he emotes in pixel bubbles (♥ ! z nom ?). Personality lives in the room, motion, and the family's own words.
+Copy decision (user-delegated, Oct 12 2026): label-maker voice. No copy that explains how the interface works (Brandon, Oct 13 2026). Nouns, verbs, times, names; sentence case; no taglines, no "our / together / moments / story / little", no exclamation marks, no em dashes, no rhetorical questions. Winnie never speaks words; he emotes in pixel bubbles (♥ ! z nom ?). Personality lives in the room, motion, and the family's own words.
 
 ## Direction contract
 
