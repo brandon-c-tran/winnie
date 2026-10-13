@@ -1,35 +1,38 @@
 // Today: the room's state, the log buttons, Also today, the day strip, and partner greetings.
-import { careStates, careDay } from "../care-plans.js?v=4.4";
-import { fridgeState, onFridge } from "../fridge-model.js?v=4.4";
-import { latestCare, elapsed } from "../care-state.js?v=4.4";
+import { careStates, careDay } from "../care-plans.js?v=4.6";
+import { fridgeState, onFridge } from "../fridge-model.js?v=4.6";
+import { latestCare, elapsed } from "../care-state.js?v=4.6";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
 import { getTimes } from "../vendor/suncalc.js";
-import { weatherKind } from "../room.js?v=4.4";
-import { cachedWeather, refreshWeather, weatherWords } from "./weather.js?v=4.4";
-import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.4";
-import { rhythmInsights, durationLabel } from "../insights.js?v=4.4";
-import { care, facts, fridge, room, sync } from "./services.js?v=4.4";
-import { setTab, showPhotos } from "./nav.js?v=4.4";
-import { pantryHTML } from "./pantry-view.js?v=4.4";
-import { QUALITY } from "../pantry.js?v=4.4";
-import { finishWalk, log } from "./logging.js?v=4.4";
+import { weatherKind } from "../room.js?v=4.6";
+import {
+  cachedWeather,
+  refreshWeather,
+  weatherWords,
+} from "./weather.js?v=4.6";
+import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.6";
+import { rhythmInsights, durationLabel } from "../insights.js?v=4.6";
+import { care, facts, fridge, room, sync } from "./services.js?v=4.6";
+import { setTab, showPhotos } from "./nav.js?v=4.6";
+import { pantryHTML } from "./pantry-view.js?v=4.6";
+import { QUALITY } from "../pantry.js?v=4.6";
+import { finishWalk, log } from "./logging.js?v=4.6";
 import {
   $,
   TYPES,
   face,
   active,
-  by,
   clock,
   dayKey,
   esc,
   person,
   when,
-} from "./format.js?v=4.4";
-import { html, toast } from "./ui.js?v=4.4";
-import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.4";
-import { legacyDiff } from "./settings.js?v=4.4";
-import { renderLastTimes, renderStory } from "./library.js?v=4.4";
-import { state } from "./state.js?v=4.4";
+} from "./format.js?v=4.6";
+import { html, toast } from "./ui.js?v=4.6";
+import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.6";
+import { legacyDiff } from "./settings.js?v=4.6";
+import { renderLastTimes, renderStory } from "./library.js?v=4.6";
+import { state } from "./state.js?v=4.6";
 
 let shownWeather = 0;
 let roomReady = false,
@@ -50,7 +53,9 @@ export function roomObject(what) {
     const t = getTimes(new Date(), 37.7749, -122.4194),
       w = cachedWeather(),
       words = weatherWords(weatherKind(w), w);
-    toast(`${words ? words + " · " : ""}Sunrise ${clock(+t.sunrise)} · Sunset ${clock(+t.sunset)}`);
+    toast(
+      `${words ? words + " · " : ""}Sunrise ${clock(+t.sunrise)} · Sunset ${clock(+t.sunset)}`,
+    );
   }
   if (what === "toy") return room.react("toy");
   if (what === "ribbon") return toast("Canine Good Citizen");
@@ -106,7 +111,11 @@ function greetPartner(events) {
     .slice(0, 3)
     .map((e) => `${eventLabel(e).toLowerCase()} ${clock(e.time)}`)
     .join(", ");
-  dialogue(newest.loggedBy, `Logged ${list}${theirs.length > 3 ? ` and ${theirs.length - 3} more` : ""}`, newest.id);
+  dialogue(
+    newest.loggedBy,
+    `Logged ${list}${theirs.length > 3 ? ` and ${theirs.length - 3} more` : ""}`,
+    newest.id,
+  );
 }
 // A Stardew-style dialogue box in the room when the other person logs something.
 let dialogueTimer = 0;
@@ -125,7 +134,10 @@ function dialogue(who, text, eventId) {
 // After a poop, one tap records how it was. Shown for 30 minutes, until tagged.
 function renderQuality(events) {
   const poop = latestCare(events).poop;
-  const show = poop && Date.now() - poop.time < 30 * 60000 && !QUALITY.some((q) => poop.tags?.includes(q));
+  const show =
+    poop &&
+    Date.now() - poop.time < 30 * 60000 &&
+    !QUALITY.some((q) => poop.tags?.includes(q));
   $("poop-quality").hidden = !show;
   if (!show) return;
   html(
@@ -240,8 +252,8 @@ function renderToday(events, sleeping, walk) {
   // Something running: the status line says so and finishing it is one tap.
   $("room-status").classList.toggle("running", !!run);
   $("room-status").innerHTML = run
-    ? `<span class="sq run-ic" style="--c:${typeColor(run.type)}" aria-hidden="true">${icon(typeIcon(run.type), "ic sm")}</span><span class="grow"><b>${run.type === "walk" ? "Out on a walk" : run.type === "nap" ? "Napping" : "Asleep for the night"}</b> <span>${durationLabel(Math.max(1, Math.round((now - run.time) / 60000)))}${run.loggedBy ? " · " + face(run.loggedBy, "xs") + esc(person(run.loggedBy)) : ""}</span></span><button class="px btn" data-act="${run.type === "walk" ? "finish-walk" : "end-sleep"}">${run.type === "walk" ? "Finish walk" : run.type === "nap" ? "End nap" : "End sleep"}</button>`
-    : `<b>Awake</b>${last ? `<span>last log ${when(last.time)}${esc(by(last.loggedBy))}</span>` : ""}`;
+    ? `<span class="sq run-ic" style="--c:${typeColor(run.type)}" aria-hidden="true">${icon(typeIcon(run.type), "ic sm")}</span><span class="grow"><b>${run.type === "walk" ? "Out on a walk" : run.type === "nap" ? "Napping" : "Asleep for the night"}</b> <span>${durationLabel(Math.max(1, Math.round((now - run.time) / 60000)))}${run.loggedBy ? `<span class="status-person">${face(run.loggedBy, "xs")}${esc(person(run.loggedBy))}</span>` : ""}</span></span><button class="px btn" data-act="${run.type === "walk" ? "finish-walk" : "end-sleep"}">${run.type === "walk" ? "Finish walk" : run.type === "nap" ? "End nap" : "End sleep"}</button>`
+    : `<b>Awake</b>${last ? `<span class="status-last">Last log ${when(last.time)}${last.loggedBy ? `<span class="status-person">${esc(person(last.loggedBy))}</span>` : ""}</span>` : ""}`;
   $("room").setAttribute(
     "aria-label",
     run
@@ -262,10 +274,8 @@ function renderToday(events, sleeping, walk) {
               month: "short",
               day: "numeric",
             }),
-      meta = l
-        ? `${elapsed(t)}${l.loggedBy ? " · " + face(l.loggedBy, "xs") + esc(person(l.loggedBy)) : ""}${l.pending ? " · not sent" : ""}`
-        : "";
-    return `<button class="px tile" style="--c:var(--${type})" data-log="${type}" aria-label="Log ${type}. Last ${esc(tm)}"><span class="top">${icon(type)}<span class="nm">${TYPES[type][1]}</span><span class="act">+ Log</span></span><span class="tm">${tm}</span><span class="meta">${meta}</span>${type === "poop" ? poopHint(events) : ""}</button>`;
+      meta = l ? elapsed(t) : "";
+    return `<button class="px tile" style="--c:var(--${type})" data-log="${type}" aria-label="Log ${type}. Last ${esc(tm)}"><span class="top">${icon(type)}<span class="nm">${TYPES[type][1]}</span><span class="act">+ Log</span></span><span class="tm">${tm}</span><span class="tile-footer">${l?.loggedBy ? face(l.loggedBy, "tile-face") : ""}<span><span class="meta">${meta}</span>${l?.pending ? '<span class="pending-dot">Not sent</span>' : ""}${l?.loggedBy ? `<span class="tile-person">${esc(person(l.loggedBy))}</span>` : ""}</span></span>${type === "poop" ? poopHint(events) : ""}</button>`;
   };
   html("care-actions", tile("pee") + tile("poop"));
   renderQuality(events);
@@ -273,7 +283,7 @@ function renderToday(events, sleeping, walk) {
   html(
     "log-row",
     [
-      `<button class="px chip" style="--c:var(--meal)" data-log="meal" aria-label="Log meal">${icon("meal")}Meal${meal ? `<small>${dayKey(meal.time) === dayKey(now) ? clock(meal.time) : elapsed(meal.time)}</small><small>${dayKey(meal.time) === dayKey(now) ? elapsed(meal.time) : ""}${meal.loggedBy ? (dayKey(meal.time) === dayKey(now) ? " · " : "") + esc(person(meal.loggedBy)) : ""}</small>` : ""}</button>`,
+      `<button class="px chip" style="--c:var(--meal)" data-log="meal" aria-label="Log meal">${icon("meal")}Meal${meal ? `<small>${dayKey(meal.time) === dayKey(now) ? clock(meal.time) : elapsed(meal.time)}</small><small>${dayKey(meal.time) === dayKey(now) ? elapsed(meal.time) : ""}${meal.loggedBy ? `<span class="chip-person">${esc(person(meal.loggedBy))}</span>` : ""}</small>` : ""}</button>`,
       `<button class="px chip" style="--c:var(--photo)" data-act="photo">${icon("photo")}Photo</button>`,
       `<button class="px chip" data-act="earlier">${icon("earlier")}Earlier</button>`,
       `<button class="px chip" data-act="more">${icon("more")}More</button>`,
@@ -311,9 +321,7 @@ function renderAlso(events) {
         );
         return `<button class="px" data-also="${type}" data-title="${t}" aria-pressed="${did}">${icon(did ? "check" : i, "ic sm")}${t}</button>`;
       })
-      .join(
-        "",
-      )}</div>`,
+      .join("")}</div>`,
   );
 }
 function renderDay(events) {
@@ -363,8 +371,12 @@ function renderDay(events) {
     "aria-label",
     `${day.length} ${day.length === 1 ? "entry" : "entries"} across the day`,
   );
-  $("day-summary").textContent =
-    `${count("pee")} pee · ${count("poop")} poop · ${count("meal")} ${count("meal") === 1 ? "meal" : "meals"}`;
+  $("day-summary").innerHTML = ["pee", "poop", "meal"]
+    .map(
+      (type) =>
+        `<span><strong>${count(type)}</strong> ${type === "meal" && count(type) !== 1 ? "meals" : type}</span>`,
+    )
+    .join("");
   html(
     "timeline",
     day.length

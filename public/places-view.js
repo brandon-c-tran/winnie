@@ -1,4 +1,4 @@
-import { groupPlaces, loadCities, cityLabel } from "./places.js?v=4.4";
+import { groupPlaces, loadCities, cityLabel } from "./places.js?v=4.6";
 
 export function mapFrame(cities, minimum = 0.9) {
   let west = Math.min(...cities.map((c) => c.lng)),
@@ -27,39 +27,42 @@ export function mapFrame(cities, minimum = 0.9) {
 export function createPlacesView({ root, esc, entry, hydratePhotos }) {
   let events = [],
     selected = null,
-    focus = null,
-    type = "all",
+    frame = null,
+    land = [],
+    cities = [],
+    ready = false;
+  let type = "all",
     year = "all",
     limit = 12,
-    land = null,
+    loading = null,
     error = "",
-    ready = false;
-  let loading = null;
+    drag = null;
   const date = (t) =>
     new Date(t).toLocaleDateString([], {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
-  const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
-  const region = (c) =>
-    c.country === "US" ? c.region : countryNames.of(c.country);
+  const countries = new Intl.DisplayNames(["en"], { type: "region" });
   async function load() {
     if (loading) return loading;
     loading = Promise.all([
       loadCities(),
-      fetch("/geo/land.json").then((r) => {
-        if (!r.ok) throw Error();
-        return r.json();
-      }),
+      fetch("/geo/land.json")
+        .then((r) => {
+          if (!r.ok) throw Error();
+          return r.json();
+        })
+        .catch(() => []),
     ])
-      .then(([, outlines]) => {
+      .then(([rows, outlines]) => {
+        cities = rows;
         land = outlines;
         ready = true;
         error = "";
       })
       .catch(() => {
-        error = "The place map couldn’t load. Your entries are safe.";
+        error = "Places couldn't load.";
       })
       .finally(() => {
         loading = null;
@@ -67,32 +70,42 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
       });
     return loading;
   }
-  function map(groups, chosen) {
-    const focused = focus ? groups.filter((g) => focus.includes(g.id)) : groups;
-    const frame = mapFrame(
-      chosen ? [chosen] : focused.length ? focused : groups,
-      focus ? 0.04 : 0.9,
+  function groupsNow() {
+    return groupPlaces(
+      events.filter(
+        (e) =>
+          (year === "all" || String(new Date(e.time).getFullYear()) === year) &&
+          (type === "all" ||
+            (type === "photos" ? e.photos?.length : e.type === type)),
+      ),
     );
+  }
+  function map(groups) {
+    frame ||= mapFrame(groups, 0.4);
     const project = ([lng, lat]) => [
       ((lng - frame.west) / (frame.east - frame.west)) * 640,
       ((frame.north - lat) / (frame.north - frame.south)) * 400,
     ];
     const path = land
       .map((ring) => {
-        let last = null;
+        // Skip distant rings without generating thousands of off-screen coordinates.
+        const xs = ring.map((p) => p[0]),
+          ys = ring.map((p) => p[1]);
+        if (
+          Math.max(...xs) < frame.west ||
+          Math.min(...xs) > frame.east ||
+          Math.max(...ys) < frame.south ||
+          Math.min(...ys) > frame.north
+        )
+          return "";
         return (
           ring
-            .map((p, i) => {
-              const point = project(p).map((n) => Math.round(n * 10) / 10);
-              if (
-                last &&
-                Math.hypot(point[0] - last[0], point[1] - last[1]) < 1 &&
-                i < ring.length - 1
-              )
-                return "";
-              last = point;
-              return `${i ? "L" : "M"}${point[0]},${point[1]}`;
-            })
+            .map(
+              (p, i) =>
+                `${i ? "L" : "M"}${project(p)
+                  .map((n) => Math.round(n * 10) / 10)
+                  .join(",")}`,
+            )
             .join("") + "Z"
         );
       })
@@ -100,135 +113,230 @@ export function createPlacesView({ root, esc, entry, hydratePhotos }) {
     const markers = [];
     for (const g of groups) {
       const [x, y] = project([g.lng, g.lat]);
-      if (x < 24 || x > 616 || y < 24 || y > 376) continue;
-      const cluster = markers.find((m) => Math.hypot(m.x - x, m.y - y) < 90);
-      if (cluster) {
-        cluster.groups.push(g);
-      } else {
-        markers.push({ x, y, groups: [g] });
-      }
+      if (x < 30 || x > 610 || y < 30 || y > 370) continue;
+      const cluster = markers.find((m) => Math.hypot(m.x - x, m.y - y) < 72);
+      if (cluster) cluster.groups.push(g);
+      else markers.push({ x, y, groups: [g] });
     }
-    return `<div class="places-map"><div class="map-canvas"><svg viewBox="0 0 640 400" aria-hidden="true"><defs><pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="currentColor" stroke-width=".5"/></pattern></defs><rect width="640" height="400" fill="url(#map-grid)"/><path class="map-land" d="${path}"/></svg>${markers
-      .map((m) => {
-        const multiple = m.groups.length > 1,
-          g = m.groups[0],
-          index = groups.findIndex((c) => c.id === g.id) + 1;
-        const label = multiple
-          ? `Zoom into ${m.groups.length} nearby cities`
-          : cityLabel(g);
-        return `<button class="map-pin ${multiple ? "cluster" : ""} ${g.id === selected ? "active" : ""}" ${multiple ? `data-map-cluster="${m.groups.map((c) => c.id).join(",")}"` : `data-city="${esc(g.id)}"`} style="left:${m.x / 6.4}%;top:${m.y / 4}%" aria-label="${esc(label)}" title="${esc(label)}"><strong>${multiple ? m.groups.length : index}</strong>${multiple ? "<small>cities</small>" : ""}</button>`;
-      })
-      .join(
-        "",
-      )}</div><div class="map-caption">${chosen ? esc(cityLabel(chosen)) : focus ? "A closer look" : "All places"}${chosen || focus ? '<button class="text-button" data-map-all>Show all</button>' : ""}</div></div>`;
+    const context = [];
+    for (const [id, name, lat, lng] of cities) {
+      if (groups.some((g) => g.id === id)) continue;
+      const [x, y] = project([lng, lat]);
+      if (
+        x < 70 ||
+        x > 570 ||
+        y < 50 ||
+        y > 350 ||
+        [...markers, ...context].some((m) => Math.hypot(m.x - x, m.y - y) < 100)
+      )
+        continue;
+      context.push({ x, y, name });
+      if (context.length === 6) break;
+    }
+    const spanKm =
+      (frame.east - frame.west) *
+      111.19 *
+      Math.cos((((frame.north + frame.south) / 2) * Math.PI) / 180);
+    const scale = Math.max(1, Math.round(spanKm / 4));
+    return `<div class="places-map"><div class="map-canvas" tabindex="0" role="group" aria-label="City map. Arrow keys move the map; use the zoom buttons to change scale.">
+      <div class="map-art"><svg viewBox="0 0 640 400" aria-hidden="true"><path class="map-land" d="${path}"/>${context.map((c) => `<text class="map-context" x="${c.x}" y="${c.y}">${esc(c.name)}</text>`).join("")}</svg>
+      ${markers
+        .map((m) => {
+          const multi = m.groups.length > 1,
+            g = m.groups[0];
+          const label = multi ? `${m.groups.length} cities` : cityLabel(g);
+          return `<button class="map-pin ${multi ? "cluster" : ""} ${m.groups.some((g) => g.id === selected) ? "active" : ""}" ${multi ? `data-map-cluster="${esc(m.groups.map((c) => c.id).join(","))}"` : `data-city="${esc(g.id)}"`} style="left:${m.x / 6.4}%;top:${m.y / 4}%" aria-label="${esc(multi ? "Zoom into " + label : label)}"><span class="map-dot" aria-hidden="true"></span><strong>${esc(label)}</strong></button>`;
+        })
+        .join("")}</div>
+      <span class="map-north" aria-hidden="true">↑ N</span><div class="map-zoom"><button data-map-zoom="in" aria-label="Zoom in">+</button><button data-map-zoom="out" aria-label="Zoom out">−</button></div>
+      <span class="map-scale">${scale} km</span></div><div class="map-caption"><span>City locations</span><button class="text-button" data-map-all>Fit all</button></div></div>`;
   }
-
   function render() {
     if (!ready) {
-      root.innerHTML = `<div class="card empty" role="status"><h3>${error ? "Map unavailable" : "Finding his places…"}</h3><p>${error || "Matching saved locations to nearby cities."}</p>${error ? '<button class="secondary" data-retry-places>Try again</button>' : ""}</div>`;
+      root.innerHTML = `<div class="empty" role="status"><h3>${error || "Loading places"}</h3>${error ? '<button class="px btn" data-retry-places>Try again</button>' : ""}</div>`;
       return;
     }
-    const valid = events.filter(
-      (e) => !e.deletedAt && Number.isFinite(e.time) && e.time <= Date.now(),
-    );
-    const years = [
-      ...new Set(valid.map((e) => new Date(e.time).getFullYear())),
-    ].sort((a, b) => b - a);
-    const filtered = valid.filter(
-      (e) =>
-        (year === "all" || String(new Date(e.time).getFullYear()) === year) &&
-        (type === "all" ||
-          (type === "photos" && e.photos?.length) ||
-          e.type === type),
-    );
-    const { groups, missing, mapped } = groupPlaces(filtered);
+    const { groups, mapped, missing } = groupsNow();
     const chosen = groups.find((g) => g.id === selected);
     if (!chosen) selected = null;
+    const years = [
+      ...new Set(
+        events
+          .filter((e) => !e.deletedAt && e.time <= Date.now())
+          .map((e) => new Date(e.time).getFullYear()),
+      ),
+    ].sort((a, b) => b - a);
     root.innerHTML = `<div class="places-controls"><label>When<select data-places-year><option value="all">All time</option>${years.map((y) => `<option ${String(y) === year ? "selected" : ""}>${y}</option>`).join("")}</select></label><label>Show<select data-places-type>${[
       ["all", "All entries"],
+      ["photos", "Photos"],
       ["pee", "Pees"],
       ["poop", "Poops"],
-      ["photos", "Photos"],
     ]
       .map(
         ([v, n]) =>
           `<option value="${v}" ${type === v ? "selected" : ""}>${n}</option>`,
       )
       .join("")}</select></label></div>
-      <div class="places-intro"><h2>${groups.length ? `${groups.length} ${groups.length === 1 ? "city" : "cities"},.` : "No places yet."}</h2><p class="fine">${mapped.toLocaleString()} ${mapped === 1 ? "entry" : "entries"} with a location${missing ? ` · ${missing.toLocaleString()} without a map location` : ""}</p></div>
+      <div class="places-intro"><h2>${groups.length} ${groups.length === 1 ? "city" : "cities"}</h2><span class="fine">${mapped.toLocaleString()} located ${mapped === 1 ? "entry" : "entries"}</span></div>
+      ${groups.length ? map(groups) : '<div class="empty"><h3>No saved locations</h3><button class="px btn" data-act="settings">Location settings</button></div>'}
+      ${
+        chosen
+          ? `<section class="place-history" tabindex="-1"><div class="section-heading"><div><h2>${esc(cityLabel(chosen))}</h2><p class="fine">${chosen.days.size} recorded ${chosen.days.size === 1 ? "day" : "days"} · ${chosen.events.length} entries</p></div><button class="text-button" data-place-close>Close</button></div>${chosen.events
+              .slice(0, limit)
+              .map(
+                (e, i, a) =>
+                  `${i === 0 || date(e.time) !== date(a[i - 1].time) ? `<h3 class="history-day">${date(e.time)}</h3>` : ""}${entry(e)}`,
+              )
+              .join(
+                "",
+              )}${chosen.events.length > limit ? '<button class="px btn" data-more-places>Show more entries</button>' : ""}</section>`
+          : ""
+      }
       ${
         groups.length
-          ? `${map(groups, chosen)}<div class="places-cities" aria-label="Cities">${groups.map((g, i) => `<button class="place-city ${g.id === selected ? "selected" : ""}" data-city="${esc(g.id)}" aria-pressed="${g.id === selected}"><span class="place-number">${i + 1}</span><span><strong>${esc(cityLabel(g))}</strong><span class="fine">${esc(region(g))} · ${g.days.size} recorded ${g.days.size === 1 ? "day" : "days"} · ${g.events.length} ${g.events.length === 1 ? "entry" : "entries"}</span><span class="fine">First ${date(g.first)} · Latest ${date(g.last)}</span></span><span aria-hidden="true">↗</span></button>`).join("")}</div>${
-              chosen
-                ? `<section class="place-history"><div class="section-heading"><h3>${esc(cityLabel(chosen))}</h3><button class="text-button" data-map-all>All places</button></div>${chosen.events
-                    .slice(0, limit)
-                    .map(
-                      (e) =>
-                        `<p class="place-entry-date">${date(e.time)}</p>${entry(e)}`,
-                    )
-                    .join(
-                      "",
-                    )}${chosen.events.length > limit ? '<button class="secondary" data-more-places>Show more entries</button>' : ""}</section>`
-                : ""
-            }`
-          : '<div class="card empty"><p>New logs add a location automatically when this phone allows it. Older entries with coordinates appear here too.</p></div>'
+          ? `<div class="places-list-head"><h2>Places</h2><span class="fine">Most recent first</span></div><div class="places-cities" aria-label="Cities">${groups
+              .map((g) => {
+                const photo = g.events.find((e) => e.photos?.length)?.photos[0];
+                return `<button class="place-city ${g.id === selected ? "selected" : ""}" data-city="${esc(g.id)}" aria-pressed="${g.id === selected}">${photo ? `<img class="place-thumb" data-photo="${esc(photo.id)}" alt="" loading="lazy">` : '<span class="place-glyph" aria-hidden="true">⌖</span>'}<span class="place-copy"><strong>${esc(cityLabel(g))}</strong><span class="fine">${esc(g.country === "US" ? g.region : countries.of(g.country))} · ${g.days.size} recorded ${g.days.size === 1 ? "day" : "days"}</span><span class="fine">${date(g.last)}</span></span><span class="place-arrow" aria-hidden="true">→</span></button>`;
+              })
+              .join("")}</div>`
+          : ""
       }
-      <details class="places-about"><summary>About this map</summary><p>City names are the nearest city in our offline directory, not exact city boundaries. Small towns may be labeled with a nearby city. Dots mark city centers, not individual stops. Recorded days use San Francisco time and count only days with saved entries; they aren’t a count of visits.</p><p>Place names are worked out on your device. No location history is sent to a geocoding service. Original coordinates stay with each entry; open an entry for its exact map link.</p><p>City data: <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. Land: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a>, public domain.</p></details>`;
-    const history = root.querySelector(".place-history");
-    if (history) {
-      history.tabIndex = -1;
-      root.querySelector(".places-cities").before(history);
-    }
+      <details class="places-about"><summary>Map details${missing ? ` · ${missing} entries without locations` : ""}</summary><p>Markers show nearby city centers, not exact stops. Recorded days count days with saved entries, not visits. Open an entry for its exact map link.</p><p>City matching stays on your device. City data: <a href="https://www.geonames.org/" target="_blank" rel="noopener">GeoNames</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Land: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>, public domain.${land.length ? "" : " Coastline unavailable offline."}</p></details>`;
     hydratePhotos();
   }
+  function move(dx, dy) {
+    const w = frame.east - frame.west,
+      h = frame.north - frame.south;
+    frame = {
+      west: frame.west + dx * w,
+      east: frame.east + dx * w,
+      south: frame.south + dy * h,
+      north: frame.north + dy * h,
+    };
+    boundFrame();
+  }
+  function boundFrame() {
+    const w = Math.min(360, frame.east - frame.west),
+      h = Math.min(170, frame.north - frame.south);
+    const cx = Math.max(
+      -180 + w / 2,
+      Math.min(180 - w / 2, (frame.west + frame.east) / 2),
+    );
+    const cy = Math.max(
+      -85 + h / 2,
+      Math.min(85 - h / 2, (frame.south + frame.north) / 2),
+    );
+    frame = {
+      west: cx - w / 2,
+      east: cx + w / 2,
+      south: cy - h / 2,
+      north: cy + h / 2,
+    };
+  }
+  function zoom(factor) {
+    const cx = (frame.west + frame.east) / 2,
+      cy = (frame.south + frame.north) / 2;
+    const h = Math.max(
+        0.04,
+        Math.min(155, (frame.north - frame.south) * factor),
+      ),
+      w = Math.min(
+        360,
+        (h * (frame.east - frame.west)) / (frame.north - frame.south),
+      );
+    frame = {
+      west: cx - w / 2,
+      east: cx + w / 2,
+      south: cy - h / 2,
+      north: cy + h / 2,
+    };
+    boundFrame();
+  }
   root.addEventListener("click", (ev) => {
-    const cluster = ev.target.closest("[data-map-cluster]");
-    if (cluster) {
-      focus = cluster.dataset.mapCluster.split(",");
-      selected = null;
-      render();
-      root.querySelector("[data-map-all]")?.focus({ preventScroll: true });
-    }
-    const city = ev.target.closest("[data-city]");
+    const city = ev.target.closest("[data-city]"),
+      cluster = ev.target.closest("[data-map-cluster]"),
+      z = ev.target.closest("[data-map-zoom]");
     if (city) {
       selected = city.dataset.city;
       limit = 12;
       render();
       root.querySelector(".place-history")?.focus({ preventScroll: true });
-      root.querySelector(".place-history")?.scrollIntoView({
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "instant"
-          : "smooth",
-        block: "start",
-      });
-    }
-    if (ev.target.closest("[data-map-all]")) {
-      selected = null;
-      focus = null;
+    } else if (cluster) {
+      frame = mapFrame(
+        groupsNow().groups.filter((g) =>
+          cluster.dataset.mapCluster.split(",").includes(g.id),
+        ),
+        0.06,
+      );
       render();
-    }
-    if (ev.target.closest("[data-more-places]")) {
+      root.querySelector(".map-canvas")?.focus({ preventScroll: true });
+    } else if (z) {
+      zoom(z.dataset.mapZoom === "in" ? 0.5 : 2);
+      render();
+      root
+        .querySelector(`[data-map-zoom="${z.dataset.mapZoom}"]`)
+        ?.focus({ preventScroll: true });
+    } else if (ev.target.closest("[data-map-all]")) {
+      frame = null;
+      render();
+      root.querySelector("[data-map-all]")?.focus({ preventScroll: true });
+    } else if (ev.target.closest("[data-place-close]")) {
+      selected = null;
+      render();
+    } else if (ev.target.closest("[data-more-places]")) {
       limit += 24;
       render();
-    }
-    if (ev.target.closest("[data-retry-places]")) {
+    } else if (ev.target.closest("[data-retry-places]")) {
       error = "";
-      render();
       load();
-    }
-  });
-  root.addEventListener("keydown", (ev) => {
-    if (ev.target.matches("g[data-city]") && ["Enter", " "].includes(ev.key)) {
-      ev.preventDefault();
-      ev.target.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     }
   });
   root.addEventListener("change", (ev) => {
     if (ev.target.matches("[data-places-year]")) year = ev.target.value;
-    if (ev.target.matches("[data-places-type]")) type = ev.target.value;
+    else if (ev.target.matches("[data-places-type]")) type = ev.target.value;
+    else return;
+    frame = null;
     selected = null;
-    focus = null;
-    limit = 12;
+    render();
+  });
+  root.addEventListener("keydown", (ev) => {
+    if (!ev.target.matches(".map-canvas") || !frame) return;
+    const delta = {
+      ArrowLeft: [-0.2, 0],
+      ArrowRight: [0.2, 0],
+      ArrowUp: [0, 0.2],
+      ArrowDown: [0, -0.2],
+    }[ev.key];
+    if (!delta) return;
+    ev.preventDefault();
+    move(...delta);
+    render();
+    root.querySelector(".map-canvas").focus({ preventScroll: true });
+  });
+  root.addEventListener("pointerdown", (ev) => {
+    const canvas = ev.target.closest(".map-canvas");
+    if (!canvas || ev.target.closest("button") || !frame) return;
+    drag = { x: ev.clientX, y: ev.clientY, canvas };
+    canvas.setPointerCapture(ev.pointerId);
+  });
+  root.addEventListener("pointermove", (ev) => {
+    if (!drag) return;
+    drag.canvas.querySelector(".map-art").style.transform =
+      `translate(${ev.clientX - drag.x}px,${ev.clientY - drag.y}px)`;
+  });
+  root.addEventListener("pointerup", (ev) => {
+    if (!drag) return;
+    const { x, y, canvas } = drag;
+    drag = null;
+    move(
+      -(ev.clientX - x) / canvas.clientWidth,
+      (ev.clientY - y) / canvas.clientHeight,
+    );
+    render();
+  });
+  root.addEventListener("pointercancel", () => {
+    drag = null;
     render();
   });
   return {

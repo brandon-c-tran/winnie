@@ -55,6 +55,24 @@
         ],
         "createdAt": "2026-10-13T01:26:24.648Z",
         "reason": "Claude: .room clips its full-bleed pixel canvas; the only positioned child is the HUD, which sits fully inside the room; sheets/menus render in the dialog outside it"
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/app/entries.js"
+        ],
+        "createdAt": "2026-10-13T14:03:50.842Z",
+        "reason": "Agent: data-photo images receive authenticated blob URLs from hydratePhotos; existing lazy image pipeline verified in browser tests."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/places-view.js"
+        ],
+        "createdAt": "2026-10-13T14:08:24.373Z",
+        "reason": "Agent: city thumbnails use the verified data-photo/hydratePhotos authenticated blob URL pipeline, not missing assets."
       }
     ]
   }

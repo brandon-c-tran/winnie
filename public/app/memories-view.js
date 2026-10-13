@@ -4,14 +4,14 @@ import {
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.4";
-import { cityFor } from "../places.js?v=4.4";
+} from "../memories.js?v=4.6";
+import { cityFor } from "../places.js?v=4.6";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.4";
-import { $, esc } from "./format.js?v=4.4";
-import { html, toast } from "./ui.js?v=4.4";
-import { hydratePhotos } from "./entries.js?v=4.4";
-import { download } from "./photos.js?v=4.4";
+import { facts, sync } from "./services.js?v=4.6";
+import { $, esc } from "./format.js?v=4.6";
+import { html, toast } from "./ui.js?v=4.6";
+import { hydratePhotos } from "./entries.js?v=4.6";
+import { download } from "./photos.js?v=4.6";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -79,7 +79,7 @@ export function renderMemories() {
     [recap.photos, "photos", "photo"],
   ];
   html(
-    "story-items",
+    "photo-items",
     `<section class="card mem" aria-labelledby="week-title">
       <div class="card-head"><h2 id="week-title">This week</h2><span class="muted">${range}</span></div>
       <canvas id="postcard" class="postcard" width="1080" height="1350" role="img" aria-label="Postcard for ${range}: ${week.counts.pee} pee, ${week.counts.poop} poop, ${week.counts.meal} meals, ${week.counts.walk} walks"></canvas>
@@ -131,8 +131,8 @@ async function drawPostcard(week, range) {
   ]).catch(() => {});
   const [photo, ...faceImgs] = await Promise.all([
     photoImage(week.best),
-    loadImage("/photos/brandon-face.png"),
-    loadImage("/photos/kim-face.png"),
+    loadImage("/photos/brandon-pixel.png"),
+    loadImage("/photos/kim-pixel.png"),
   ]);
   const faces = [
     ["brandon", faceImgs[0]],

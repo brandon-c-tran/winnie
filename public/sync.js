@@ -1,4 +1,4 @@
-import { notificationState } from "./everyday.js?v=4.4";
+import { notificationState } from "./everyday.js?v=4.6";
 const API = "/.netlify/functions/api";
 const empty = () => ({
   snapshot: {
@@ -341,9 +341,12 @@ export class WinnieSync extends EventTarget {
   }
   async addPhoto(eventId, blob) {
     const id = uid();
+    // Store bytes rather than a Blob: WebKit can abort IndexedDB writes of
+    // canvas-created Blobs. Existing Blob records remain readable below.
+    const stored = { bytes: await blob.arrayBuffer(), type: blob.type };
     await new Promise((resolve, reject) => {
       const t = this.db.transaction("photos", "readwrite");
-      t.objectStore("photos").put(blob, `${this.session.home}/${id}`);
+      t.objectStore("photos").put(stored, `${this.session.home}/${id}`);
       t.oncomplete = resolve;
       t.onerror = () => reject(t.error);
     });
@@ -382,7 +385,7 @@ export class WinnieSync extends EventTarget {
       r.onerror = () => reject(r.error);
     });
     return (
-      local || this.request("photo", { extra: `&id=${encodeURIComponent(id)}` })
+      (local?.bytes instanceof ArrayBuffer ? new Blob([local.bytes], { type: local.type }) : local) || this.request("photo", { extra: `&id=${encodeURIComponent(id)}` })
     );
   }
   async refresh() {

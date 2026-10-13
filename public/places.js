@@ -86,6 +86,7 @@ export function loadCities() {
       })
       .then((rows) => {
         lookup = createCityLookup(rows);
+        return rows;
       })
       .catch((error) => {
         loading = null;

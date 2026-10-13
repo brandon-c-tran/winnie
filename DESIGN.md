@@ -374,7 +374,7 @@ One line under the room that states the room's state in words.
 Square labels floating over the room: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings.
 
 ### People (Brandon and Kim)
-Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). Faces are 40×40 crops, drawn pixelated with a 1.5px ink edge, always next to the name in text, never instead of it.
+Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). Use the full `brandon-pixel.png` and `kim-pixel.png` artwork with `object-fit: contain` and a bottom baseline. Small author portraits occupy 28×32px, sheet portraits 44×52px, and the room's settings portrait 32×36px inside a 44px target. Entries and care tiles give the author a dedicated line beside the portrait, separate from timestamps.
 - Sizes: `xs` 16px in entry times, tile meta and the status line; `sm` 20px in plan owners and magnets; `md` 28px on the join screen; `chip` 26px fills the Settings pill in the HUD.
 - **Dialogue box.** When the other phone logs something, a game dialogue box rises over the bottom of the room: the 48px full portrait, the name in Pixelify 700, "Logged meal 12:40 PM" in Rubik. Cream paper, 3px ink edge, gold inner rim. Tap opens the entry; it leaves on its own after 7 seconds. It replaces the old "Kim logged" toast.
 - The weekly postcard puts both faces on the footer line with each person's count for the week.
@@ -474,3 +474,29 @@ All motion is stepped. CSS uses `steps()` timing only: button press `60ms steps(
 - **Don't** smooth-scale pixel art or draw it off the art grid; scale by integers with `image-rendering: pixelated`.
 - **Don't** use brown or black outlines in the UI or the room.
 - **Don't** lead with a hero photo or a pastel card grid; the room is the top of Today.
+
+## History, photos and reactions
+
+Do not flatten metadata into strings separated by bullets or middle dots.
+Use placement and hierarchy: consistency and place are separate labeled entry
+fields, timestamps have their own alignment, notes are prose, and portraits sit
+with author names. Detail sheets use labeled date/time fields. Prefer concise
+sentences when a relationship genuinely needs prose. This is a standing user
+preference for future interfaces as well as the care log.
+
+History owns its Log and Trends sections, search, type and date filters. Entries
+are grouped by day; last-care counters live in an expandable summary. Photos
+owns Gallery, Memories and Places with its own search and collection selection.
+Gallery groups real photos by month. Winnie is the default collection; meal and
+poop photos have explicit collections and remain available in All photos.
+Switching tabs preserves each tab's filters.
+
+Places pairs an offline city map with a chronological city list. Pins have names,
+nearby cities cluster, and the map supports zoom, pan and Fit all. Selecting a
+city shows its entries in place. City centers and recorded days are explicitly
+distinguished from precise coordinates and visits in Map details.
+
+There is one reaction picker owned by the exact entry button that opens it.
+Within a sheet it belongs to that dialog and uses the popover top layer. Escape
+closes the picker first; opening another surface dismisses it. Keep 44px minimum
+reaction targets and keyboard navigation through the three choices.
