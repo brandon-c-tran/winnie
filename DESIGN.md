@@ -361,7 +361,7 @@ The biggest targets on Today.
 ### Sticky notes (Notes card)
 Paper on the fridge.
 - Two across, min 92px, Sticky Yellow or Sticky Rose, ink text 14px, clamped to four lines, author and date in 12px below.
-- A 12px square magnet with a 2px ink border sits centred on the top edge, half off the paper: red on yellow, gingham blue on rose.
+- A 12px square magnet with a 2px ink border sits centred on the top edge, half off the paper: red on yellow, gingham blue on rose. A note with an author uses that person's 20px face as the magnet instead.
 - Paper ledge underneath. The add slot is a 2px dashed box with a plus icon.
 
 ### Status line
@@ -372,6 +372,21 @@ One line under the room that states the room's state in words.
 
 ### HUD pills
 Square labels floating over the room: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings.
+
+### People (Brandon and Kim)
+Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). Faces are 40×40 crops, drawn pixelated with a 1.5px ink edge, always next to the name in text, never instead of it.
+- Sizes: `xs` 16px in entry times, tile meta and the status line; `sm` 20px in plan owners and magnets; `md` 28px on the join screen; `chip` 26px fills the Settings pill in the HUD.
+- **Dialogue box.** When the other phone logs something, a game dialogue box rises over the bottom of the room: the 48px full portrait, the name in Pixelify 700, "Logged meal 12:40 PM" in Rubik. Cream paper, 3px ink edge, gold inner rim. Tap opens the entry; it leaves on its own after 7 seconds. It replaces the old "Kim logged" toast.
+- The weekly postcard puts both faces on the footer line with each person's count for the week.
+
+### Food card (Plans) and Order food (Up next)
+- Each food is a row: meal-green icon square, name, "8 meals · eaten Tue", a 8px stock meter (green, amber when the total supply is low), then Reorder (the Amazon link, opens Amazon), "+ Bag" and Edit.
+- Card head shows "about 6 days left". Footer: Add food and "Delivery: 3 days".
+- Up next gets "Order food · about 4 days left · Beef lowest" with Reorder and Ordered when the supply will not outlast delivery plus two days. Once ordered it reads "Food ordered" with the face and name of who ordered, and Arrived opens a sheet of "+ Bag" buttons.
+- The meal sheet orders foods by rotation (eaten longest ago first) and adds "3d ago · 8 left" under each.
+
+### Poop quality
+Right after a poop, a bar under the tiles: poop icon, the time, and Firm, Soft and Loose pixel buttons in poop colour. One tap tags the poop and the bar goes. It stays for 30 minutes, then gives up. The entry sheet carries the same three choices. Trends, on the Poop topic, shows "Poop by food": one bar per food (firm in poop brown, soft in amber, loose in sick green), from the first poop within a day after each meal.
 
 ### Toast
 The receipt after every action.

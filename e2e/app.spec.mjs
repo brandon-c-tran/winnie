@@ -193,7 +193,7 @@ test("sheets close by tapping outside them", async ({ page }, info) => {
   await expect(page.locator("#dialog")).not.toHaveAttribute("open", "");
 });
 
-test("a join code adds Kim's phone, and Winnie greets her log", async ({
+test("a join code adds Kim's phone, and her log shows as a dialogue box", async ({
   browser,
 }, info) => {
   const shared = code(info);
@@ -211,13 +211,18 @@ test("a join code adds Kim's phone, and Winnie greets her log", async ({
     await browser.newContext({ ...info.project.use })
   ).newPage();
   await join(kim, joinCode, "kim");
-  await expect(kim.locator("#person-name")).toHaveText("K");
+  await expect(kim.locator("#person-name img")).toHaveAttribute("src", /kim-face/);
   await kim.locator('#care-actions [data-log="poop"]').click();
   await expect(kim.locator("#sync-status")).toHaveText("Up to date");
 
   await brandon.locator("#sync-chip").click();
   await brandon.locator('[data-act="sync-now"]').click();
-  await expect(toast(brandon)).toContainText("Kim logged poop");
+  const box = brandon.locator("#partner-box");
+  await expect(box).toBeVisible();
+  await expect(box).toContainText("Kim");
+  await expect(box).toContainText("Logged poop");
+  await box.click();
+  await expect(brandon.locator("#dialog-title")).toContainText("Poop");
 });
 
 test("dark mode renders without errors", async ({ page }, info) => {

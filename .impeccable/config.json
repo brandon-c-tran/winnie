@@ -46,6 +46,15 @@
         ],
         "createdAt": "2026-10-13T01:18:12.924Z",
         "reason": "Claude: <img data-photo> starts without src and is filled by hydratePhotos(), the app-wide photo loader"
+      },
+      {
+        "rule": "clipped-overflow-container",
+        "value": "*",
+        "files": [
+          "public/index.html"
+        ],
+        "createdAt": "2026-10-13T01:26:24.648Z",
+        "reason": "Claude: .room clips its full-bleed pixel canvas; the only positioned child is the HUD, which sits fully inside the room; sheets/menus render in the dialog outside it"
       }
     ]
   }
