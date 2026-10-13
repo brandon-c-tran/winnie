@@ -57,7 +57,9 @@ test("Earlier logs poop 30 minutes ago", async ({ page }, info) => {
   await page.locator('[data-early-ago="30"]').click();
   await page.locator("[data-early-save]").click();
   await expect(toast(page)).toContainText("Poop logged for");
-  await expect(page.locator("#timeline")).toContainText("Poop");
+  // Check History, not today's list: 30 minutes ago can be yesterday just after midnight.
+  await page.locator("#history-tab").click();
+  await expect(page.locator("#story-items")).toContainText("Poop");
 });
 
 test("press and hold a log button opens Log earlier", async ({

@@ -12,6 +12,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${port}`,
     trace: "retain-on-failure",
+    // The household (and the app's care dates) run on San Francisco time.
+    timezoneId: "America/Los_Angeles",
   },
   webServer: {
     command: "node scripts/dev.mjs",
