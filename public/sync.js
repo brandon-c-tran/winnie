@@ -1,4 +1,4 @@
-import { notificationState } from "./everyday.js?v=4.21";
+import { notificationState } from "./everyday.js?v=4.22";
 const API = "/.netlify/functions/api";
 const empty = () => ({
   snapshot: {
@@ -76,6 +76,11 @@ export function project(data) {
         });
       }
     } else if (e) {
+      if (c.kind === "recollect") {
+        e.recollections ||= {};
+        if (c.payload.text.trim()) e.recollections[item.person] = {text:c.payload.text.trim()};
+        else delete e.recollections[item.person];
+      }
       if (c.kind === "react") {
         e.reactions ||= {};
         if (c.payload.emoji)
@@ -508,6 +513,8 @@ export class WinnieSync extends EventTarget {
           );
         c.operationId = uid();
         c.expectedRevision = current.revision;
+        if (c.kind === "recollect")
+          c.payload.previous = current.recollections?.[item.person]?.text || "";
         delete item.error;
         delete item.current;
       } else d.queue = d.queue.filter((q) => q.command.operationId !== id);

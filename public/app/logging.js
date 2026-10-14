@@ -1,20 +1,20 @@
 // Logging: one-tap logs, sleep and walks, grooming, Earlier, meals, More, press-and-hold.
-import { careStates, completionId } from "../care-plans.js?v=4.21";
-import { elapsed } from "../care-state.js?v=4.21";
+import { careStates, completionId } from "../care-plans.js?v=4.22";
+import { elapsed } from "../care-state.js?v=4.22";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { durationLabel } from "../insights.js?v=4.21";
+import { durationLabel } from "../insights.js?v=4.22";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
-} from "../everyday.js?v=4.21";
+} from "../everyday.js?v=4.22";
 import {
   autoPlace,
   autoPlaceEnabled,
   facts,
   room,
   sync,
-} from "./services.js?v=4.21";
+} from "./services.js?v=4.22";
 import {
   $,
   TYPES,
@@ -23,7 +23,7 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.21";
+} from "./format.js?v=4.22";
 import {
   closeDialog,
   retainDialogDraft,
@@ -35,12 +35,12 @@ import {
   renderedHTML,
   safe,
   toast,
-} from "./ui.js?v=4.21";
-import { editForm } from "./forms.js?v=4.21";
-import { render } from "./today.js?v=4.21";
-import { state } from "./state.js?v=4.21";
-import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.21";
-import { pantryNow, savePantry } from "./pantry-view.js?v=4.21";
+} from "./ui.js?v=4.22";
+import { editForm } from "./forms.js?v=4.22";
+import { render } from "./today.js?v=4.22";
+import { state } from "./state.js?v=4.22";
+import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.22";
+import { pantryNow, savePantry } from "./pantry-view.js?v=4.22";
 
 let mealSubmitting = false;
 let pressTimer = 0;

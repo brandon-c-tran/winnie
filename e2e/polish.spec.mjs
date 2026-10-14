@@ -41,7 +41,7 @@ test("History and Gallery keep independent filters and actual photos", async ({
   const errors = await join(page, code(info));
   // Isolated fixture through the actual offline queue and photo upload pipeline.
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.21");
+    const { sync } = await import("/app/services.js?v=4.22");
     const image = new Image();
     image.src = "/photos/winnie-smile.png";
     await image.decode();
@@ -100,7 +100,7 @@ test("Places opens destinations and their source logs without losing the list", 
 }, info) => {
   const errors = await join(page, code(info));
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.21");
+    const { sync } = await import("/app/services.js?v=4.22");
     for (const [lat, lng] of [
       [37.7749, -122.4194],
       [37.8044, -122.2712],
@@ -140,7 +140,7 @@ test("new room poses render, settle after interruption and respect reduced motio
 }, info) => {
   const errors = await join(page, code(info));
   const result = await page.evaluate(async () => {
-    const { room } = await import("/app/services.js?v=4.21");
+    const { room } = await import("/app/services.js?v=4.22");
     for (const pose of [
       "belly",
       "roll",
@@ -169,7 +169,7 @@ test("new room poses render, settle after interruption and respect reduced motio
   await expect
     .poll(() =>
       page.evaluate(async () => {
-        const { room } = await import("/app/services.js?v=4.21");
+        const { room } = await import("/app/services.js?v=4.22");
         room.react("toy");
         return { pose: room.dog.pose, toy: room.dog.toy };
       }),

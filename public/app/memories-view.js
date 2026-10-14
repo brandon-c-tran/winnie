@@ -1,20 +1,22 @@
-import { collectionsHTML } from './lifetime-view.js?v=4.21';
+import { collectionsHTML } from './lifetime-view.js?v=4.22';
+import { storyAlbumHTML, bindStoryAlbum, choosePostcard } from './story-album-view.js?v=4.22';
+import { state } from './state.js?v=4.22';
 // Memories: this week's postcard, on this day, milestones, and the year so far.
-import { memoryEvents } from "../keepsakes.js?v=4.21";
-import { placeLabel } from "../places.js?v=4.21";
+import { memoryEvents } from "../keepsakes.js?v=4.22";
+import { placeLabel } from "../places.js?v=4.22";
 import {
   milestones,
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.21";
-import { cityFor } from "../places.js?v=4.21";
+} from "../memories.js?v=4.22";
+import { cityFor } from "../places.js?v=4.22";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.21";
-import { $, esc } from "./format.js?v=4.21";
-import { html, toast } from "./ui.js?v=4.21";
-import { hydratePhotos } from "./entries.js?v=4.21";
-import { download } from "./photos.js?v=4.21";
+import { facts, sync } from "./services.js?v=4.22";
+import { $, esc } from "./format.js?v=4.22";
+import { html, toast } from "./ui.js?v=4.22";
+import { hydratePhotos } from "./entries.js?v=4.22";
+import { download } from "./photos.js?v=4.22";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -58,8 +60,7 @@ export function renderMemories() {
     ].sort((a, b) => b - a),
     recap = yearRecap(events, recapYear);
   const choices = memories
-    .flatMap((e) => e.photos.map((p) => ({ e, p })))
-    .slice(0, 60);
+    .flatMap((e) => e.photos.map((p) => ({ e, p })));
   const chosen =
     choices.find((x) => x.p.id === postcardPhoto) ||
     choices.find((x) => x.p.id === week.best?.photoId) ||
@@ -102,9 +103,9 @@ export function renderMemories() {
   ];
   html(
     "photo-items",
-    `<section class="card mem" aria-labelledby="week-title">
+    `${storyAlbumHTML()}<section class="card mem" aria-labelledby="week-title">
       <div class="card-head"><h2 id="week-title">Postcard</h2><span class="muted">${range}</span></div>
-      ${chosen ? `<label>Photo<select id="postcard-photo">${choices.map(({ e, p }) => `<option value="${esc(p.id)}" ${p.id === chosen.p.id ? "selected" : ""}>${esc(e.note || "Winnie")} — ${full.format(e.time)}</option>`).join("")}</select></label><button class="text-button" data-edit="${esc(chosen.e.id)}">Edit caption</button>` : `<p>No keepsakes yet.</p><button class="px btn" data-add-photos>Add photos</button>`}
+      ${chosen ? `<div class="button-row"><button class="secondary" id="postcard-photo">Choose photo</button><button class="text-button" data-edit="${esc(chosen.e.id)}">Edit caption</button></div>` : `<p>No keepsakes yet.</p><button class="px btn" data-add-photos>Add photos</button>`}
       <canvas ${chosen ? "" : "hidden"} id="postcard" class="postcard" width="1080" height="1350" role="img" aria-label="Winnie postcard: ${esc(range)}${week.caption ? ", " + esc(week.caption) : ""}"></canvas>
       <div class="button-row" ${chosen ? "" : "hidden"}><button class="px btn ink" data-act="postcard-share">Share</button><button class="px btn" data-act="postcard-save">Save</button></div>
     </section>
@@ -121,14 +122,18 @@ export function renderMemories() {
     </section></details>`,
   );
   if ($("postcard-photo"))
-    $("postcard-photo").onchange = (event) => {
-      postcardPhoto = event.target.value;
+    $("postcard-photo").onclick = () => choosePostcard(id => {
+      postcardPhoto = id;
       renderMemories();
       $("postcard-photo")?.focus();
-    };
+    });
+  bindStoryAlbum();
   hydratePhotos();
   drawPostcard(week, range).catch(() => {});
 }
+document.addEventListener('winnie:story-change',()=>{
+  if(state.tab==='photos'&&state.filter==='memories')renderMemories();
+});
 
 // ---------- the postcard ----------
 const CARD = { w: 1080, h: 1350 };
