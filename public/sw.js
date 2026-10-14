@@ -1,5 +1,5 @@
 // Versioned files are served cache-first: change a file, bump its ?v= tag and CACHE.
-const CACHE = "winnie-v4-20261014-travel-map";
+const CACHE = "winnie-v4-20261014-travel-map-home";
 const SHELL = [
   "/travel.js?v=4.17",
   "/travel-map.js?v=4.17",
@@ -24,7 +24,7 @@ const SHELL = [
   "/places-view.js?v=4.17",
   "/",
   "/index.html",
-  "/styles.css?v=4.17",
+  "/styles.css?v=4.17.1",
   "/app.js?v=4.17",
   "/app/clicks.js?v=4.17",
   "/app/entries.js?v=4.17",

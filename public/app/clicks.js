@@ -36,7 +36,7 @@ import {
 import { addPhotos, choosePhoto, download } from "./photos.js?v=4.17";
 import { review, settings, updatePushStatus } from "./settings.js?v=4.17";
 import { openHistory } from "./nav.js?v=4.17";
-import { render } from "./today.js?v=4.17";
+import { render, roomObject } from "./today.js?v=4.17";
 import { state } from "./state.js?v=4.17";
 import { QUALITY } from "../pantry.js?v=4.17";
 import { postcard, setRecapYear } from "./memories-view.js?v=4.17";
@@ -55,6 +55,10 @@ const has = (b, key) => !!b.dataset[key];
 const flag = (b, name) => b.hasAttribute(name);
 
 const BY_ATTRIBUTE = [
+  [
+    (b) => has(b, "roomAction"),
+    (b) => { closeDialog(); return roomObject(b.dataset.roomAction); },
+  ],
   [
     (b) => has(b, "log"),
     (b) => {

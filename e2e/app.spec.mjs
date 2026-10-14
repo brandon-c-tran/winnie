@@ -14,7 +14,7 @@ test("Today opens on the room with the log buttons and tabs", async ({
   );
   for (const tab of ["Today", "Plans", "History", "Photos"])
     await expect(page.locator("#tabbar")).toContainText(tab);
-  await expect(page.locator("#room-status")).toContainText("Last logged");
+  await expect(page.locator("#room-status")).toHaveText(/Pee .+ago\./);
   expect(errors).toEqual([]);
 });
 
@@ -23,6 +23,7 @@ test("logging pee shows Undo, and Undo removes it", async ({ page }, info) => {
   const before = await page.locator("#timeline .feed-entry").count();
   await page.locator('#care-actions [data-log="pee"]').click();
   await expect(toast(page)).toContainText("Pee logged");
+  await expect(page.locator("#room-status")).toHaveText("Pee just now, logged by Brandon.");
   await expect(
     page.locator('#care-actions [data-log="pee"] .meta'),
   ).toContainText("Just now");
@@ -84,7 +85,7 @@ test("a walk empties the room and finishes with one tap", async ({
   await expect(page.locator("#room-status")).toContainText("Walk timer running");
   await page.locator('#room-status [data-act="finish-walk"]').click();
   await expect(toast(page)).toContainText("Walk finished");
-  await expect(page.locator("#room-status")).toContainText("Last logged");
+  await expect(page.locator("#room-status")).toHaveText(/Pee .+ago\./);
 });
 
 test("a recurring bath plan shows in Up next and Done logs it", async ({

@@ -381,6 +381,12 @@ export async function saveMeal(food) {
     mealSubmitting = false;
   }
 }
+const roomActionsHTML = `<details class="room-actions"><summary>Explore the room</summary><div class="button-row">${[
+  ["winnie", "Pet Winnie"], ["toy", "Play with toy"], ["photo", "Change wall photo"],
+  ["fridge", "Leave a note"], ["calendar", "Open plans"], ["bowl", "Log meal"],
+  ["bed", "Sleep timer"], ["door", "Walk timer"], ["window", "Weather and daylight"],
+  ["shelf", "Open memories"], ["ribbon", "Training ribbon"]
+].map(([action,label]) => `<button class="text-button" data-room-action="${action}">${label}</button>`).join("")}</div></details>`;
 export function moreCare() {
   const events = facts(),
     sleeping = events.find(
@@ -392,6 +398,6 @@ export function moreCare() {
       return e ? elapsed(e.time) : "Not yet";
     };
   openDialog(
-    `<h2 id="dialog-title">More</h2><section class="sheet-section"><h3>Grooming</h3><div class="type-grid">${GROOMING.map(([t, i]) => `<button class="px" style="--c:var(--groom)" data-groom="${t}">${icon(i)}${t}<small>${lastOf((x) => x.type === "grooming" && (x.careTitle || "").toLowerCase() === t.toLowerCase())}</small></button>`).join("")}</div></section><section class="sheet-section"><h3>Walks and sleep</h3><div class="type-grid"><button class="px" style="--c:var(--walk)" data-act="${walk ? "finish-walk" : "start-walk"}">${icon("walk")}${walk ? "Finish walk" : "Start walk"}</button><button class="px" style="--c:var(--sleep)" data-act="${sleeping ? "end-sleep" : "start-sleep"}">${icon("sleep")}${sleeping ? (sleeping.type === "nap" ? "End nap" : "End sleep") : sleepContext().type === "nap" ? "Start nap" : "Start night sleep"}</button><button class="px" style="--c:var(--walk)" data-new-type="outing">${icon("walk")}Outing</button></div></section><section class="sheet-section"><h3>Health and training</h3><div class="type-grid">${["medication", "enrichment", "appointment", "vomit", "episode", "travel", "covered_gap", "note"].map((t) => `<button class="px" style="--c:${typeColor(t)}" data-new-type="${t}">${icon(typeIcon(t))}${TYPES[t][1]}</button>`).join("")}<button class="px" style="--c:var(--care)" data-act="trainer">${icon("whistle")}Trainer visit</button></div></section>`,
+    `<h2 id="dialog-title">More</h2><section class="sheet-section"><h3>Grooming</h3><div class="type-grid">${GROOMING.map(([t, i]) => `<button class="px" style="--c:var(--groom)" data-groom="${t}">${icon(i)}${t}<small>${lastOf((x) => x.type === "grooming" && (x.careTitle || "").toLowerCase() === t.toLowerCase())}</small></button>`).join("")}</div></section><section class="sheet-section"><h3>Walks and sleep</h3><div class="type-grid"><button class="px" style="--c:var(--walk)" data-act="${walk ? "finish-walk" : "start-walk"}">${icon("walk")}${walk ? "Finish walk" : "Start walk"}</button><button class="px" style="--c:var(--sleep)" data-act="${sleeping ? "end-sleep" : "start-sleep"}">${icon("sleep")}${sleeping ? (sleeping.type === "nap" ? "End nap" : "End sleep") : sleepContext().type === "nap" ? "Start nap" : "Start night sleep"}</button><button class="px" style="--c:var(--walk)" data-new-type="outing">${icon("walk")}Outing</button></div></section><section class="sheet-section"><h3>Health and training</h3><div class="type-grid">${["medication", "enrichment", "appointment", "vomit", "episode", "travel", "covered_gap", "note"].map((t) => `<button class="px" style="--c:${typeColor(t)}" data-new-type="${t}">${icon(typeIcon(t))}${TYPES[t][1]}</button>`).join("")}<button class="px" style="--c:var(--care)" data-act="trainer">${icon("whistle")}Trainer visit</button></div></section>${roomActionsHTML}`,
   );
 }
