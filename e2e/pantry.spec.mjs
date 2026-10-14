@@ -1,3 +1,4 @@
+import { goTimeline } from './helpers.mjs';
 import { test, expect } from "@playwright/test";
 import { code, join, toast } from "./helpers.mjs";
 
@@ -60,8 +61,8 @@ test("poop quality: tag right after a poop, then it shows by food in Trends", as
   await expect(page.locator('#dialog [data-quality="firm"]')).toHaveClass(/selected/);
   await page.keyboard.press("Escape");
 
-  await page.locator("#history-tab").click();
-  await page.locator('[data-history="patterns"]').click();
+  await goTimeline(page);
+  await page.locator('#insights-tab').click();
   await page.locator('[data-rhythm="poop"]').click();
   await expect(page.locator(".by-food")).toContainText("Chicken");
   await expect(page.locator(".by-food")).toContainText("1 of 3 soft or loose");

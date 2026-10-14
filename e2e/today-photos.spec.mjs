@@ -1,3 +1,4 @@
+import { goTimeline } from './helpers.mjs';
 import { test, expect } from "@playwright/test";
 import { code, join } from "./helpers.mjs";
 
@@ -74,7 +75,7 @@ for (const person of ["brandon", "kim"])
     await page.getByRole("button", { name: "Not now", exact: true }).click();
     await expect(page.locator("#timeline .feed-entry")).toHaveCount(before + 2);
     await expect(page.locator("#timeline .record-photo")).toHaveCount(1);
-    await page.locator("#history-tab").click();
+    await goTimeline(page);
     await expect(page.locator("#story-items .record-photo")).toHaveCount(0);
     await expect(page.locator("#story-items .entry-photo-link")).toHaveCount(1);
     expect(errors).toEqual([]);

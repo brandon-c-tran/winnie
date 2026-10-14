@@ -1,27 +1,27 @@
-import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.19';
-import { selectedPhotos, recordDay } from '../lifetime.js?v=4.19';
-import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.19";
-import { renderMemories } from "./memories-view.js?v=4.19";
-import { foodPoopStats } from "../pantry.js?v=4.19";
+import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.20';
+import { selectedPhotos, recordDay } from '../lifetime.js?v=4.20';
+import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.20";
+import { renderMemories } from "./memories-view.js?v=4.20";
+import { foodPoopStats } from "../pantry.js?v=4.20";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.19";
-import { elapsed } from "../care-state.js?v=4.19";
+import { placeLabel } from "../places.js?v=4.20";
+import { elapsed } from "../care-state.js?v=4.20";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.19";
-import { insightsView } from "../insight-view.js?v=4.19";
-import { photoCaption } from "../everyday.js?v=4.19";
-import { html, openDialog } from "./ui.js?v=4.19";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.19";
-import { facts, places } from "./services.js?v=4.19";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.19";
-import { addPhotos } from "./photos.js?v=4.19";
-import { state } from "./state.js?v=4.19";
-import { renderCalendarHistory } from './calendar-view.js?v=4.19';
+} from "../insights.js?v=4.20";
+import { insightsView } from "../insight-view.js?v=4.20";
+import { photoCaption } from "../everyday.js?v=4.20";
+import { html, openDialog } from "./ui.js?v=4.20";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.20";
+import { facts, places } from "./services.js?v=4.20";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.20";
+import { addPhotos } from "./photos.js?v=4.20";
+import { state } from "./state.js?v=4.20";
+import { renderCalendarHistory } from './calendar-view.js?v=4.20';
 
 let patternDays = 28,
   insightData = null,
@@ -64,7 +64,7 @@ export function renderStory() {
       (id) => $(id).value,
     );
   $("story-count").hidden = patterns;
-  $("story-count").parentElement.hidden = state.filter === 'calendar';
+  $("story-count").parentElement.hidden = patterns;
   if (state.filter === 'calendar') return renderCalendarHistory();
   if (lifetime) return renderLifetime();
   if (patterns) return renderPatterns();
@@ -87,7 +87,7 @@ export function renderStory() {
           .slice(0, state.limit)
           .map(
             (e, i, a) =>
-              `${i === 0 || recordDay(e) !== recordDay(a[i - 1]) ? '<h2 class="history-day">' + dateLabel(new Date(recordDay(e)+"T12:00").getTime()) + "</h2>" : ""}${entry(e)}`,
+              `${i === 0 || recordDay(e) !== recordDay(a[i - 1]) ? '<h2 class="history-day">' + dateLabel(new Date(recordDay(e)+"T12:00").getTime()) + "</h2>" : ""}${entry(e, { photoRecord: e.type === "moment" })}`,
           )
           .join("")
       : '<div class="empty"><h3>' +
@@ -119,12 +119,6 @@ function renderGallery() {
     gallery = state.filter === "moments" || care,
     map = state.filter === "places";
   $("photos-view").classList.toggle("is-places", map);
-  $("photos-title").textContent = map
-    ? "Places"
-    : gallery
-      ? "Photos"
-      : "Memories";
-  $("story-add").hidden = !gallery;
   $("photo-kinds").hidden = !gallery;
   $("photos-library").hidden = map;
   $("photo-tools").hidden = !gallery;
@@ -134,6 +128,7 @@ function renderGallery() {
     !gallery ||
     (!$("photo-search").value && (!care || $("photo-album").value === "all"));
   $("photo-count").hidden = !gallery;
+  $("photo-count").parentElement.hidden = !gallery;
   $("photo-items").hidden = map;
   $("places-view").hidden = !map;
   $("photo-more").hidden = true;

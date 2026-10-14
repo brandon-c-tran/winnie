@@ -1,14 +1,14 @@
-import { loadCities, placeDay } from "./places.js?v=4.19";
+import { loadCities, placeDay } from "./places.js?v=4.20";
 import {
   travelAtlas,
   regionKey,
   regionName,
   travelDate,
   travelRange,
-} from "./travel.js?v=4.19";
-import { ageAt } from "./lifetime.js?v=4.19";
+} from "./travel.js?v=4.20";
+import { ageAt } from "./lifetime.js?v=4.20";
 import { icon } from "./icons.js?v=4.0";
-import { createTravelMap } from "./travel-map.js?v=4.19";
+import { createTravelMap } from "./travel-map.js?v=4.20";
 
 export function createPlacesView({ root, esc, entry, hydratePhotos }) {
   let events = [],

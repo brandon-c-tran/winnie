@@ -1,3 +1,4 @@
+import { goTimeline } from './helpers.mjs';
 import { test, expect } from "@playwright/test";
 import { code, join } from "./helpers.mjs";
 test.use({serviceWorkers:'block'});
@@ -39,7 +40,7 @@ test("connect shared calendar, browse history, confirm once, refresh and disconn
   await expect(row).toHaveCount(1);
   await expect(row).toContainText("View care record");
   await page.reload();
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await page.locator('[data-history="calendar"]').click();
   await page.locator('[data-calendar-period="past"]').click();
   await page.getByLabel("Visits", { exact: true }).selectOption("trainer");
@@ -62,7 +63,7 @@ test("invalid connection explains recovery; history has a useful disconnected st
   page,
 }, info) => {
   const errors = await join(page, code(info));
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await page.locator('[data-history="calendar"]').click();
   await page.getByRole("button", { name: "Connect Google Calendar" }).click();
   await page

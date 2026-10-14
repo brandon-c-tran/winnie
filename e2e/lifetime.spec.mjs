@@ -1,10 +1,11 @@
+import { goTimeline, goPhotos } from './helpers.mjs';
 import { test, expect } from '@playwright/test';
 import { code, join } from './helpers.mjs';
 import { datedPhoto } from './photo-fixture.mjs';
 
 test('original EXIF dates survive a mixed batch, reload, metadata edit and trip collection',async({page},info)=>{
   const errors=await join(page,code(info));
-  await page.locator('#photos-tab').click();await page.locator('#story-add').click();
+  await goPhotos(page);await page.locator('#story-add').click();
   await page.locator('[data-album-library]').click();
   await page.locator('#library-input').setInputFiles([datedPhoto('2025:12:24 23:30:00'),datedPhoto('2026:01:02 10:20:00')]);
   await expect(page.locator('#photo-draft img')).toHaveCount(2);
@@ -16,7 +17,7 @@ test('original EXIF dates survive a mixed batch, reload, metadata edit and trip 
   await expect(page.locator('#photo-count')).toHaveText('2 photos');
   await expect(page.locator('.photo-month')).toHaveText(['January 2026','December 2025']);
   await expect(page.locator('#sync-status')).toHaveText('Up to date');
-  await page.reload();await page.locator('#photos-tab').click();
+  await page.reload();await goPhotos(page);
   await expect(page.locator('#photo-count')).toHaveText('2 photos');
   await page.locator('.memory-card').first().click();await page.locator('[data-edit-photo-meta]').click();
   await page.locator('#photo-metadata-form [name="location"]').fill('Garland');
@@ -44,16 +45,16 @@ test('original EXIF dates survive a mixed batch, reload, metadata edit and trip 
 });
 test('by-age history searches source records, navigates days, and checks comparison coverage',async({page},info)=>{
   const errors=await join(page,code(info));
-  await page.locator('#history-tab').click();await page.locator('[data-history="lifetime"]').click();
+  await goTimeline(page);await page.locator('#story-tab').click();await page.locator('[data-filter="memories"]').click();await page.locator('[data-history="lifetime"]').click();
   await expect(page.locator('.life-origin')).toContainText('July 25, 2025');
   await page.locator('#record-question-input').fill('last pee');await page.locator('#record-question button').click();
   await expect(page.locator('#record-answer')).toContainText('Latest matching record');
   await expect(page.locator('#record-answer [data-open]')).toHaveCount(1);
   await page.locator('[data-life-day]').first().click();
   await expect(page.locator('#history-from')).not.toHaveValue('');
-  await page.locator('[data-history="patterns"]').click();
+  await page.locator('#insights-tab').click();
   await expect(page.locator('#compare-result')).toContainText('Descriptive totals only');
-  await page.locator('[data-history="lifetime"]').click();await page.locator('[data-new-milestone]').click();
+  await page.locator('#story-tab').click();await page.locator('[data-filter="memories"]').click();await page.locator('[data-history="lifetime"]').click();await page.locator('[data-new-milestone]').click();
   await page.locator('#life-form [name="title"]').fill('First beach day');await page.locator('#life-form [name="start"]').fill('2026-01-01');await page.locator('#life-form .primary').click();
   await expect(page.locator('.life-milestones')).toContainText('First beach day');
   expect(errors).toEqual([]);

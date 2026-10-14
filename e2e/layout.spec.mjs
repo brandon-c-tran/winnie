@@ -69,9 +69,10 @@ test("no state scrolls sideways", async ({ page }, info) => {
   await noSideways(page, "sleep running");
   for (const [tab, label] of [
     ["#plans-tab", "Plans"],
-    ["#history-tab", "History"],
-    ['[data-history="patterns"]', "Trends"],
-    ["#photos-tab", "Photos"],
+    ["#story-tab", "Story"],
+    ['#insights-tab', "Trends"],
+    ["#story-tab", "Story return"],
+    ["#places-home", "Photos"],
     ['[data-filter="places"]', "Places"],
     ['[data-filter="memories"]', "Memories"],
   ]) {

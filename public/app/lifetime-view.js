@@ -1,10 +1,10 @@
-import { BIRTHDAY, HOMECOMING, ERAS, recordDay, ageAt, chapters, selectedPhotos, trainingMonths, comparePeriods, milestoneCandidates, destinationCollections, answerRecords } from '../lifetime.js?v=4.19';
-import { facts, sync } from './services.js?v=4.19';
-import { $, esc, uid } from './format.js?v=4.19';
-import { html, openDialog, closeDialog, safe, toast } from './ui.js?v=4.19';
-import { entry, hydratePhotos } from './entries.js?v=4.19';
-import { openHistory } from './nav.js?v=4.19';
-import { wallInstants } from '../photo-metadata.js?v=4.19';
+import { BIRTHDAY, HOMECOMING, ERAS, recordDay, ageAt, chapters, selectedPhotos, trainingMonths, comparePeriods, milestoneCandidates, destinationCollections, answerRecords } from '../lifetime.js?v=4.20';
+import { facts, sync } from './services.js?v=4.20';
+import { $, esc, uid } from './format.js?v=4.20';
+import { html, openDialog, closeDialog, safe, toast } from './ui.js?v=4.20';
+import { entry, hydratePhotos } from './entries.js?v=4.20';
+import { openHistory } from './nav.js?v=4.20';
+import { wallInstants } from '../photo-metadata.js?v=4.20';
 let month = '', question = '', answerLimit = 20;
 const monthName = value => new Date(value+'-15T12:00Z').toLocaleDateString([], {month:'long',year:'numeric',timeZone:'UTC'});
 const photosHTML = photos => `<div class="chapter-photos">${photos.map(p => `<button data-open="${esc(p.event.id)}" aria-label="Photo from ${esc(p.day)}"><img data-photo="${esc(p.photo.id)}" alt="${esc(p.event.note || 'Winnie')}" loading="lazy"></button>`).join('')}</div>`;
@@ -64,7 +64,7 @@ export function collectionsHTML() {
 }
 function collectionDialog(title,rows,photos=selectedPhotos(rows)) {
   const days=[...new Set([...dates(rows),...photos.map(p=>p.day)])].sort();
-  openDialog(`<h2 id="dialog-title">${esc(title)}</h2><p class="fine">${days.length} recorded days${days.length?' from '+days[0]+' to '+days.at(-1):''}</p>${photosHTML(photos)}<details><summary>${rows.length} entries</summary>${sourceRows(rows.slice(0,80))}${rows.length>80?'<p class="fine">Use History for the complete date range.</p>':''}</details>`);
+  openDialog(`<h2 id="dialog-title">${esc(title)}</h2><p class="fine">${days.length} recorded days${days.length?' from '+days[0]+' to '+days.at(-1):''}</p>${photosHTML(photos)}<details><summary>${rows.length} entries</summary>${sourceRows(rows.slice(0,80))}${rows.length>80?'<p class="fine">Use Story’s timeline for the complete date range.</p>':''}</details>`);
   hydratePhotos();
 }
 document.addEventListener('click',safe(async event=>{

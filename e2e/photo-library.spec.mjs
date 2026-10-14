@@ -1,3 +1,4 @@
+import { goTimeline, goPhotos } from './helpers.mjs';
 import { test, expect } from "@playwright/test";
 import { code, join } from "./helpers.mjs";
 
@@ -5,7 +6,7 @@ test("photo-first composer saves previews to Winnie and survives reload", async 
   page,
 }, info) => {
   const errors = await join(page, code(info));
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await page.locator("#story-add").click();
   await expect(page.locator("#photo-composer [type=submit]")).toBeDisabled();
   await page.locator("[data-album-library]").click();
@@ -31,7 +32,7 @@ test("photo-first composer saves previews to Winnie and survives reload", async 
   );
   await expect(page.locator("#sync-status")).toHaveText("Up to date");
   await page.reload();
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await expect(page.locator("#photo-items .memory-card img")).toHaveAttribute(
     "src",
     /blob:/,
@@ -42,7 +43,7 @@ test("photo-first composer saves previews to Winnie and survives reload", async 
   for (const section of ["memories", "places"]) {
     await page.locator(`[data-filter="${section}"]`).click();
     await expect(page.locator("#photo-kinds")).toBeHidden();
-    await expect(page.locator("#story-add")).toBeHidden();
+    await expect(page.locator("#story-add")).toBeVisible();
     await expect(page.locator("#places-home")).toBeVisible();
     await page.locator("#places-home").click();
     await expect(page.locator("#places-home")).toHaveAttribute("aria-pressed", "true");
@@ -58,7 +59,7 @@ test("attach care photos to the existing entry without creating a duplicate", as
   const errors = await join(page, code(info));
   await page.locator('#care-actions [data-log="poop"]').click();
   await page.getByRole('button', { name: 'Not now', exact: true }).click();
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await page.locator('[data-filter="care-photos"]').click();
   await page.locator("#story-add").click();
   await page.locator("#attach-search").fill("poop");
@@ -73,13 +74,13 @@ test("attach care photos to the existing entry without creating a duplicate", as
   await page.locator("#dialog-close").click();
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
   await expect(page.locator(".care-photo-record")).toHaveCount(1);
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await page.locator("#history-type").selectOption("poop");
   await expect(page.locator("#story-count")).toHaveText("1 entry");
   await expect(page.locator("#story-items .entry-photo-link")).toHaveText(
     "1 photo",
   );
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await page.locator('[data-filter="moments"]').click();
   await expect(page.locator("#photo-count")).toHaveText("0 photos");
   expect(errors).toEqual([]);
@@ -89,9 +90,9 @@ test("discarded selection and invalid file leave no new entries", async ({
   page,
 }, info) => {
   const errors = await join(page, code(info));
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   const originalCount = await page.locator("#story-count").textContent();
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await page.locator("#story-add").click();
   await page.locator("[data-album-library]").click();
   await page
@@ -110,7 +111,7 @@ test("discarded selection and invalid file leave no new entries", async ({
     .setInputFiles("public/photos/winnie-smile.png");
   await expect(page.locator("#photo-draft img")).toHaveCount(1);
   await page.locator("#dialog-close").click();
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await expect(page.locator("#story-count")).toHaveText(originalCount);
   expect(errors).toEqual([]);
 });
