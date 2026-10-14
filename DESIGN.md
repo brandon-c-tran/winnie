@@ -550,20 +550,27 @@ lifetime additions extend the incumbent controls and typography; they introduce
 no new visual identity or token set. Their behavioral limits are recorded in
 PRODUCT.md and `.impeccable/surfaces/public-app-library-js.md`.
 
-Places uses a divided destination list grouped by region. Its own heading and
-the primary Photos / Memories / Places row precede search, year and order controls. Flat rows pair a
-Rubik place name and last recorded date with a right-aligned Pixelify recorded-day
-count; thin dividers and spacing carry the hierarchy without destination cards
-or photo thumbnails. Region headings and detail titles retain Pixelify Sans.
+Places leads with region controls and a bordered local atlas beneath its heading
+and the Photos / Memories / Places row. Natural Earth geography uses restrained
+land and water fills; pink destination markers, square map controls and Pixelify
+labels connect it to the incumbent world. Selected destinations and dated replay
+appear below the map, followed by a horizontal outing list and a divided directory.
+The directory initially shows six destinations per region, with expansion and full
+search. Flat rows align the first-saved age and date with a recorded-day count.
 
-Selecting a place hides the shared heading and primary navigation and replaces
-the list with its heading, first/latest recorded
-dates, an optional named-spot selector and expandable recorded days containing
-the original signed entry rows. Back to places restores the list's search and
-scroll position. The City map text link opens an external map; original entries
-retain their saved-pin links. Places saved by name without a pin stay separate.
-Recorded days use San Francisco dates and do not imply visits or trips. Optional
-detail photos exclude pee, poop and meal records; care evidence stays with its log.
+Replay pairs the date and age with labeled previous/next icon controls and a strip
+of contained photos. Outing covers and selected care photos use the original
+images; care keepsakes retain their source attachment. Saved-trip photo-only days
+remain visible without invented map pins. Photo capture dates and locations take
+priority when present. Suggested outings are labeled; replay draws no travel route.
+
+Selecting a destination hides the shared heading and primary navigation and opens
+its age, first/latest dates, selected photos, optional named-spot selector and
+expandable recorded days with original signed entry rows. Back to places restores
+the previous view and scroll position. City map opens an external map, while source
+entries retain their saved-pin links. Named places without pins stay separate.
+First saved refers to the available records, never a first-ever visit; year-filtered
+views say Earliest shown. This extension introduces no new identity or token set.
 
 There is one reaction picker owned by the exact entry button that opens it.
 Within a sheet it belongs to that dialog and uses the popover top layer. Escape

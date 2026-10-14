@@ -79,11 +79,11 @@ let lookup = null,
   loading = null;
 export function loadCities() {
   if (!loading)
-    loading = fetch("/geo/cities.json")
-      .then((r) => {
-        if (!r.ok) throw Error("City names could not load.");
-        return r.json();
-      })
+    loading = Promise.all(["/geo/cities.json", "/geo/towns-us.json"].map(async path => {
+      const r = await fetch(path);
+      if (!r.ok) throw Error("Place names could not load.");
+      return r.json();
+    })).then(parts => parts.flat())
       .then((rows) => {
         lookup = createCityLookup(rows);
         return rows;

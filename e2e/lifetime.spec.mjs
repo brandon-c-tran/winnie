@@ -31,6 +31,15 @@ test('original EXIF dates survive a mixed batch, reload, metadata edit and trip 
   await page.locator('#life-form .primary').click();
   await expect(page.locator('[data-trip]')).toContainText('Texas Christmas');
   await page.locator('[data-trip]').click();await expect(page.locator('#dialog .chapter-photos img')).toHaveCount(2);
+  await page.locator('#dialog-close').click();
+  await page.locator('[data-filter="places"]').click();
+  await page.locator('.travel-outing',{hasText:'Texas Christmas'}).click();
+  await expect(page.locator('.travel-selected .travel-photos img')).toHaveCount(2);
+  await page.getByRole('button',{name:'Next recorded day',exact:true}).click();
+  await expect(page.locator('.travel-replay')).toContainText('Dec 24, 2025');
+  await expect(page.locator('.travel-selected')).toContainText('No saved location for this day');
+  await expect(page.locator('.travel-marker')).toHaveCount(0);
+  await expect(page.locator('.travel-selected .travel-photos img')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 test('by-age history searches source records, navigates days, and checks comparison coverage',async({page},info)=>{

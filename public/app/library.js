@@ -1,26 +1,26 @@
-import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.16';
-import { selectedPhotos, recordDay } from '../lifetime.js?v=4.16';
-import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.16";
-import { renderMemories } from "./memories-view.js?v=4.16";
-import { foodPoopStats } from "../pantry.js?v=4.16";
+import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.17';
+import { selectedPhotos, recordDay } from '../lifetime.js?v=4.17';
+import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.17";
+import { renderMemories } from "./memories-view.js?v=4.17";
+import { foodPoopStats } from "../pantry.js?v=4.17";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.16";
-import { elapsed } from "../care-state.js?v=4.16";
+import { placeLabel } from "../places.js?v=4.17";
+import { elapsed } from "../care-state.js?v=4.17";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.16";
-import { insightsView } from "../insight-view.js?v=4.16";
-import { photoCaption } from "../everyday.js?v=4.16";
-import { html, openDialog } from "./ui.js?v=4.16";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.16";
-import { facts, places } from "./services.js?v=4.16";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.16";
-import { addPhotos } from "./photos.js?v=4.16";
-import { state } from "./state.js?v=4.16";
+} from "../insights.js?v=4.17";
+import { insightsView } from "../insight-view.js?v=4.17";
+import { photoCaption } from "../everyday.js?v=4.17";
+import { html, openDialog } from "./ui.js?v=4.17";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.17";
+import { facts, places } from "./services.js?v=4.17";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.17";
+import { addPhotos } from "./photos.js?v=4.17";
+import { state } from "./state.js?v=4.17";
 
 let patternDays = 28,
   insightData = null,

@@ -2,27 +2,44 @@
 version: 1
 slug: "public-places-view-js"
 primary_target: "public/places-view.js"
-related_targets: ["public/places.js", "public/app/library.js", "public/styles.css"]
+related_targets: ["public/travel.js", "public/travel-map.js", "public/places.js", "public/app/library.js", "public/app/lifetime-view.js", "public/styles.css", "public/geo/README.md"]
 ---
 
 # Places
 
 Mode: Operate. Existing pixel-world extension, code-led. No new identity or raster assets.
 
-THESIS: Browse places Winnie has been; the care log is evidence underneath.
+## Direction contract — travel map extension
 
-OWN-WORLD: Retain Pixelify headings, Rubik reading text, navy edges, periwinkle ground, square controls and existing signed-entry rows. Use a divided place index instead of map pins and cards.
+THESIS: Explore Winnie's growing world on a real map, then replay the dated evidence behind a destination. Geography and age supply the story; bathroom logs quietly provide its evidence.
 
-STORY: Find a city or named place, choose a saved spot within the city, browse recorded days, and expand a day for its source logs. Repeated pee and poop logs support a destination without turning into a visit count. Preserve all source data.
+OWN-WORLD: Inherit Pixelify titles, Rubik reading text, navy edges and periwinkle ground. Real cartography occupies the main field; pink destination markers and square controls connect it to Winnie. No identity change or new decorative raster assets.
 
-FIRST VIEWPORT: Places heading and the stable primary Photos / Memories / Places navigation row, search, year/order selectors, region heading and immediately visible destination rows. Winnie/Care photos collection controls and Add photos appear only in Photos; returning there restores the selected photo collection. Each row has a name, optional saved spot names, last recorded date and distinct recorded-day count. Details hide the shared heading and primary row and replace the list, with the unchanged Back to places breadcrumb, city name/City map link, date range, optional spot selector and expandable recorded days. Returning restores the directory's search and scroll position. There is no care-type filter.
+STORY: Start with all mapped destinations. Tap a grouped marker or a region to explore; choose an outing to step through its recorded days, see Winnie's age then, selected photos, and original records. Inferred outings are labeled, and the user can name/save a trip. Missing pins remain in an accessible list.
 
-FORM: Local restructuring within the established world. External city maps and original per-entry pin links provide geographic context; the custom draggable canvas is retired from this flow. Names without pins remain separate, rather than guessing their city. City grouping stays approximate and on device. Dates consistently use San Francisco time.
+FIRST VIEWPORT: Existing Places heading and Photos / Memories / Places navigation, one factual age-and-geography sentence, geographic scope controls, then a generous interactive map with grouped markers, fit and zoom controls. A selected destination or replay day appears immediately below. Dated outings follow, then searchable destinations and source coverage.
 
-FINISH: The photo navigation correction has all twelve `.impeccable/review/nav-{mobile,desktop,dark,iphone}-software-{photos,memories,places}.png` captures accepted by the fresh reviewer. The 52 targeted browser checks across both engines and two strengthened photo-composer checks passed. This scoped documentation reconciliation addresses the remaining persistence finding; the final reviewer scored Persistence resolved and returned disposition: ship for the scored fix. No new identity, tokens or rasters were introduced, and prior `.impeccable/design.json` drift remains outside scope.
+FORM: Code-led extension of the established Operate surface, with Read story detail. Signature interaction is stepping through an outing's recorded days as the map reframes; reduced motion uses immediate bounds changes. Continuous travel routes and total miles are never inferred from sparse pins.
 
-Earlier directory finish: Nine confirmation captures and six supplemental scrolled captures cover the directory, detail, named-only places and final recorded days. Five unit tests and twelve targeted browser tests passed across the final runs. Fresh review found no material visual contradiction. Final disposition: ship for that earlier scored persistence fix, with no regressions observed. User supplied no further grouping preference after the optional question; cities with named spots is the implementation assumption. Changes are local, not deployed.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
-## Evidence and limits
+## Implemented behavior and evidence
 
-The user's October 13 request calls the map clunky and explains that pee and poop are proxies for where Winnie has been. Several logs on one calendar day count as one recorded day, never as inferred visits or trips. Places do not use care photos as destination thumbnails; non-care photos may appear in a place detail. Existing logs, photos, names, coordinates and removed-pin semantics are preserved. Demonstration captures use an isolated synthetic dataset.
+The atlas leads the surface. Bundled Natural Earth countries, states, lakes and land render locally; GeoNames references supply approximate town names, including smaller US towns. Saved coordinates stay unchanged. No third-party tile or geocoding requests are needed. The atlas is generalized geography, not street navigation.
+
+Region controls and grouped markers narrow the geography. Destination previews and details label the first saved age and date; a year filter says Earliest shown. These dates describe available evidence, never Winnie's first-ever visit. The directory initially shows six destinations per region; expansion and search expose all matching destinations. Named places without pins remain in their own list.
+
+Suggested outings group nearby away-days consecutively, at least 60 km from the most-recorded destination. They remain explicitly labeled suggestions until the family names and saves a trip through the existing form. Replay combines the recorded date, Winnie's age, selected photos and links to destinations and original records. It never draws an inferred route or estimates travel mileage.
+
+Photo metadata supplies capture dates and pins when present. Selected care photos appear as keepsakes while retaining the original care attachment. Saved trips collect selected photos within their inclusive dates even when a photo has no location; photo-only days remain in replay without invented pins. Destination and trip strips use contained source images, and outing covers use a selected photo when available. There are no new raster assets.
+
+Source evidence: `public/places-view.js`, `public/travel.js`, `public/travel-map.js`, `public/places.js`, the appended travel styles in `public/styles.css`, `public/geo/README.md`, and the existing trip form hookup in `public/app/lifetime-view.js`. The twelve review captures in `.impeccable/review/travel/` cover overview, destination, outing and photo replay at mobile, desktop, dark and small widths; `before-mobile.png` is the earlier baseline. Captures use a local saved-record snapshot and isolated synthetic photo fixtures; the newest production uploads were not inspected.
+
+## Finish record
+
+The fresh review returned fix for omitted locationless selected trip photos, stale directory-first documentation and glyph replay arrows. The code now retains photo-only replay days and uses the existing left/right icons; this record reconciles the documentation. The reported baseline passed 108 unit and 88 browser tests. The final regression report adds four passing travel unit tests (109 unit tests total), eight targeted browser checks and a passing `npm run check`. Coverage includes two locationless selected photos in a saved trip and a photo-only replay day with zero map markers. The twelve review captures were refreshed after the fixes. The scored verdict is recorded below.
+
+The established pixel-world tokens and `.impeccable/design.json` remain unchanged. Prior sidecar drift is outside this ordinary extension. Historical directory contracts are superseded by the atlas contract above.
+
+Final scored verdict: **ship**. The same reviewer scored all three material fixes resolved: locationless selected photos and photo-only replay days; Places documentation consistency; authored pixel replay icons. No regressions were observed in the refreshed captures. This verdict covers those three scored fixes. Fourteen validated captures include the mobile/desktop December 24 photo-only state. No new shipping raster or identity/token changes were introduced.
+

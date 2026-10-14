@@ -6,7 +6,7 @@ test("Places groups care evidence by destination, spot and recorded day", async 
 }, info) => {
   const errors = await join(page, code(info));
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.16");
+    const { sync } = await import("/app/services.js?v=4.17");
     for (const row of [
       {
         type: "pee",
@@ -52,7 +52,7 @@ test("Places groups care evidence by destination, spot and recorded day", async 
   await page.locator("#photos-tab").click();
   await page.locator('[data-filter="places"]').click();
   await expect(page.locator("#photos-title")).toHaveText("Places");
-  await expect(page.locator(".map-canvas")).toHaveCount(0);
+  await expect(page.locator("#travel-map")).toBeVisible();
   await expect(
     page.locator(".place-city", { hasText: "San Francisco" }),
   ).toContainText("2");
