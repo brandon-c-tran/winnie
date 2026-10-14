@@ -31,8 +31,9 @@ test('original EXIF dates survive a mixed batch, reload, metadata edit and trip 
   await page.locator('#life-form [name="start"]').fill('2025-12-22');
   await page.locator('#life-form [name="end"]').fill('2026-01-05');
   await page.locator('#life-form .primary').click();
-  await expect(page.locator('[data-trip]')).toContainText('Texas Christmas');
-  await page.locator('[data-trip]').click();await expect(page.locator('#dialog .chapter-photos img')).toHaveCount(2);
+  await expect(page.locator('.life-timeline [data-trip]')).toContainText('Texas Christmas');
+  await expect(page.locator('.album-collections [data-trip]')).toContainText('Texas Christmas');
+  await page.locator('.life-timeline [data-trip]').click();await expect(page.locator('#dialog .chapter-photos img')).toHaveCount(2);
   await page.locator('#dialog-close').click();
   await page.locator('[data-filter="places"]').click();
   await page.locator('.travel-outing',{hasText:'Texas Christmas'}).click();
