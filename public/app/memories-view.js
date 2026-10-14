@@ -1,22 +1,22 @@
-import { collectionsHTML } from './lifetime-view.js?v=4.22';
-import { storyAlbumHTML, bindStoryAlbum, choosePostcard } from './story-album-view.js?v=4.22';
-import { state } from './state.js?v=4.22';
+import { collectionsHTML } from './lifetime-view.js?v=4.23';
+import { storyAlbumHTML, bindStoryAlbum, choosePostcard } from './story-album-view.js?v=4.23';
+import { state } from './state.js?v=4.23';
 // Memories: this week's postcard, on this day, milestones, and the year so far.
-import { memoryEvents } from "../keepsakes.js?v=4.22";
-import { placeLabel } from "../places.js?v=4.22";
+import { memoryEvents } from "../keepsakes.js?v=4.23";
+import { placeLabel } from "../places.js?v=4.23";
 import {
   milestones,
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.22";
-import { cityFor } from "../places.js?v=4.22";
+} from "../memories.js?v=4.23";
+import { cityFor } from "../places.js?v=4.23";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.22";
-import { $, esc } from "./format.js?v=4.22";
-import { html, toast } from "./ui.js?v=4.22";
-import { hydratePhotos } from "./entries.js?v=4.22";
-import { download } from "./photos.js?v=4.22";
+import { facts, sync } from "./services.js?v=4.23";
+import { $, esc } from "./format.js?v=4.23";
+import { html, toast } from "./ui.js?v=4.23";
+import { hydratePhotos } from "./entries.js?v=4.23";
+import { download } from "./photos.js?v=4.23";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -50,6 +50,8 @@ export const recentTrophies = () =>
 let recapYear = new Date().getFullYear();
 let postcardPhoto = "";
 export function renderMemories() {
+  const postcardOpen = document.querySelector('.postcard-tool')?.open;
+  const collectionsOpen = document.querySelector('.album-collections')?.open;
   const events = facts(),
     memories = memoryEvents(events),
     week = weekStats(memories),
@@ -103,14 +105,14 @@ export function renderMemories() {
   ];
   html(
     "photo-items",
-    `${storyAlbumHTML()}<section class="card mem" aria-labelledby="week-title">
+    `${storyAlbumHTML()}<details class="postcard-tool" ${postcardOpen ? 'open' : ''}><summary>Make a postcard</summary><section class="card mem" aria-labelledby="week-title">
       <div class="card-head"><h2 id="week-title">Postcard</h2><span class="muted">${range}</span></div>
       ${chosen ? `<div class="button-row"><button class="secondary" id="postcard-photo">Choose photo</button><button class="text-button" data-edit="${esc(chosen.e.id)}">Edit caption</button></div>` : `<p>No keepsakes yet.</p><button class="px btn" data-add-photos>Add photos</button>`}
       <canvas ${chosen ? "" : "hidden"} id="postcard" class="postcard" width="1080" height="1350" role="img" aria-label="Winnie postcard: ${esc(range)}${week.caption ? ", " + esc(week.caption) : ""}"></canvas>
       <div class="button-row" ${chosen ? "" : "hidden"}><button class="px btn ink" data-act="postcard-share">Share</button><button class="px btn" data-act="postcard-save">Save</button></div>
     </section>
-    ${agoHTML}
-    ${collectionsHTML()}
+    </details>${agoHTML}
+    <details class="album-collections" ${collectionsOpen ? 'open' : ''}><summary>Saved trips & destinations</summary>${collectionsHTML()}</details>
     <details class="card mem"><summary>Care milestones and totals</summary><section aria-labelledby="ms-title">
       <div class="card-head"><h2 id="ms-title">Milestones</h2><span class="muted">${list.length}</span></div>
       ${list.length ? `<div class="mem-list">${list.map((m) => `<button class="mem-row" data-open="${esc(m.eventId)}"><span class="sq" style="--c:var(--pee)">${icon("star", "ic sm")}</span><b>${esc(m.title)}</b><span class="muted">${full.format(m.time)}</span></button>`).join("")}</div>` : `<p class="muted">None yet.</p>`}

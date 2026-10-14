@@ -1,27 +1,28 @@
-import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.22';
-import { selectedPhotos, recordDay } from '../lifetime.js?v=4.22';
-import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.22";
-import { renderMemories } from "./memories-view.js?v=4.22";
-import { foodPoopStats } from "../pantry.js?v=4.22";
+import { lifeInsightsHTML, bindLifeInsights } from './life-insights-view.js?v=4.23';
+import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.23';
+import { selectedPhotos, recordDay } from '../lifetime.js?v=4.23';
+import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.23";
+import { renderMemories } from "./memories-view.js?v=4.23";
+import { foodPoopStats } from "../pantry.js?v=4.23";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.22";
-import { elapsed } from "../care-state.js?v=4.22";
+import { placeLabel } from "../places.js?v=4.23";
+import { elapsed } from "../care-state.js?v=4.23";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.22";
-import { insightsView } from "../insight-view.js?v=4.22";
-import { photoCaption } from "../everyday.js?v=4.22";
-import { html, openDialog } from "./ui.js?v=4.22";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.22";
-import { facts, places } from "./services.js?v=4.22";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.22";
-import { addPhotos } from "./photos.js?v=4.22";
-import { state } from "./state.js?v=4.22";
-import { renderCalendarHistory } from './calendar-view.js?v=4.22';
+} from "../insights.js?v=4.23";
+import { insightsView } from "../insight-view.js?v=4.23";
+import { photoCaption } from "../everyday.js?v=4.23";
+import { html, openDialog } from "./ui.js?v=4.23";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.23";
+import { facts, places } from "./services.js?v=4.23";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.23";
+import { addPhotos } from "./photos.js?v=4.23";
+import { state } from "./state.js?v=4.23";
+import { renderCalendarHistory } from './calendar-view.js?v=4.23';
 
 let patternDays = 28,
   insightData = null,
@@ -244,15 +245,17 @@ $("photo-clear").onclick = () => {
   renderStory();
 };
 export function renderPatterns() {
+  const recentOpen = document.querySelector('.recent-insights')?.open;
   insightData = rhythmInsights(facts(), patternDays);
   $("story-count").textContent = "";
   $("load-more").hidden = true;
   html(
     "story-items",
-    changesHTML(facts()) + insightsView(insightData, state.insightTopic, countsHTML(facts()) +
-      (state.insightTopic === "poop" ? foodPoopHTML(facts()) : "")),
+    lifeInsightsHTML() + `<details class="recent-insights" ${recentOpen?'open':''}><summary>Recent routine & meal patterns</summary>` + insightsView(insightData, state.insightTopic, countsHTML(facts()) +
+      (state.insightTopic === "poop" ? foodPoopHTML(facts()) : "")) + changesHTML(facts()) + `</details>`,
   );
   bindChanges();
+  bindLifeInsights(renderPatterns);
   $("pattern-window").onchange = (e) => {
     patternDays = Number(e.target.value);
     renderPatterns();

@@ -146,7 +146,7 @@ test("All entries in Trends opens the full History log", async ({
   await join(page, code(info));
   await goTimeline(page);
   await page.locator('#insights-tab').click();
-  await page.locator('[data-act="all-history"]').click();
+  await page.locator('.recent-insights > summary').click();await page.locator('[data-act="all-history"]').click();
   await expect(page.locator('[data-history="care"]')).toHaveAttribute(
     "aria-pressed",
     "true",

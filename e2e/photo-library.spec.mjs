@@ -38,7 +38,7 @@ test("photo-first composer saves previews to Winnie and survives reload", async 
     /blob:/,
   );
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
-  await page.locator('[data-filter="care-photos"]').click();
+  await page.locator('#photo-collection').selectOption('care-photos');
   await expect(page.locator("#photo-count")).toHaveText("0 photos");
   for (const section of ["memories", "places"]) {
     await page.locator(`[data-filter="${section}"]`).click();
@@ -47,7 +47,7 @@ test("photo-first composer saves previews to Winnie and survives reload", async 
     await expect(page.locator("#places-home")).toBeVisible();
     await page.locator("#places-home").click();
     await expect(page.locator("#places-home")).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator('[data-filter="care-photos"]')).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator('#photo-collection')).toHaveValue('care-photos');
     await expect(page.locator("#photo-count")).toHaveText("0 photos");
   }
   expect(errors).toEqual([]);
@@ -60,7 +60,7 @@ test("attach care photos to the existing entry without creating a duplicate", as
   await page.locator('#care-actions [data-log="poop"]').click();
   await page.getByRole('button', { name: 'Not now', exact: true }).click();
   await goPhotos(page);
-  await page.locator('[data-filter="care-photos"]').click();
+  await page.locator('#photo-collection').selectOption('care-photos');
   await page.locator("#story-add").click();
   await page.locator("#attach-search").fill("poop");
   await page.locator("[data-attach-entry]").first().click();
@@ -81,7 +81,7 @@ test("attach care photos to the existing entry without creating a duplicate", as
     "1 photo",
   );
   await goPhotos(page);
-  await page.locator('[data-filter="moments"]').click();
+  await page.locator('#photo-collection').selectOption('moments');
   await expect(page.locator("#photo-count")).toHaveText("0 photos");
   expect(errors).toEqual([]);
 });

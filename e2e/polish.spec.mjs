@@ -41,7 +41,7 @@ test("History and Gallery keep independent filters and actual photos", async ({
   const errors = await join(page, code(info));
   // Isolated fixture through the actual offline queue and photo upload pipeline.
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.22");
+    const { sync } = await import("/app/services.js?v=4.23");
     const image = new Image();
     image.src = "/photos/winnie-smile.png";
     await image.decode();
@@ -65,10 +65,7 @@ test("History and Gallery keep independent filters and actual photos", async ({
   await page.locator("#story-search").fill("Photo poop");
   await expect(page.locator("#story-count")).toHaveText("1 entry");
   await goPhotos(page);
-  await expect(page.locator('[data-filter="moments"]')).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(page.locator('#photo-collection')).toHaveValue('moments');
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
   await expect(page.locator("#photo-items .memory-card img")).toHaveAttribute(
     "src",
@@ -78,7 +75,7 @@ test("History and Gallery keep independent filters and actual photos", async ({
     path: info.outputPath("gallery.png"),
     fullPage: true,
   });
-  await page.locator('[data-filter="care-photos"]').click();
+  await page.locator('#photo-collection').selectOption('care-photos');
   await expect(page.locator("#photo-count")).toHaveText("2 photos");
   await page.locator("#photo-search").fill("Photo meal");
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
@@ -100,7 +97,7 @@ test("Places opens destinations and their source logs without losing the list", 
 }, info) => {
   const errors = await join(page, code(info));
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.22");
+    const { sync } = await import("/app/services.js?v=4.23");
     for (const [lat, lng] of [
       [37.7749, -122.4194],
       [37.8044, -122.2712],
@@ -140,7 +137,7 @@ test("new room poses render, settle after interruption and respect reduced motio
 }, info) => {
   const errors = await join(page, code(info));
   const result = await page.evaluate(async () => {
-    const { room } = await import("/app/services.js?v=4.22");
+    const { room } = await import("/app/services.js?v=4.23");
     for (const pose of [
       "belly",
       "roll",
@@ -169,7 +166,7 @@ test("new room poses render, settle after interruption and respect reduced motio
   await expect
     .poll(() =>
       page.evaluate(async () => {
-        const { room } = await import("/app/services.js?v=4.22");
+        const { room } = await import("/app/services.js?v=4.23");
         room.react("toy");
         return { pose: room.dog.pose, toy: room.dog.toy };
       }),
