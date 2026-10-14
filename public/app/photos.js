@@ -1,7 +1,7 @@
-import { readPhotoMetadata, wallInstants, wallTime } from '../photo-metadata.js?v=4.18';
-import { cityFor, cityLabel, loadCities } from '../places.js?v=4.18';
+import { readPhotoMetadata, wallInstants, wallTime } from '../photo-metadata.js?v=4.19';
+import { cityFor, cityLabel, loadCities } from '../places.js?v=4.19';
 // Photo picking, resizing, and saving.
-import { $, clock, dateLabel, esc, uid } from "./format.js?v=4.18";
+import { $, clock, dateLabel, esc, uid } from "./format.js?v=4.19";
 import {
   closeDialog,
   openDialog,
@@ -13,13 +13,13 @@ import {
   draftFields,
   applyDraftFields,
   persistDialogDraft,
-} from "./ui.js?v=4.18";
-import { isCarePhoto } from "../keepsakes.js?v=4.18";
-import { facts, sync, photoURLs } from "./services.js?v=4.18";
-import { detail, eventLabel, hydratePhotos } from "./entries.js?v=4.18";
+} from "./ui.js?v=4.19";
+import { isCarePhoto } from "../keepsakes.js?v=4.19";
+import { facts, sync, photoURLs } from "./services.js?v=4.19";
+import { detail, eventLabel, hydratePhotos } from "./entries.js?v=4.19";
 import { icon } from "../icons.js?v=4.0";
-import { render } from "./today.js?v=4.18";
-import { state } from "./state.js?v=4.18";
+import { render } from "./today.js?v=4.19";
+import { state } from "./state.js?v=4.19";
 
 // The photo composer owns its previews; they never enter the shared log before Save.
 let draft = null;

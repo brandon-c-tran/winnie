@@ -1,13 +1,17 @@
 // Tabs and day navigation.
 import { icon } from "../icons.js?v=4.0";
-import { $, dayKey } from "./format.js?v=4.18";
-import { render } from "./today.js?v=4.18";
-import { state } from "./state.js?v=4.18";
+import { $, dayKey } from "./format.js?v=4.19";
+import { render } from "./today.js?v=4.19";
+import { state } from "./state.js?v=4.19";
 
 $("day-picker").value = dayKey(Date.now());
 let historySection = "care",
   photosSection = "moments",
   photoCollection = "moments";
+document.addEventListener('winnie:calendar', () => {
+  historySection = 'calendar';
+  setTab('history');
+});
 
 const TAB_IDS = ["today", "plans", "history", "photos"];
 document

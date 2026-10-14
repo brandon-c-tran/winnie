@@ -12,6 +12,7 @@ import {
 } from "./core.mjs";
 import { pushKeys, dispatch } from "./push.mjs";
 import { randomInt } from "node:crypto";
+import { calendarAction } from './calendar.mjs';
 export const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -95,7 +96,7 @@ async function registerDevice(main, key, { person, deviceId, secret, name }) {
   });
   return result.doc;
 }
-export function createHandler(getStores, { runDispatch = dispatch } = {}) {
+export function createHandler(getStores, { runDispatch = dispatch, calendarFetch = fetch } = {}) {
   return async (req) => {
     try {
       const url = new URL(req.url),
@@ -231,6 +232,12 @@ export function createHandler(getStores, { runDispatch = dispatch } = {}) {
       const doc = await main.get(key, { type: "json" });
       assert(doc, "Shared log not found.", 404);
       const device = authenticate(doc, token);
+      if (['calendar-connect','calendar-refresh','calendar-disconnect','calendar-confirm'].includes(action)) {
+        assert(req.method === 'POST', 'Use POST for calendar changes.', 405);
+        const input = await body(req, 3000);
+        assert(input && typeof input === 'object' && !Array.isArray(input), 'Invalid calendar request.');
+        return json(await calendarAction({action,input,main,key,token,fetcher:calendarFetch}));
+      }
       if (action === "snapshot" && req.method === "GET") {
         if (url.searchParams.get("revision") === String(doc.revision))
           return json({ unchanged: true, revision: doc.revision });

@@ -104,6 +104,7 @@ export function snapshot(doc) {
     revision: doc.revision,
     events: doc.events,
     profile: doc.profile,
+    calendar: doc.calendar || null,
     migration: doc.migration,
     devices: Object.values(doc.devices).map(
       ({ id, person, name, created, revoked, subscription }) => ({

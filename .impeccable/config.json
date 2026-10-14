@@ -109,6 +109,15 @@
         ],
         "createdAt": "2026-10-14T00:49:15.981Z",
         "reason": "Agent verified: authenticated data-photo references are resolved to real Blob URLs by hydratePhotos; browser tests confirm uploaded photos render after reload."
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "public/styles.css"
+        ],
+        "createdAt": "2026-10-14T02:10:45.774Z",
+        "reason": "Agent verified in browser: the flagged .travel-scopes button is a flat region selector with computed border-radius 0px and a 3px bottom selection indicator, not a rounded card. Detector has no value-specific finding; exception scoped to this rule in this stylesheet."
       }
     ]
   }

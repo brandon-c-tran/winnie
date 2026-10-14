@@ -1,26 +1,27 @@
-import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.18';
-import { selectedPhotos, recordDay } from '../lifetime.js?v=4.18';
-import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.18";
-import { renderMemories } from "./memories-view.js?v=4.18";
-import { foodPoopStats } from "../pantry.js?v=4.18";
+import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.19';
+import { selectedPhotos, recordDay } from '../lifetime.js?v=4.19';
+import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.19";
+import { renderMemories } from "./memories-view.js?v=4.19";
+import { foodPoopStats } from "../pantry.js?v=4.19";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.18";
-import { elapsed } from "../care-state.js?v=4.18";
+import { placeLabel } from "../places.js?v=4.19";
+import { elapsed } from "../care-state.js?v=4.19";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.18";
-import { insightsView } from "../insight-view.js?v=4.18";
-import { photoCaption } from "../everyday.js?v=4.18";
-import { html, openDialog } from "./ui.js?v=4.18";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.18";
-import { facts, places } from "./services.js?v=4.18";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.18";
-import { addPhotos } from "./photos.js?v=4.18";
-import { state } from "./state.js?v=4.18";
+} from "../insights.js?v=4.19";
+import { insightsView } from "../insight-view.js?v=4.19";
+import { photoCaption } from "../everyday.js?v=4.19";
+import { html, openDialog } from "./ui.js?v=4.19";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.19";
+import { facts, places } from "./services.js?v=4.19";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.19";
+import { addPhotos } from "./photos.js?v=4.19";
+import { state } from "./state.js?v=4.19";
+import { renderCalendarHistory } from './calendar-view.js?v=4.19';
 
 let patternDays = 28,
   insightData = null,
@@ -54,7 +55,7 @@ export function renderStory() {
   const isPhotos = state.tab === "photos";
   if (isPhotos) return renderGallery();
   const lifetime = state.filter === "lifetime";
-  const patterns = state.filter === "patterns" || lifetime;
+  const patterns = state.filter === "patterns" || lifetime || state.filter === 'calendar';
   $("story-tools").hidden = patterns;
   $("last-care").hidden = patterns || !$("last-times").children.length;
   $("history-clear").hidden =
@@ -63,6 +64,8 @@ export function renderStory() {
       (id) => $(id).value,
     );
   $("story-count").hidden = patterns;
+  $("story-count").parentElement.hidden = state.filter === 'calendar';
+  if (state.filter === 'calendar') return renderCalendarHistory();
   if (lifetime) return renderLifetime();
   if (patterns) return renderPatterns();
   const query = $("story-search").value.toLowerCase().trim();

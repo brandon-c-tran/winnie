@@ -6,7 +6,7 @@ test("Places groups care evidence by destination, spot and recorded day", async 
 }, info) => {
   const errors = await join(page, code(info));
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.18");
+    const { sync } = await import("/app/services.js?v=4.19");
     for (const row of [
       {
         type: "pee",
