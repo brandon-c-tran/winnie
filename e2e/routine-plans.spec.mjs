@@ -34,14 +34,15 @@ test("training imports remain planned until a past visit is confirmed", async ({
       buffer: Buffer.from(JSON.stringify(schedule)),
     });
   await page.locator("#save-trainer-import").click();
-  await expect(page.locator("#dialog")).toContainText("Next training fixture");
+  await expect(page.locator("#history-view")).toContainText("Next training fixture");
+  await page.locator('[data-calendar-period="past"]').click();
   await page.locator('[data-visit="past-visit"]').click();
   await expect(
     page
-      .locator("#dialog .scheduled-visit", { hasText: "Training fixture" })
+      .locator("#calendar-results .calendar-entry", { hasText: "Training fixture" })
       .first(),
-  ).toContainText("Logged");
-  await page.locator("#dialog-close").click();
+  ).toContainText("View care record");
+  await page.locator("#plans-tab").click();
   await expect(page.locator("#training-visits")).toContainText(
     "Next training fixture",
   );

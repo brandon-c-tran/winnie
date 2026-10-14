@@ -407,7 +407,7 @@ Every form and detail opens in the same native `<dialog>` as a bottom sheet: ful
 ### Permanent Care and Plans rows
 Care uses a two-column divided list inside Today's card. Each row aligns an icon, a flexible text column and a 44px-minimum Done target. Rubik carries the task name and smaller underlined last-entry age; missing history reads “Not logged yet.” Below 370px, the gap narrows and the icon hides so text and actions retain room.
 
-Plans orders Supplies, Training visits and Reminders as flat sections. Supplies pair a Rubik name and stock state with right-aligned update and optional reorder actions; food inventory follows within the same section. The Heartgard dose-reminder link is separate from its stock state. Visits align a compact month/day block with title, date, time, state and available action on separate lines. Reminder rows use thin bottom dividers and separate due date, cadence and owner placement.
+Plans orders Supplies, Winnie’s calendar and Reminders as flat sections. Supplies pair a Rubik name and stock state with right-aligned update and optional reorder actions; food inventory follows within the same section. The Heartgard dose-reminder link is separate from its stock state. The calendar shows connection status and up to three upcoming entries. Its rows align a Pixelify month/day block with a flexible Rubik title, separate date, time and location lines, and the available action or state beneath. Thin dividers keep the agenda flat. Reminder rows use thin bottom dividers and separate due date, cadence and owner placement.
 
 Reminder creation uses a two-column named-task chooser. Known tasks omit the entry-kind selector; custom reminders label it Kind. Stock editing uses a two-column radio grid with a distinct selected border and sunk fill. These extensions reuse the incumbent palette, square edges and type families.
 
@@ -493,12 +493,18 @@ which also use labeled date/time fields. Prefer concise
 sentences when a relationship genuinely needs prose. This is a standing user
 preference for future interfaces as well as the care log.
 
-History owns Daily log, Trends and By age. Search, type and date filters belong
+History owns Daily log, Trends, By age and Calendar. Search, type and date filters belong
 to Daily log. By age uses the same flat sections, Pixelify labels and Rubik
 reading text for source search, monthly photos and recorded days, milestones
 and source notes. Its age label explicitly describes age at mid-month. Trends
 places monthly comparisons and expandable training history before recent patterns.
-Entries are grouped by day as compact signed records. The text column contains
+Calendar reuses the agenda rows beneath month headings. Upcoming and Past use
+pressed-state buttons; the visit-kind selector wraps beside them, with search and
+the cancelled/removed checkbox below. Past Will counts and scheduled hours share
+a compact wrapping summary. Source status and refresh controls follow the
+results; cancelled and removed states use muted text with explicit labels.
+The extension keeps the incumbent palette, square controls and type families.
+Daily-log entries are grouped by day as compact signed records. The text column contains
 the event, one useful result when recorded (such as stool consistency, food or
 duration), an optional note limited to two visible lines, then a frameless 24px
 square full-bust portrait inline with the author's name. Time aligns at the top

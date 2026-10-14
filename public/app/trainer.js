@@ -1,8 +1,9 @@
+import {calendarPlansHTML, calendarSheet} from './calendar-view.js?v=4.19';
 // Trainer visits imported from the calendar.
-import { validateTrainerImport } from "../everyday.js?v=4.18";
-import { $, clock, dateLabel, esc } from "./format.js?v=4.18";
-import { facts, sync } from "./services.js?v=4.18";
-import { openDialog, safe, toast } from "./ui.js?v=4.18";
+import { validateTrainerImport } from "../everyday.js?v=4.19";
+import { $, clock, dateLabel, esc } from "./format.js?v=4.19";
+import { facts, sync } from "./services.js?v=4.19";
+import { openDialog, safe, toast } from "./ui.js?v=4.19";
 
 export function visitRow(v, events = facts()) {
   const logged = events.find(
@@ -23,21 +24,8 @@ export function visitRow(v, events = facts()) {
     });
   return `<article class="scheduled-visit"><div class="training-date" aria-hidden="true">${month}<b>${day}</b></div><div class="visit-main"><strong>${esc(v.title)}</strong><p class="fine">${dateLabel(v.start)}</p><p class="fine">${clock(v.start)}–${clock(v.end)}</p><span class="visit-state">${logged ? "Logged" : v.end <= Date.now() ? "Not confirmed" : "Scheduled"}</span>${logged ? `<button class="text-button" data-open="${esc(logged.id)}">View logged visit</button>` : v.end <= Date.now() ? `<button class="secondary small" data-visit="${esc(v.id)}">Confirm visit</button>` : ""}</div></article>`;
 }
-export function trainingHTML() {
-  const schedule = sync.view().profile.trainerSchedule,
-    visits = (schedule?.visits || [])
-      .filter((v) => v.end >= Date.now())
-      .slice(0, 3);
-  return `<div class="section-heading"><h2 id="training-title">Training visits</h2><button class="text-button" data-act="trainer-schedule">${schedule ? "View schedule" : "Add schedule"}</button></div>${visits.map((v) => visitRow(v)).join("") || `<p class="fine">${schedule ? "No upcoming visits in the saved calendar." : "No calendar visits added yet."}</p>`}${schedule ? `<p class="fine">Calendar checked ${dateLabel(Date.parse(schedule.checkedAt))}</p>` : ""}`;
-}
-export function trainerSchedule() {
-  const schedule = sync.view().profile.trainerSchedule,
-    visits =
-      schedule?.visits.filter((v) => v.end >= Date.now() - 7 * 86400000) || [];
-  openDialog(
-    `<h2 id="dialog-title">Training visits</h2><p class="fine">${schedule ? "Calendar checked " + dateLabel(Date.parse(schedule.checkedAt)) + ". Saved through " + esc(schedule.through) + ". Import again after schedule changes." : "Import the training visits saved from Google Calendar."}</p>${visits.map((v) => visitRow(v)).join("") || "<p>No visits in this schedule.</p>"}<div class="button-row"><button class="secondary small" data-act="trainer-import">Import calendar visits</button><button class="text-button" data-act="trainer-manual">Log another visit</button></div><p id="form-error" class="error" role="alert"></p>`,
-  );
-}
+export const trainingHTML = calendarPlansHTML;
+export const trainerSchedule = calendarSheet;
 export async function confirmVisit(id) {
   const visit = sync
     .view()

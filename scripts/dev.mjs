@@ -26,7 +26,10 @@ stores.legacy.get = async (key, options) =>
       ? largeLog()
       : smallLog()
     : null);
-const api = createHandler(() => stores, { runDispatch: async () => {} });
+const api = createHandler(() => stores, {
+  runDispatch: async () => {},
+  ...(process.env.WINNIE_DEV_CALENDAR ? {calendarFetch: async () => new Response(await fs.readFile(process.env.WINNIE_DEV_CALENDAR,'utf8'))} : {}),
+});
 const mime = {
   ".html": "text/html",
   ".js": "text/javascript",

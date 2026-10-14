@@ -2,6 +2,31 @@
    apricot, navy ink, honey wood. One colour per care type, used everywhere.
    Pixel edges are drawn with stepped box-shadows; nothing is rounded. */
 
+.calendar-entry { display:grid; grid-template-columns:42px minmax(0,1fr); gap:16px; padding:18px 0; border-bottom:1px solid var(--line); }
+.calendar-date { text-align:center; font-family:var(--px); line-height:1.15; padding-top:3px; }
+.calendar-date span { display:block; font-size:.9rem; color:var(--muted); }
+.calendar-date b { display:block; font-size:1.85rem; font-variant-numeric:tabular-nums; }
+.calendar-entry-body h3 { font:600 1.05rem/1.35 var(--ui); margin:0 0 4px; overflow-wrap:anywhere; }
+.calendar-entry-body p { margin:2px 0; }
+.calendar-entry-action { margin-top:7px; }
+.calendar-entry-action button { min-height:36px; text-align:left; }
+.calendar-location { overflow-wrap:anywhere; }
+.calendar-inactive { color:var(--muted); }
+.calendar-tally { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 16px; padding:14px 0 20px; }
+.calendar-tally span { color:var(--muted); font-size:.9rem; }
+.calendar-controls { display:flex; flex-wrap:wrap; align-items:end; gap:16px; margin:10px 0 16px; }
+.calendar-controls label { flex:1; min-width:130px; margin:0; }
+.calendar-period { display:flex; gap:8px; padding-bottom:4px; }
+.calendar-period [aria-pressed="true"] { background:var(--ink); color:#fff; }
+.calendar-search { display:block; margin-bottom:12px; }
+.calendar-cancelled { display:flex; align-items:center; gap:10px; font-family:var(--ui); font-size:.85rem; color:var(--muted); }
+.calendar-cancelled input { width:20px; height:20px; flex:none; accent-color:var(--ink); }
+.calendar-month { margin:22px 0 0; font-size:19px; }
+.calendar-source { margin-top:24px; }
+.calendar-instructions { padding-left:22px; }
+.calendar-instructions li { margin:10px 0; }
+.calendar-empty { max-width:48ch; padding:24px 0; }
+
 @font-face {
   font-family: "Pixelify Sans";
   src: url("/fonts/pixelify-sans-latin.woff2") format("woff2");

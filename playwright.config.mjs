@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const port = 4191;
+const port = Number(process.env.WINNIE_TEST_PORT || 4191);
 const ci = !!process.env.CI;
 
 export default defineConfig({
@@ -17,7 +17,7 @@ export default defineConfig({
   },
   webServer: {
     command: "node scripts/dev.mjs",
-    env: { WINNIE_DEV_PORT: String(port) },
+    env: { WINNIE_DEV_PORT: String(port), WINNIE_DEV_CALENDAR: 'tests/fixtures/winnie-calendar.ics' },
     url: `http://localhost:${port}`,
     reuseExistingServer: !ci,
   },
