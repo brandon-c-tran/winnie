@@ -3,7 +3,7 @@ import {
   recordDay,
   selectedPhotos,
   usable,
-} from "./lifetime.js?v=4.24";
+} from "./lifetime.js?v=4.25";
 
 export function ageBoundary(month) {
   return new Date(Date.UTC(2025, 6 + month, 25)).toISOString().slice(0, 10);

@@ -43,12 +43,14 @@ colors:
   dark-edge: "#3d4594"
   dark-btn: "#e2e7ff"
   dark-drop: "rgb(0 0 0 / 0.42)"
-  room-wall: "#c6d2f8"
-  room-wainscot: "#7d95dc"
-  room-wood: "#dc9b56"
-  room-seam: "#a9692f"
-  room-bed: "#3e52b0"
-  room-door: "#b9713d"
+  room-wall: "#e9e2d6"
+  room-wainscot: "#e0d8c9"
+  room-wood: "#bd997a"
+  room-seam: "#957458"
+  room-bed: "#d9aca7"
+  room-door: "#eee9df"
+  room-sofa: "#c8bcaa"
+  room-crate-cover: "#ecd59e"
   room-gingham: "#5c7ad6"
 typography:
   display:
@@ -212,9 +214,9 @@ components:
 
 **Creative North Star: "Winnie's Room"**
 
-The app is a 16-bit game bedroom dressed in Winnie's bandana colours: blue gingham, apricot Winnie, navy ink outlines, honey-wood floor, periwinkle wallpaper. The top of Today is a living pixel diorama in which pixel Winnie acts out only what the shared log has recorded, under the real San Francisco sky. Everything below it is game UI from the same world: big pixel-edged buttons that press down, square HUD pills, cards drawn with a 2px ink line, sticky notes pinned with a square magnet. Nothing is rounded.
+The app opens onto a 16-bit room inspired by Winnie's familiar belongings: warm cream walls and sofa, light wood floor, a yellow-covered crate and blush pink bed, with apricot Winnie and his blue gingham bandanna. The top of Today is a living pixel diorama in which pixel Winnie acts out only what the shared log has recorded, under the real San Francisco sky. Everything below it keeps the periwinkle-and-navy game UI: big pixel-edged buttons that press down, square HUD pills, cards drawn with a 2px ink line, sticky notes pinned with a square magnet. Nothing is rounded.
 
-Density is phone-first and one-handed. Today starts with the room, one status line, two big log tiles, a row of four chips, then permanent Care rows, inside a 560px column. Colour is loud but disciplined: each care type owns exactly one saturated colour and that colour means that type everywhere it appears (tile, chip, timeline square, strip tick, chart bar, sheet button). Neutrals are cool periwinkle-tinted paper and navy ink, never warm grey or brown.
+Density is phone-first and one-handed. Today starts with the room, one status line, two big log tiles, a row of four chips, then permanent Care rows, inside a 560px column. Colour is loud but disciplined: each care type owns exactly one saturated colour and that colour means that type everywhere it appears (tile, chip, timeline square, strip tick, chart bar, sheet button). UI neutrals are cool periwinkle-tinted paper and navy ink; warm cream, wood and fabric colours belong to the room's physical objects.
 
 Personality lives in the room, the motion, and the family's own words. The interface copy is a label maker. Winnie never speaks; he emotes in pixel bubbles. Rejected and retired: the pastel card-grid pet dashboard with a hero photo and serif headline, and warm taglines ("our good boy", "His story", "A life worth remembering").
 
@@ -229,7 +231,7 @@ Personality lives in the room, the motion, and the family's own words. The inter
 
 ## Colors
 
-A cool periwinkle-and-navy room lit by six candy-saturated care colours.
+A warm cream-and-wood room above a cool periwinkle-and-navy interface, with saturated care colours.
 
 ### Primary
 - **Bandana Navy Ink** (`ink`): the outline of every pixel button, tile, chip, pill, magnet and icon square; the toast and tab bar fill; the primary button fill in light mode; text on every coloured surface. Also the outline colour inside the room art (`C.ink`, same hex). Ink does not change in dark mode.
@@ -251,7 +253,7 @@ The map lives in `public/icons.js` (`TYPES`), resolved through `typeColor(type)`
 - **Sticky Yellow** (`sticky-yellow`) and **Sticky Rose** (`sticky-rose`): the two fridge note papers, and their saved-drawer versions.
 - **Pending Paper** (`pending-paper`): the sync pill while changes wait to send, and the notice banner.
 - **Review Paper** (`review-paper`): the sync pill when changes need review or the phone is offline.
-- **Alarm Red** (`alert`): errors, danger text, the "now" marker on the day strip, the caret colour, the yellow note's magnet; in the room, the bowl, doormat, leash and error badge.
+- **Alarm Red** (`alert`): errors, danger text, the "now" marker on the day strip, the caret colour, the yellow note's magnet; in the room, the bowl, leash and error badge.
 - **Signal Green** (`ok`): the sync dot when up to date.
 - **Amber** (`amber`): overdue care-plan icons; pending marker text in dark mode.
 - **Focus Pink** (`focus-pink`): the 3px focus ring on everything.
@@ -265,13 +267,21 @@ The map lives in `public/icons.js` (`TYPES`), resolved through `typeColor(type)`
 - **Midnight Text** (`text`) and **Dusk Muted** (`muted`): body and secondary text.
 - **Gingham** (`gingham-blue` over `gingham-paper`): Winnie's bandana. Two crossed `repeating-linear-gradient` stripes, 6px on/6px off (4px in the active tab square, 10px at 8% alpha on the desktop page backdrop).
 
+### Room materials
+- **Warm Cream** (`room-wall`, `room-wainscot`, `room-door`): walls, quiet panel shading, door and the room's HUD background.
+- **Light Wood** (`room-wood`, `room-seam`): floor planks and their material joints.
+- **Cream Sofa** (`room-sofa`): the low sofa behind Winnie, with a rust throw and sage pillow.
+- **Blush Bed** (`room-bed`): the rectangular bolster bed inside the crate.
+- **Yellow Cover** (`room-crate-cover`): the crate cover with a stepped cream lattice.
+- **Gingham Blue** (`room-gingham`): retained artwork colour, not a requirement to put checks on the furniture. The flat blue CGC ribbon has its own blue and gold material palette.
+
 ### Dark scheme
 `prefers-color-scheme: dark` swaps only the neutrals: `dark-ground`, `dark-surface`, `dark-sunk`, `dark-line`, `dark-edge`, `dark-text`, `dark-muted`, `dark-btn` (plain buttons become pale periwinkle), `dark-drop`, and `plain` becomes `dark-btn`. The primary button and selected segments switch from ink fill to Sun Yellow fill with ink text. Care colours, sticky papers, ink, the toast, the tab bar and the room art are the same in both schemes; natural room lighting follows the real sky, with a device-local Room lights override for warm interior illumination. Neither follows the colour scheme, and the window keeps the real sky.
 
 ### Named Rules
 **The One Colour Per Care Type Rule.** A care type has exactly one colour token and it appears wherever that type does. Never give a type a second colour, and never borrow a care colour for decoration unrelated to that type (Sun Yellow as the "selected" fill is the one established exception).
 
-**The Navy Not Brown Rule.** Outlines and text on colour are navy ink (`ink`), in the UI and in the pixel art alike. No brown or black outlines.
+**The Navy Ink Rule.** UI outlines and text on colour use navy ink (`ink`). Room controls retain that ink; physical furniture, wood joints, fabric edges and the ribbon use their own darker material shades.
 
 ## Typography
 
@@ -420,14 +430,15 @@ A 52px bordered lane per day: care spans and ticks as small care-colour blocks w
 ### Winnie's Room (signature)
 A canvas diorama, the centre of the identity. Care behavior follows recorded facts; the sky follows San Francisco time and weather, and Room lights is a separate device-local presentation preference.
 
-**Art grid.** The scene is painted at art resolution, 112 art px tall and `W` art px wide, then blitted with nearest-neighbour scaling. The scale `k` is an integer number of device pixels per art pixel chosen so `W` lands near 220 (between about 180 and 260); on a phone this is about 2 CSS px per art pixel. The layout anchors door, leash hook, lamp and bed to the right edge so the room holds from 184 to about 260 art px wide. Light falloff and the sky use a 4x4 Bayer dither, never smooth gradients. The pixel Winnie sprite sheet is `public/photos/winnie-room-v1.png`, 3x2 cells of 64 art px: sit, blink, sleep, walkA, walkB, happy.
+**Art grid.** The scene is painted at art resolution, 112 art px tall and `W` art px wide, then blitted with nearest-neighbour scaling. The scale `k` is an integer number of device pixels per art pixel chosen so `W` lands near 220 (between about 180 and 260); on a phone this is about 2 CSS px per art pixel. The layout anchors door, leash hook, lamp, crate and bed to the right edge so the room holds from 184 to about 260 art px wide. Light falloff and the sky use a 4x4 Bayer dither, never smooth gradients. The runtime Winnie sprite sheet is `public/photos/winnie-room-v3.png`, 3x10 cells of 64 art px; the harness sheet is `public/photos/winnie-harness-v1.png`, 3x2 cells on the same grid.
 
-**Palette.** Room colours live in `C` in `public/room.js`: periwinkle checked wallpaper (`room-wall` and two darker steps, 4px checks), periwinkle wainscot panels (`room-wainscot`), pale rail and baseboard, honey-wood floor planks 5 art px tall (`room-wood` with highlight, shade and `room-seam` joints), gingham bed (`room-bed` rim, `room-gingham` checks), wooden door (`room-door`) with a Sun Yellow knob, red bowl, doormat and leash (Alarm Red), all outlined in ink. The sky is keyed to real solar altitude in `SKY` (night navy through dusk rose and sunrise apricot to day blue). With Room lights off, the room is multiplied by `TINT` (cool blue at night, apricot at golden hour, white by day), with dimming for grey weather. Room lights on applies a warm interior tint and restores the unaltered sky in the window. The photograph receives the same interior tint as its surroundings.
+**Palette.** Room colours live in `C` in `public/room.js`: warm cream walls (`room-wall`) and wainscot (`room-wainscot`), pale rail and baseboard, light wood floor planks (`room-wood` with highlight, shade and `room-seam` joints), cream sofa (`room-sofa`) with rust throw and sage pillow, a yellow crate cover (`room-crate-cover`) with cream lattice, a blush rectangular bolster bed (`room-bed`), and a cream door (`room-door`) with a grey knob. The doormat is muted olive; the bowl and leash remain red. Material shading defines furniture edges, while controls retain navy ink. The sky is keyed to real solar altitude in `SKY` (night navy through dusk rose and sunrise apricot to day blue). With Room lights off, the room is multiplied by `TINT` (cool blue at night, apricot at golden hour, white by day), with dimming for grey weather. Room lights on applies a warm interior tint and restores the unaltered sky in the window. The photograph receives the same interior tint as its surroundings.
 
 **Scene objects and what they mean.**
 - **Window:** the real San Francisco sky from solar position (suncalc): sun arc and drifting clouds by day, stars and the actual moon phase at night, a dark skyline with Sutro Tower and lit windows after dusk. Live San Francisco weather from Open-Meteo (cached 20 minutes, optional): overcast greys the sky and hides the sun, fog drifts in over the skyline and Sutro Tower, rain and snow fall in the glass; grey days dim the room and drop the sunbeam. During an active walk a tiny Winnie trots across the skyline. Tapping it toasts the weather, sunrise and sunset.
 - **Door, leash and doormat:** the walk. The leash hangs on its hook unless a walk is active. Tapping the door logs a walk, or finishes the active one.
-- **Bed:** sleep. Winnie is in it only during an active nap or night sleep, breathing one art px, with z particles. Its front rim paints over Winnie only in that in-bed state; when he is awake or walking, the complete bed paints before him. Tapping logs sleep.
+- **Sofa and crate:** a low cream sofa with rust throw and sage pillow sits behind Winnie. The yellow-covered crate has an open front and cream lattice detailing, with the pink bed inside; these belongings are set dressing, not new care controls.
+- **Bed:** sleep. The pink rectangular bolster bed holds Winnie only during an active nap or night sleep, breathing one art px, with z particles. Its front rim paints over Winnie only in that in-bed state; when he is awake or walking, the complete bed paints before him. Tapping logs sleep.
 - **Bowl:** meal. Fills with kibble when a meal is logged and empties as he eats. Tapping logs a meal.
 - **Fridge:** shared notes; shows up to two sticky notes matching the live note count. Tapping opens notes.
 - **Calendar:** today's SF date in a 3x5 pixel font; a red corner dot when care is due today; flashes when a plan is done. Tapping opens Plans.
@@ -438,15 +449,15 @@ A canvas diorama, the centre of the identity. Care behavior follows recorded fac
 - **Sunbeam:** a dithered beam from the window across the floor by day, leaning with the time of day; a faint cool beam at night.
 - **Plant, toy caterpillar:** set dressing; the toy is an idle sniffing spot.
 - **Snuggle Puppy:** his real plush, in the bed. He sleeps with it, carries it when he plays, and tapping it starts a play. Hidden from the bed while he holds it or sleeps.
-- **CGC ribbon:** his Canine Good Citizen rosette under the picture. Tapping names it.
+- **CGC ribbon:** a long flat blue ribbon with gold marks under the picture, drawn at 9x20 art px. Tapping names it. Its appearance does not establish a graduation date or create a milestone.
 - **Trophy shelf:** one trophy per milestone from the last 30 days, up to three; no shelf when there are none. Tapping opens Life.
 - **Seasons:** a pumpkin by the door in October (its face glows after dark), string lights along the rail from December 1 to January 6, flowers on the plant in spring.
 
-**Poses.** The sheet is `public/photos/winnie-room-v2.png`, built by `scripts/build-poses.mjs` from the six cleaned frames: sit, blink, sleep, walk (2), happy, plus tail wag, eating (2), sniffing (2), yawn, wet with towel, holding the Snuggle Puppy, and asleep with it. Idle time mixes wandering, wagging, sniffing, playing with the plush, and an evening yawn; night sleep starts with a yawn. New poses that need real art are specified in `ASTRA_HANDOFF.md`.
+**Poses.** The sheet is `public/photos/winnie-room-v3.png`, packed by `scripts/pack-poses.mjs` from the existing 15 frames and generated scratch, tilt, bow, roll, jump, shake, eating, greeting and toy poses. The separate six-pose harness sheet replaces the bandanna with a cream chest piece, red and yellow straps and green hardware during the bathroom acknowledgment. It is generated artwork packed by `scripts/pack-harness.mjs`; provenance and the prompt live in `assets/animation/harness-prompt.md`. The personal clothing reference photograph is not bundled or published. Idle time mixes wandering, wagging, sniffing, playing with the plush, and an evening yawn; night sleep starts with a yawn.
 
 **State machine.** Recorded inputs are `sleep` (active nap or night sleep), `walk` (active walk), note count, pending count, review error, and due today; SF time and weather supply ambient conditions. The independent `lights` preference is restored from `localStorage` key `winnie:room-lights` and saved as `on` or `off`. It defaults to natural lighting and remains usable without persistence when storage is unavailable; it neither writes a care record nor changes sleep or walk state. With nothing running he is awake in the room. Starting sleep: he walks to the bed and settles ("z"). Ending it: he hops out ("!") and wags. Starting a walk: he walks to the door, the leash comes off, the door opens and he fades out through it; while out he is absent from the room. Ending it: the door opens, he walks back in leaving fading paw prints, hops ("!") and wags.
 
-**Reactions to logs.** Pee or poop: he trots toward the door, sniffs, sparkles, hops ("~"), wags. Meal: kibble appears, he walks to the bowl ("nom"), eats head-down with crumbs, hops (heart). Photo: white flash, he looks back ("!"). Plan done: calendar flashes, he walks to it, hops. Partner logged something: he goes to the door to greet it ("!"), then acts out a partner meal at the bowl. Bath: he shakes off (rows jitter, water drops), then sits in his striped towel with darkened fur before a hop. Other grooming: sparkles and a hop. Reaction or pat: hearts. Undo: "?". While he is out on a walk, logs show as sparkles or hearts at the door instead; while asleep, a log gets a "z", a pat gets hearts.
+**Reactions to logs.** Pee or poop: while awake and home, he puts on the harness, walks toward the door, sparkles in a happy pose, walks back to his prior spot, sits, then returns to the bandanna. This acknowledgment does not delay saving or start a walk record. Interrupted sequences clear the harness; if its image is unavailable, the normal sprite remains visible. Meal: kibble appears, he walks to the bowl ("nom"), eats head-down with crumbs, hops (heart). Photo: white flash, he looks back ("!"). Plan done: calendar flashes, he walks to it, hops. Partner logged something: he goes to the door to greet it ("!"), then acts out a partner meal at the bowl. Bath: he shakes off (rows jitter, water drops), then sits in his striped towel with darkened fur before a hop. Other grooming: sparkles and a hop. Reaction or pat: hearts. Undo: "?". While he is out on a walk, logs show as sparkles or hearts at the door instead; while asleep, a log gets a "z", a pat gets hearts. Reduced motion skips the harness sequence and settles directly into the logged state.
 
 **Idle.** Every 3-7 seconds he picks one neutral action: wander, wag, turn around, or go sniff the toy ("?"). He blinks occasionally.
 
@@ -468,8 +479,8 @@ All motion is stepped. CSS uses `steps()` timing only: button press `60ms steps(
 - **Do** let Winnie respond to a log with an action in the room while the toast offers Undo.
 - **Do** derive care behavior in the room from recorded facts: an active sleep, an active walk, a logged meal, pending changes, notes on the fridge, a plan due. Keep device-local lighting separate from care state and preserve the real sky.
 - **Do** use `steps()` timing and whole-pixel moves for any new motion, and give reduced motion a still, settled pose.
-- **Do** use gingham as Winnie's signature pattern on surfaces that belong to him (the bed, window curtains, the active tab square, the desktop backdrop).
-- **Do** use navy ink for outlines and for text on coloured surfaces, in the UI and in new pixel art.
+- **Do** retain gingham in Winnie's bandanna, the active tab square and the desktop backdrop; render the room's furniture in its observed cream, pink and yellow materials.
+- **Do** use navy ink for UI outlines and text on coloured surfaces; use darker material shades where the room's physical objects need edges.
 
 ### Don't:
 - **Don't** show Winnie sad, hungry, needy or waiting, or infer any state from gaps in the log. No streaks, scores or guilt.
@@ -481,7 +492,7 @@ All motion is stepped. CSS uses `steps()` timing only: button press `60ms steps(
 - **Don't** write copy that explains how the interface works: no hint lines, tutorials, or sentences about what a tap does, where something will show up, or how a date is worked out ("One tap logs it", "Shows up here when it's due", "Tap a group to zoom"). Labels and results speak for themselves. Keep a sentence only when it states a fact the person cannot see and that changes what they do: an error and its fix, when a code expires, that nothing is tracked between logs.
 - **Don't** set paragraphs in Pixelify Sans or use all-caps labels.
 - **Don't** smooth-scale pixel art or draw it off the art grid; scale by integers with `image-rendering: pixelated`.
-- **Don't** use brown or black outlines in the UI or the room.
+- **Don't** replace navy UI outlines with brown or black; room material shading is separate from the UI palette.
 - **Don't** lead with a hero photo or a pastel card grid; the room is the top of Today.
 
 ## Story, insights and reactions

@@ -28,3 +28,18 @@ than the requested grid; retain them here for future refinements.
 Runtime behavior lives in `public/room.js`: scratch, tilt, bow, roll, jump,
 shake, eating, greeting and carrying/resting with the toy. Interruptions clear
 transient offsets and toy state; reduced motion settles to a still logged state.
+
+## Harness accessory
+
+`winnie-harness.png` is the generated transparent six-pose source for Winnie's
+cream harness with red/yellow straps and green hardware. The generation prompt,
+reference handling and output sizes are recorded in [harness-prompt.md](harness-prompt.md).
+The personal clothing reference photograph is not bundled or published.
+
+Run `node scripts/pack-harness.mjs` using [the harness packer](../../scripts/pack-harness.mjs)
+to produce `public/photos/winnie-harness-v1.png`. It aligns each generated pose
+to the corresponding existing 64px room frame using nearest-neighbour sampling
+and preserves the source sheet. `public/app/services.js` loads both room and
+harness sheets; `public/room.js` shows the harness for the current pee/poop
+acknowledgment, then restores the bandanna. Interruptions and reduced motion
+clear the accessory; loading failure retains the normal Winnie sprite.

@@ -380,7 +380,7 @@ main:focus {
 .room {
   position: relative;
   line-height: 0;
-  background: #7d95dc;
+  background: #e9e2d6;
   --room-hud-height: calc(env(safe-area-inset-top, 0px) + 64px);
   padding-top: var(--room-hud-height);
   overflow: hidden;
