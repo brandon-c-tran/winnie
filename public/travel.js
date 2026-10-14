@@ -4,9 +4,9 @@ import {
   placeName,
   placeDirectory,
   distanceKm,
-} from "./places.js?v=4.17";
-import { ageAt, recordDay, selectedPhotos, usable } from "./lifetime.js?v=4.17";
-import { winniePhotos } from "./keepsakes.js?v=4.17";
+} from "./places.js?v=4.18";
+import { ageAt, recordDay, selectedPhotos, usable } from "./lifetime.js?v=4.18";
+import { winniePhotos } from "./keepsakes.js?v=4.18";
 
 export const regionName = (g) =>
   g.country === "US"

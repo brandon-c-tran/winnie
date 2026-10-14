@@ -1,8 +1,8 @@
 // Tabs and day navigation.
 import { icon } from "../icons.js?v=4.0";
-import { $, dayKey } from "./format.js?v=4.17";
-import { render } from "./today.js?v=4.17";
-import { state } from "./state.js?v=4.17";
+import { $, dayKey } from "./format.js?v=4.18";
+import { render } from "./today.js?v=4.18";
+import { state } from "./state.js?v=4.18";
 
 $("day-picker").value = dayKey(Date.now());
 let historySection = "care",

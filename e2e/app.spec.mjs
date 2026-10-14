@@ -35,7 +35,9 @@ test("logging pee shows Undo, and Undo removes it", async ({ page }, info) => {
 test("a meal is logged from the food sheet", async ({ page }, info) => {
   await join(page, code(info));
   await page.locator('#log-row [data-log="meal"]').click();
-  await page.locator('[data-food="Chicken"]').click();
+  await expect(page.locator("[data-food]")).toHaveCount(0);
+  await page.locator('#custom-food input').fill("Chicken");
+  await page.locator('#custom-food button[type="submit"]').click();
   await expect(toast(page)).toContainText("Meal logged");
   await expect(page.locator("#timeline")).toContainText("Chicken");
 });

@@ -49,10 +49,14 @@ export function validatePantry(value) {
   if (!Number.isInteger(value.leadDays) || value.leadDays < 1 || value.leadDays > 21) fail("Delivery time must be 1 to 21 days.");
   const o = value.ordered;
   if (!(o === null || (o && ["brandon", "kim"].includes(o.by) && Number.isFinite(o.at) && o.at > 0))) fail();
-  return { foods, leadDays: value.leadDays, ordered: o ? { by: o.by, at: o.at } : null };
+  const hidden = value.hiddenFoods ?? [];
+  if (!Array.isArray(hidden) || hidden.length > 500 || hidden.some(name => typeof name !== "string" || !name.trim() || name.length > 40))
+    fail("Food options need valid names of up to 40 characters.");
+  const hiddenFoods = [...new Set(hidden.map(norm))];
+  return { foods, hiddenFoods, leadDays: value.leadDays, ordered: o ? { by: o.by, at: o.at } : null };
 }
 
-export const emptyPantry = () => ({ foods: [], leadDays: 3, ordered: null });
+export const emptyPantry = () => ({ foods: [], hiddenFoods: [], leadDays: 3, ordered: null });
 
 const meals = (events) =>
   events.filter((e) => !e.deletedAt && e.type === "meal" && Number.isFinite(e.time));

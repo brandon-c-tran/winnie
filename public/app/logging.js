@@ -1,20 +1,20 @@
 // Logging: one-tap logs, sleep and walks, grooming, Earlier, meals, More, press-and-hold.
-import { careStates, completionId } from "../care-plans.js?v=4.17";
-import { elapsed } from "../care-state.js?v=4.17";
+import { careStates, completionId } from "../care-plans.js?v=4.18";
+import { elapsed } from "../care-state.js?v=4.18";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { durationLabel } from "../insights.js?v=4.17";
+import { durationLabel } from "../insights.js?v=4.18";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
-} from "../everyday.js?v=4.17";
+} from "../everyday.js?v=4.18";
 import {
   autoPlace,
   autoPlaceEnabled,
   facts,
   room,
   sync,
-} from "./services.js?v=4.17";
+} from "./services.js?v=4.18";
 import {
   $,
   TYPES,
@@ -23,7 +23,7 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.17";
+} from "./format.js?v=4.18";
 import {
   closeDialog,
   retainDialogDraft,
@@ -35,12 +35,12 @@ import {
   renderedHTML,
   safe,
   toast,
-} from "./ui.js?v=4.17";
-import { editForm } from "./forms.js?v=4.17";
-import { render } from "./today.js?v=4.17";
-import { state } from "./state.js?v=4.17";
-import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.17";
-import { pantryNow } from "./pantry-view.js?v=4.17";
+} from "./ui.js?v=4.18";
+import { editForm } from "./forms.js?v=4.18";
+import { render } from "./today.js?v=4.18";
+import { state } from "./state.js?v=4.18";
+import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.18";
+import { pantryNow, savePantry } from "./pantry-view.js?v=4.18";
 
 let mealSubmitting = false;
 let pressTimer = 0;
@@ -60,10 +60,10 @@ document.addEventListener("contextmenu", (ev) => {
   if (ev.target.closest("[data-log]")) ev.preventDefault();
 });
 export async function log(type, extra = {}) {
+  if (type === "meal" && !extra.foods) return mealPicker();
   if (type === state.lastLogType && Date.now() - state.actionLock < 600) return;
   state.actionLock = Date.now();
   state.lastLogType = type;
-  if (type === "meal" && !extra.foods) return mealPicker();
   if (type === "sleep" || type === "nap" || type === "slumber") {
     const sleeping = facts().find(
       (e) => ["nap", "slumber"].includes(e.type) && active(e),
@@ -324,9 +324,7 @@ function pottyPhoto(id, type) {
 function mealOptions() {
   const events = facts(),
     pantry = pantryNow(),
-    names = [
-      ...new Set([...pantry.foods.map((f) => f.name), ...foodChoices(events)]),
-    ];
+    names = foodChoices(events, sync.view().profile.pantry || {});
   const used = names.filter(
     (n) =>
       pantry.foods.some((f) => f.name.toLowerCase() === n.toLowerCase()) ||
@@ -343,20 +341,22 @@ function mealOptions() {
       d === null ? "" : d === 0 ? "today" : `${d}d ago`,
       stock ? `${Math.round(stock.left)} left` : "",
     ].filter(Boolean);
-    return { food, note: parts.join(" · ") };
+    return { food, notes: parts };
   });
 }
 function mealPicker() {
+  const options = mealOptions();
   openDialog(
-    `<h2 id="dialog-title">Meal</h2><div class="food-grid">${mealOptions()
+    `<div class="card-head"><h2 id="dialog-title">Meal</h2><button class="text-button" id="manage-foods">Manage foods</button></div>${options.length ? `<div class="food-grid">${options
       .map(
-        ({ food, note }) =>
-          `<button class="px" style="--c:var(--meal)" data-food="${esc(food)}">${esc(food)}${note ? `<small>${esc(note)}</small>` : ""}</button>`,
+        ({ food, notes }) =>
+          `<button class="px" style="--c:var(--meal)" data-food="${esc(food)}">${esc(food)}${notes.map(note => `<small>${esc(note)}</small>`).join("")}</button>`,
       )
       .join(
         "",
-      )}</div><form id="custom-food"><label>Other food<input name="food" maxlength="40" required placeholder="Turkey" autocomplete="off"></label><div class="button-row"><button class="px btn ink" type="submit">Log meal</button><button class="text-button" type="button" data-food-unknown>Log without a food</button></div></form><p id="form-error" class="error" role="alert"></p>`,
+      )}</div>` : '<p class="fine">Foods you log will appear here for next time.</p>'}<form id="custom-food"><label>${options.length ? "Other food" : "Food"}<input name="food" maxlength="40" required placeholder="Food name" autocomplete="off"></label><div class="button-row"><button class="px btn ink" type="submit">Log meal</button><button class="text-button" type="button" data-food-unknown>Log without a food</button></div></form><p id="form-error" class="error" role="alert"></p>`,
   );
+  $("manage-foods").onclick = foodOptionsSheet;
   $("custom-food").onsubmit = safe(async (ev) => {
     ev.preventDefault();
     const food = normalizeFood(new FormData(ev.target).get("food"));
@@ -368,6 +368,31 @@ function mealPicker() {
     } finally {
       button.disabled = false;
     }
+  });
+}
+function foodOptionsSheet() {
+  const pantry = sync.view().profile.pantry || {},
+    hidden = new Set((pantry.hiddenFoods || []).map(normalizeFood)),
+    names = [...new Set([...foodChoices(facts(), { ...pantry, hiddenFoods: [] }), ...hidden])]
+      .sort((a, b) => Number(hidden.has(a)) - Number(hidden.has(b)) || a.localeCompare(b));
+  openDialog(`<h2 id="dialog-title">Manage foods</h2><p class="fine">Remove foods from the meal picker. Past meals and food stock stay saved.</p><div id="food-options-list">${names.map(name => `<div class="food-row"><div class="food-main"><b>${esc(name)}</b>${hidden.has(name) ? '<small>Removed from picker</small>' : ""}</div><button class="text-button" data-food-option="${esc(name)}" aria-label="${hidden.has(name) ? "Restore" : "Remove"} ${esc(name)}">${hidden.has(name) ? "Restore" : "Remove"}</button></div>`).join("") || '<p>No saved food options yet.</p>'}</div><div class="button-row"><button class="secondary" id="food-options-done">Back to meal</button></div><p id="form-error" class="error" role="alert"></p>`);
+  $("food-options-done").onclick = mealPicker;
+  $("food-options-list").onclick = safe(async event => {
+    const button = event.target.closest("[data-food-option]");
+    if (!button) return;
+    button.disabled = true;
+    const name = button.dataset.foodOption, restoring = hidden.has(name);
+    try {
+      await savePantry(p => {
+        const next = new Set((p.hiddenFoods || []).map(normalizeFood));
+        if (restoring) next.delete(name); else next.add(name);
+        p.hiddenFoods = [...next];
+      });
+      foodOptionsSheet();
+      const replacement = [...$("food-options-list").querySelectorAll("[data-food-option]")].find(b => b.dataset.foodOption === name);
+      replacement?.focus();
+      toast(`${name} ${restoring ? "restored" : "removed from picker"}`);
+    } finally { button.disabled = false; }
   });
 }
 export async function saveMeal(food) {

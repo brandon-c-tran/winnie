@@ -1,6 +1,5 @@
 import { getTimes } from "./vendor/suncalc.js";
 
-export const FOODS = ["Chicken", "Duck", "Lamb", "Beef", "Pork", "Sardine"];
 export function normalizeFood(value) {
   const text = String(value || "")
     .trim()
@@ -8,17 +7,18 @@ export function normalizeFood(value) {
     .toLowerCase();
   return text ? text[0].toUpperCase() + text.slice(1) : "";
 }
-export function foodChoices(events) {
+export function foodChoices(events, pantry = {}) {
+  const hidden = new Set((pantry.hiddenFoods || []).map(normalizeFood));
   return [
     ...new Set(
       [
-        ...FOODS,
+        ...(pantry.foods || []).map((food) => food.name),
         ...events
           .filter((e) => !e.deletedAt && e.type === "meal")
           .flatMap((e) => e.foods || []),
       ]
         .map(normalizeFood)
-        .filter(Boolean),
+        .filter((name) => name && !hidden.has(name)),
     ),
   ];
 }

@@ -1,10 +1,10 @@
 // Food on hand: the Food section in Plans, "Order food" in Up next, restocking and editing.
-import { pantryState, emptyPantry, lastEaten } from "../pantry.js?v=4.17";
+import { pantryState, emptyPantry, lastEaten } from "../pantry.js?v=4.18";
 import { icon } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.17";
-import { $, esc, face, person } from "./format.js?v=4.17";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.17";
-import { render } from "./today.js?v=4.17";
+import { facts, sync } from "./services.js?v=4.18";
+import { $, esc, face, person } from "./format.js?v=4.18";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.18";
+import { render } from "./today.js?v=4.18";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -22,7 +22,7 @@ const ago = (t) => {
 
 export const pantryNow = () => pantryState(sync.view().profile.pantry, facts());
 
-async function save(change) {
+export async function savePantry(change) {
   const profile = sync.view().profile,
     next = structuredClone(profile.pantry || emptyPantry());
   change(next);
@@ -69,7 +69,7 @@ function foodSheet(id) {
     if (link && !/^https:\/\//.test(link)) throw Error("Use a full https:// link.");
     if (sync.view().profile.revision !== profileRevision || (f && pantryNow().foods.find(x => x.id === id)?.left !== f.left))
       throw Error("Food stock changed while this form was open. Reopen it to use the latest count.");
-    await save((p) => {
+    await savePantry((p) => {
       const item = {
         id: f?.id || crypto.randomUUID().slice(0, 18),
         name,
@@ -78,6 +78,7 @@ function foodSheet(id) {
         count: { servings: Number(v.get("servings")), at: openedAt },
       };
       p.foods = f ? p.foods.map((x) => (x.id === f.id ? item : x)) : [...p.foods, item];
+      p.hiddenFoods = (p.hiddenFoods || []).filter(x => x.toLowerCase() !== name.toLowerCase());
     });
     closeDialog();
     toast(`${name} saved`);
@@ -87,7 +88,7 @@ function foodSheet(id) {
 async function restock(id, bags = 1) {
   const f = pantryNow().foods.find((x) => x.id === id);
   if (!f) return;
-  await save((p) => {
+  await savePantry((p) => {
     const item = p.foods.find((x) => x.id === id);
     item.count = { servings: Math.round((f.left + f.perPackage * bags) * 10) / 10, at: Date.now() };
     p.ordered = null;
@@ -137,22 +138,26 @@ document.addEventListener(
         if ($("dialog").open && $("dialog-title")?.textContent === "Food arrived") arrivedSheet();
         return;
       case "remove":
-        await save((p) => (p.foods = p.foods.filter((x) => x.id !== id)));
+        await savePantry((p) => {
+          const food = p.foods.find(x => x.id === id);
+          if (food) p.hiddenFoods = [...new Set([...(p.hiddenFoods || []), food.name.toLowerCase()])];
+          p.foods = p.foods.filter((x) => x.id !== id);
+        });
         closeDialog();
         return toast("Food removed");
       case "ordered":
-        await save((p) => (p.ordered = { by: sync.session.person, at: Date.now() }));
+        await savePantry((p) => (p.ordered = { by: sync.session.person, at: Date.now() }));
         return toast("Marked ordered");
       case "arrived":
         return arrivedSheet();
       case "done-arrived":
-        await save((p) => (p.ordered = null));
+        await savePantry((p) => (p.ordered = null));
         closeDialog();
         return render();
       case "lead":
         return leadSheet();
       case "set-lead":
-        await save((p) => (p.leadDays = Number(b.dataset.days)));
+        await savePantry((p) => (p.leadDays = Number(b.dataset.days)));
         return closeDialog();
     }
   }),
