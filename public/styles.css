@@ -381,7 +381,7 @@ main:focus {
   position: relative;
   line-height: 0;
   background: #7d95dc;
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 64px);
   overflow: hidden;
 }
 .room canvas {
@@ -424,11 +424,24 @@ main:focus {
   font-size: 15px;
   font-weight: 700;
 }
+.room-lights {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  min-height: 44px;
+  gap: 6px;
+}
+.room-lights[aria-pressed="true"] { background: var(--pee); }
 .sync .dot {
+  flex-shrink: 0;
   width: 8px;
   height: 8px;
   background: var(--ok);
   box-shadow: 0 0 0 1.5px var(--ink);
+}
+@media (max-width: 370px) {
+  .hud { gap: 4px; }
+  .hud-pill:not(.me) { padding-inline: 7px; }
 }
 .sync[data-s="pending"] {
   background: #ffe08a;

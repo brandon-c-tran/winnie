@@ -219,7 +219,7 @@ Density is phone-first and one-handed. Today starts with the room, one status li
 Personality lives in the room, the motion, and the family's own words. The interface copy is a label maker. Winnie never speaks; he emotes in pixel bubbles. Rejected and retired: the pastel card-grid pet dashboard with a hero photo and serif headline, and warm taglines ("our good boy", "His story", "A life worth remembering").
 
 **Key Characteristics:**
-- One pixel diorama at the top of Today, drawn on an integer art-pixel grid, scaled nearest-neighbour.
+- One pixel diorama at the top of Today, drawn on an integer art-pixel grid, scaled nearest-neighbour; the wall photograph retains its detail at display resolution inside the pixel frame.
 - One colour per care type, identical everywhere.
 - Square corners only; pixel edges drawn with four 3px ink box-shadow sides.
 - Pressable things sit on a 7px ledge and press down 3px; flat things (cards, lists) do not.
@@ -266,7 +266,7 @@ The map lives in `public/icons.js` (`TYPES`), resolved through `typeColor(type)`
 - **Gingham** (`gingham-blue` over `gingham-paper`): Winnie's bandana. Two crossed `repeating-linear-gradient` stripes, 6px on/6px off (4px in the active tab square, 10px at 8% alpha on the desktop page backdrop).
 
 ### Dark scheme
-`prefers-color-scheme: dark` swaps only the neutrals: `dark-ground`, `dark-surface`, `dark-sunk`, `dark-line`, `dark-edge`, `dark-text`, `dark-muted`, `dark-btn` (plain buttons become pale periwinkle), `dark-drop`, and `plain` becomes `dark-btn`. The primary button and selected segments switch from ink fill to Sun Yellow fill with ink text. Care colours, sticky papers, ink, the toast, the tab bar and the room art are the same in both schemes; the room is lit by the real sky, not by the colour scheme.
+`prefers-color-scheme: dark` swaps only the neutrals: `dark-ground`, `dark-surface`, `dark-sunk`, `dark-line`, `dark-edge`, `dark-text`, `dark-muted`, `dark-btn` (plain buttons become pale periwinkle), `dark-drop`, and `plain` becomes `dark-btn`. The primary button and selected segments switch from ink fill to Sun Yellow fill with ink text. Care colours, sticky papers, ink, the toast, the tab bar and the room art are the same in both schemes; natural room lighting follows the real sky, with a device-local Room lights override for warm interior illumination. Neither follows the colour scheme, and the window keeps the real sky.
 
 ### Named Rules
 **The One Colour Per Care Type Rule.** A care type has exactly one colour token and it appears wherever that type does. Never give a type a second colour, and never borrow a care colour for decoration unrelated to that type (Sun Yellow as the "selected" fill is the one established exception).
@@ -303,7 +303,7 @@ A single phone column, `max-width: 560px`, centred. Above 640px the page behind 
 
 The side gutter is `gut` (16px), dropping to `gut-narrow` (12px) under 370px. Vertical rhythm on Today: 12px above the log rows, 14px between the two big tiles and 12px between the four chips, 18px above each card, 26px above the day log. Inside cards, 10px gaps; rows use a three-column grid of icon square, flexible text, trailing action.
 
-**Today's order, top to bottom:** the room (full-bleed, 112 art px tall, about 224 CSS px on a phone) with the HUD overlaid; the status line; the two big log tiles (Pee, Poop) in a 2-column grid; the optional post-poop controls; the four-chip row (Meal, Photo, Earlier, More); permanent Care rows; Also today when present; Up next; Notes; On this day when present; and the day log. The tab bar is fixed to the bottom and the shell pads `76px + safe-area` under it. Safe-area insets are respected at the top of the room and the bottom of the tab bar, toast and sheet.
+**Today's order, top to bottom:** the room's full-bleed HUD ledge (64 CSS px plus the top safe area), followed by its canvas (112 art px tall, about 224 CSS px on a phone) with Room lights at the lower left; the status line; pending and active-care notices when present; the two big log tiles (Pee, Poop) in a 2-column grid; the optional post-poop controls; the four-chip row (Meal, Photo, Earlier, More); permanent Care rows; Also today when present; Up next; Notes; On this day when present; and the day log. The room wrapper includes both ledge and canvas height. The tab bar is fixed to the bottom and the shell pads `76px + safe-area` under it. Safe-area insets are respected at the top of the room and the bottom of the tab bar, toast and sheet.
 
 Grids elsewhere: 3-column type and food grids in sheets (14px gap), 2-column notes, 2-column photo grid (3 columns at 520px and up).
 
@@ -371,7 +371,7 @@ One line under the room that states the room's state in words.
 - `aria-live="polite"`; the room canvas label mirrors it.
 
 ### HUD pills
-Square labels floating over the room: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings.
+Square labels on the room's dedicated top ledge, clear of the wall photograph: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings. Room lights reuses the pill treatment in a minimum 44px-high button, 10px from the room's left edge and 8px from its bottom. It reads Lights on or Lights off, exposes its pressed state, and uses Sun Yellow when on.
 
 ### People (Brandon and Kim)
 Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). All placements use the existing full-bust `brandon-pixel.png` and `kim-pixel.png` artwork. Today, Timeline and Care photos contain the whole portrait in a frameless 24×24px area inline beside the author's name, below the event, result and optional note. Entry details retain a 64×64px portrait area beside the title and logger attribution. Portraits use `object-fit: contain`, a bottom baseline and pixelated rendering; the close-cropped head assets are not used.
@@ -418,11 +418,11 @@ Fixed bottom bar, ink fill, four equal tabs (Today, Plans, Story, Insights), 24p
 A 52px bordered lane per day: care spans and ticks as small care-colour blocks with 2px ink borders, a red "now" post with a square flag, and Pixelify 10px hour labels (12a, 6a, 12p, 6p, 12a).
 
 ### Winnie's Room (signature)
-A canvas diorama, the centre of the identity. It shows only recorded facts.
+A canvas diorama, the centre of the identity. Care behavior follows recorded facts; the sky follows San Francisco time and weather, and Room lights is a separate device-local presentation preference.
 
 **Art grid.** The scene is painted at art resolution, 112 art px tall and `W` art px wide, then blitted with nearest-neighbour scaling. The scale `k` is an integer number of device pixels per art pixel chosen so `W` lands near 220 (between about 180 and 260); on a phone this is about 2 CSS px per art pixel. The layout anchors door, leash hook, lamp and bed to the right edge so the room holds from 184 to about 260 art px wide. Light falloff and the sky use a 4x4 Bayer dither, never smooth gradients. The pixel Winnie sprite sheet is `public/photos/winnie-room-v1.png`, 3x2 cells of 64 art px: sit, blink, sleep, walkA, walkB, happy.
 
-**Palette.** Room colours live in `C` in `public/room.js`: periwinkle checked wallpaper (`room-wall` and two darker steps, 4px checks), periwinkle wainscot panels (`room-wainscot`), pale rail and baseboard, honey-wood floor planks 5 art px tall (`room-wood` with highlight, shade and `room-seam` joints), gingham bed (`room-bed` rim, `room-gingham` checks), wooden door (`room-door`) with a Sun Yellow knob, red bowl, doormat and leash (Alarm Red), all outlined in ink. The sky is keyed to real solar altitude in `SKY` (night navy through dusk rose and sunrise apricot to day blue) and the whole room is multiplied by `TINT` (cool blue at night, apricot at golden hour, white by day).
+**Palette.** Room colours live in `C` in `public/room.js`: periwinkle checked wallpaper (`room-wall` and two darker steps, 4px checks), periwinkle wainscot panels (`room-wainscot`), pale rail and baseboard, honey-wood floor planks 5 art px tall (`room-wood` with highlight, shade and `room-seam` joints), gingham bed (`room-bed` rim, `room-gingham` checks), wooden door (`room-door`) with a Sun Yellow knob, red bowl, doormat and leash (Alarm Red), all outlined in ink. The sky is keyed to real solar altitude in `SKY` (night navy through dusk rose and sunrise apricot to day blue). With Room lights off, the room is multiplied by `TINT` (cool blue at night, apricot at golden hour, white by day), with dimming for grey weather. Room lights on applies a warm interior tint and restores the unaltered sky in the window. The photograph receives the same interior tint as its surroundings.
 
 **Scene objects and what they mean.**
 - **Window:** the real San Francisco sky from solar position (suncalc): sun arc and drifting clouds by day, stars and the actual moon phase at night, a dark skyline with Sutro Tower and lit windows after dusk. Live San Francisco weather from Open-Meteo (cached 20 minutes, optional): overcast greys the sky and hides the sun, fog drifts in over the skyline and Sutro Tower, rain and snow fall in the glass; grey days dim the room and drop the sunbeam. During an active walk a tiny Winnie trots across the skyline. Tapping it toasts the weather, sunrise and sunset.
@@ -431,9 +431,9 @@ A canvas diorama, the centre of the identity. It shows only recorded facts.
 - **Bowl:** meal. Fills with kibble when a meal is logged and empties as he eats. Tapping logs a meal.
 - **Fridge:** shared notes; shows up to two sticky notes matching the live note count. Tapping opens notes.
 - **Calendar:** today's SF date in a 3x5 pixel font; a red corner dot when care is due today; flashes when a plan is done. Tapping opens Plans.
-- **Picture frame:** the pinned fridge photo, posterised into an 18x14 art-px picture. Tapping picks the pinned photo.
+- **Picture frame:** the pinned fridge photo, contained without cropping or posterisation and drawn with high-quality smoothing at display resolution. The wooden pixel frame begins at art coordinates (94, 13), is 32 art px tall, and varies from 28 to 42 art px wide with the available space before the door; its inner opening has a 2 art px inset. The ribbon sits below. Tapping retains the existing pinned-photo picker.
 - **Envelope at the door:** pending changes. Shows a red count when more than one is waiting and a yellow envelope with "!" when changes need review; it lifts away when everything sends.
-- **Wall sconce:** switches on after dusk (dithered warm pool of light) unless Winnie is asleep for the night.
+- **Wall sconce:** switches on after dusk (dithered warm pool of light) unless Winnie is asleep for the night. Room lights on illuminates the full interior and lights the sconce even during recorded sleep, without changing that sleep state.
 - **Sunbeam:** a dithered beam from the window across the floor by day, leaning with the time of day; a faint cool beam at night.
 - **Plant, toy caterpillar:** set dressing; the toy is an idle sniffing spot.
 - **Snuggle Puppy:** his real plush, in the bed. He sleeps with it, carries it when he plays, and tapping it starts a play. Hidden from the bed while he holds it or sleeps.
@@ -443,7 +443,7 @@ A canvas diorama, the centre of the identity. It shows only recorded facts.
 
 **Poses.** The sheet is `public/photos/winnie-room-v2.png`, built by `scripts/build-poses.mjs` from the six cleaned frames: sit, blink, sleep, walk (2), happy, plus tail wag, eating (2), sniffing (2), yawn, wet with towel, holding the Snuggle Puppy, and asleep with it. Idle time mixes wandering, wagging, sniffing, playing with the plush, and an evening yawn; night sleep starts with a yawn. New poses that need real art are specified in `ASTRA_HANDOFF.md`.
 
-**State machine.** Inputs are recorded state only: `sleep` (active nap or night sleep), `walk` (active walk), note count, pending count, review error, due today, and SF time. With nothing running he is awake in the room. Starting sleep: he walks to the bed and settles ("z"). Ending it: he hops out ("!") and wags. Starting a walk: he walks to the door, the leash comes off, the door opens and he fades out through it; while out he is absent from the room. Ending it: the door opens, he walks back in leaving fading paw prints, hops ("!") and wags.
+**State machine.** Recorded inputs are `sleep` (active nap or night sleep), `walk` (active walk), note count, pending count, review error, and due today; SF time and weather supply ambient conditions. The independent `lights` preference is restored from `localStorage` key `winnie:room-lights` and saved as `on` or `off`. It defaults to natural lighting and remains usable without persistence when storage is unavailable; it neither writes a care record nor changes sleep or walk state. With nothing running he is awake in the room. Starting sleep: he walks to the bed and settles ("z"). Ending it: he hops out ("!") and wags. Starting a walk: he walks to the door, the leash comes off, the door opens and he fades out through it; while out he is absent from the room. Ending it: the door opens, he walks back in leaving fading paw prints, hops ("!") and wags.
 
 **Reactions to logs.** Pee or poop: he trots toward the door, sniffs, sparkles, hops ("~"), wags. Meal: kibble appears, he walks to the bowl ("nom"), eats head-down with crumbs, hops (heart). Photo: white flash, he looks back ("!"). Plan done: calendar flashes, he walks to it, hops. Partner logged something: he goes to the door to greet it ("!"), then acts out a partner meal at the bowl. Bath: he shakes off (rows jitter, water drops), then sits in his striped towel with darkened fur before a hop. Other grooming: sparkles and a hop. Reaction or pat: hearts. Undo: "?". While he is out on a walk, logs show as sparkles or hearts at the door instead; while asleep, a log gets a "z", a pat gets hearts.
 
@@ -465,7 +465,7 @@ All motion is stepped. CSS uses `steps()` timing only: button press `60ms steps(
 - **Do** set short labels, headings, times and counts in Pixelify Sans and sentences in Rubik; set inputs at 16px.
 - **Do** write copy like a label maker: nouns, verbs, times and names in sentence case ("Pee logged · 4:07 PM", "Finish walk", "None yet", "Nothing planned"). Buttons name exactly what they do.
 - **Do** let Winnie respond to a log with an action in the room while the toast offers Undo.
-- **Do** derive every room state from a recorded fact: an active sleep, an active walk, a logged meal, pending changes, notes on the fridge, a plan due.
+- **Do** derive care behavior in the room from recorded facts: an active sleep, an active walk, a logged meal, pending changes, notes on the fridge, a plan due. Keep device-local lighting separate from care state and preserve the real sky.
 - **Do** use `steps()` timing and whole-pixel moves for any new motion, and give reduced motion a still, settled pose.
 - **Do** use gingham as Winnie's signature pattern on surfaces that belong to him (the bed, window curtains, the active tab square, the desktop backdrop).
 - **Do** use navy ink for outlines and for text on coloured surfaces, in the UI and in new pixel art.

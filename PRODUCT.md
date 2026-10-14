@@ -30,6 +30,7 @@ Keep Winnie's day, care, and memories together. The current app combines a share
 - **Insights:** an independent bottom destination for the former Trends views, including monthly comparisons, a training retrospective and recent patterns. The bottom navigation is Today, Plans, Story and Insights.
 - **Settings:** device identity, partner notifications, automatic location, shared handoff notes, trainer visits, exports, saved-phone-history review, and connected devices.
 - Care schedules and recorded-day grouping use San Francisco dates. The sleep action switches between nap and night sleep using San Francisco sunrise and sunset.
+- **Room lighting and photo:** Room lights brightens the interior with warm light while the window retains the real San Francisco sky. The toggle remembers its on/off choice on this device (`localStorage`, `winnie:room-lights`); off restores natural lighting, and unavailable storage leaves the toggle usable for the current session. This presentation preference does not create care records or change Winnie's sleep or walk state. The wall frame shows the whole pinned photo with its original detail and opens the existing photo picker.
 
 ## Capabilities and Constraints
 
