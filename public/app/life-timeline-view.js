@@ -1,10 +1,10 @@
-import { lifeTimeline } from "../life-timeline.js?v=4.26";
-import { ageAt } from "../lifetime.js?v=4.26";
-import { facts } from "./services.js?v=4.26";
-import { $, esc } from "./format.js?v=4.26";
-import { hydratePhotos } from "./entries.js?v=4.26";
-import { recollectionsHTML } from "./recollections.js?v=4.26";
-import { state } from "./state.js?v=4.26";
+import { lifeTimeline } from "../life-timeline.js?v=4.27";
+import { ageAt } from "../lifetime.js?v=4.27";
+import { facts } from "./services.js?v=4.27";
+import { $, esc } from "./format.js?v=4.27";
+import { hydratePhotos } from "./entries.js?v=4.27";
+import { recollectionsHTML } from "./recollections.js?v=4.27";
+import { state } from "./state.js?v=4.27";
 
 const BATCH = 8;
 let start = 0,

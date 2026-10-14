@@ -28,3 +28,11 @@ OWN-WORLD: Extend the same canvas room with the reference home's medium warm woo
 STORY: Ribbon opens a photo-led CGC memory with its original entry and separate caregiver recollections. A shared pointer binds the photo; absent dates are never guessed. Closet offers bandanna, harness and striped shirt. Shared outfit survives reload; temporary bathroom harness returns to the chosen outfit. Clothing never creates a care event.
 FIRST VIEWPORT: Room objects retain direct touch and keyboard hit targets; wardrobe has a hanger sign. The photo remains uncropped in the graduation sheet. Outfit picker previews the actual sprites, three choices with explicit selected state.
 FORM: Pinned extension of the existing world, no concept replacement. Verify phone 320/390 and desktop, day/night, wardrobe selected state, full photo, empty keepsake, sleep and bathroom outfit transitions. New private-photo hydration follows the authenticated blob pipeline.
+
+## October 14: full outfit animation parity
+
+THESIS: Choosing clothes must never take away Winnie's personality or play.
+OWN-WORLD: Preserve the existing room, pixel artwork, character scale and released six base poses. Extend both harness and striped shirt to the original 30-cell animation grid with matching silhouettes and baselines.
+STORY: Every outfit fetches, carries, naps with and returns Snuggle Puppy, eats, scratches, rolls, bows, jumps and shakes using the same timing. A missing or incomplete outfit image uses the original pose artwork, never an unrelated sitting pose. Shared clothing selection and temporary bathroom harness behavior remain intact.
+FIRST VIEWPORT: The same familiar room and closet; new artwork appears naturally during actions. No new navigation or extra controls.
+FORM: Pinned bug fix, no concept roll or replacement composition. Verify all named frame coordinates in both outfits and actual toy sequence on WebKit and Chrome; inspect phone 320/390 and desktop. Reduced motion and interrupted actions retain existing cleanup.

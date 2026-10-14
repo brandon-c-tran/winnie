@@ -866,13 +866,20 @@
       "furniture": "Warm cream wall and sofa, rust throw, sage pillow, light wood floor, yellow crate cover with cream lattice and pink rectangular bolster bed. The sofa and crate stay behind Winnie; the bed rim overlays him only while asleep in bed.",
       "ribbon": "Flat blue CGC ribbon, 9x20 art px, with gold marks; tapping names it without inferring a graduation date or creating a milestone.",
       "harness": {
-        "sprite": "public/photos/winnie-harness-v1.png",
-        "grid": "3x2 cells of 64 art px",
+        "sprite": "public/photos/winnie-harness-v2.png",
+        "grid": "192x640px; 3x10 cells of 64 art px",
         "appearance": "Cream chest piece, red/yellow straps and green hardware, replacing the bandanna.",
-        "behavior": "After a current pee/poop log while awake and home: harness on, walk toward door, happy pose and sparkles, walk back, sit, bandanna restored. Saving and offline queuing do not wait for animation. Interruptions and reduced motion clear the harness; active sleep/walk reactions remain unchanged. Missing harness artwork falls back to the normal sprite.",
-        "provenance": "assets/animation/harness-prompt.md",
-        "packer": "scripts/pack-harness.mjs",
+        "behavior": "Shared outfit or temporary acknowledgment. After a current pee/poop log while awake and home: harness on, walk toward door, happy pose and sparkles, walk back, sit, selected shared outfit restored. Saving and offline queuing do not wait for animation. Interruptions clear the temporary override and reduced motion settles immediately; active sleep/walk reactions remain unchanged.",
+        "provenance": "assets/animation/full-outfits-prompt.md; original six poses: assets/animation/harness-prompt.md",
+        "packer": "scripts/pack-outfits.mjs",
         "privacy": "Personal reference photograph is not bundled or published."
+      },
+      "outfits": {
+        "sprites": ["public/photos/winnie-harness-v2.png", "public/photos/winnie-stripes-v2.png"],
+        "grid": "192x640px; same 3x10 cells of 64 art px as the bandanna",
+        "behavior": "Every outfit uses the same pose coordinates and timing, including fetching, carrying, resting with and returning Snuggle Puppy. A missing or incomplete clothing sheet uses the corresponding bandanna pose.",
+        "packing": "scripts/pack-outfits.mjs preserves each v1 sheet's six released poses and fits 24 generated extensions to the bandanna silhouettes and baselines.",
+        "provenance": "assets/animation/full-outfits-prompt.md"
       },
       "lighting": "Real San Francisco sky and weather remain unchanged. Device-local Room lights warms the interior while retaining the real window sky; off restores natural lighting. Hidden tabs pause animation."
     },

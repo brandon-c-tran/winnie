@@ -1,8 +1,8 @@
-import { lifetimeInsights } from "../life-insights.js?v=4.26";
-import { ageAt, ERAS } from "../lifetime.js?v=4.26";
-import { facts } from "./services.js?v=4.26";
-import { $, esc } from "./format.js?v=4.26";
-import { openHistory } from "./nav.js?v=4.26";
+import { lifetimeInsights } from "../life-insights.js?v=4.27";
+import { ageAt, ERAS } from "../lifetime.js?v=4.27";
+import { facts } from "./services.js?v=4.27";
+import { $, esc } from "./format.js?v=4.27";
+import { openHistory } from "./nav.js?v=4.27";
 
 let horizon = "all",
   rhythm = "pee",

@@ -144,7 +144,7 @@ const glyphW = (s) =>
   [...s].reduce((w, ch) => w + (GLYPH[ch] ? GLYPH[ch][0].length + 1 : 2), 0) -
   1;
 // Sprite sheet: 3x10 cells of 64. dx/dy align each frame's feet and body centre to "sit".
-const FRAMES = {
+export const FRAMES = {
   sit: [0, 0, 0, 0],
   blink: [1, 0, 2, 0],
   sleep: [2, 0, 0, -1],
@@ -985,9 +985,10 @@ export function createRoom(canvas, opts = {}) {
   function paintDog(c) {
     if (dog.hidden || dog.alpha <= 0) return;
     const clothing = dog.harness || st.outfit === 'harness' ? harnessSprite : st.outfit === 'stripes' ? shirtSprite : null;
-    const dressed = clothing?.complete && clothing.naturalWidth > 0;
-    const requested = frameOf();
-    const name = dressed && FRAMES[requested]?.[1] > 1 ? dog.pose === 'sleep' ? 'sleep' : 'sit' : requested;
+    // Every outfit has the same complete pose grid. A failed/incomplete sheet
+    // falls back to the original animation, never to an unrelated sitting pose.
+    const dressed = clothing?.complete && clothing.naturalWidth === 192 && clothing.naturalHeight === 640;
+    const name = frameOf();
     const sheet = dressed ? clothing : sprite;
     const [fx, fy, dx, dy] = FRAMES[name];
     let x = Math.round(dog.x),

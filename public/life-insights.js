@@ -6,7 +6,7 @@ import {
   toileting,
   eraFor,
   destinationCollections,
-} from "./lifetime.js?v=4.26";
+} from "./lifetime.js?v=4.27";
 
 const median = (values) => {
   const a = values.toSorted((x, y) => x - y),
