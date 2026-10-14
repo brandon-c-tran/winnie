@@ -349,6 +349,13 @@ export function applyCommand(doc, command, device, now = Date.now()) {
       409,
       { current: doc.profile },
     );
+    if (Object.hasOwn(payload, 'cgcMemory')) {
+      const link = payload.cgcMemory;
+      assert(link && typeof link === 'object' && validId(link.eventId) && validId(link.photoId), 'Choose a saved graduation photo.');
+      const source = doc.events.find(e => e.id === link.eventId && !e.deletedAt);
+      assert(source?.photos?.some(p => p.id === link.photoId), 'This graduation photo is no longer available.');
+      doc.profile.cgcMemory = { eventId:link.eventId, photoId:link.photoId };
+    }
     if (Object.hasOwn(payload, 'storyCovers')) {
       const covers = payload.storyCovers;
       assert(covers && typeof covers === 'object' && !Array.isArray(covers) && Object.keys(covers).length <= 300, 'Invalid story covers.');
@@ -359,6 +366,10 @@ export function applyCommand(doc, command, device, now = Date.now()) {
       const value=payload.historyArchive;
       assert(value && typeof value==='object' && typeof value.batch==='string' && Array.isArray(value.held) && value.held.length<=500 && value.held.every(row=>typeof row.raw==='string' && row.raw.length<=10000) && JSON.stringify(value).length<=100000, 'Invalid history source archive.');
       doc.profile.historyArchive=value;
+    }
+    if (Object.hasOwn(payload, "roomOutfit")) {
+      assert(['bandanna', 'harness', 'stripes'].includes(payload.roomOutfit), 'Choose an available outfit.');
+      doc.profile.roomOutfit = payload.roomOutfit;
     }
     if (Object.hasOwn(payload, "carePlans")) {
       try {

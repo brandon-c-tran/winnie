@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-14T15:30:37.028Z",
+  "generatedAt": "2026-10-14T16:29:48.247Z",
   "title": "Design System: Winnie",
   "extensions": {
     "colorMeta": {
@@ -661,34 +661,34 @@
       },
       "room-wood": {
         "role": "tertiary",
-        "displayName": "Room: Light Wood",
-        "canonical": "#bd997a",
-        "oklch": "oklch(70.8% 0.061 62.3)",
+        "displayName": "Room: Warm Wood",
+        "canonical": "#a98061",
+        "oklch": "oklch(63.2% 0.067 58.3)",
         "tonalRamp": [
-          "oklch(15.0% 0.061 62.3)",
-          "oklch(26.4% 0.061 62.3)",
-          "oklch(37.9% 0.061 62.3)",
-          "oklch(49.3% 0.061 62.3)",
-          "oklch(60.7% 0.061 62.3)",
-          "oklch(72.1% 0.061 62.3)",
-          "oklch(83.6% 0.061 62.3)",
-          "oklch(95.0% 0.061 62.3)"
+          "oklch(15.0% 0.067 58.3)",
+          "oklch(26.4% 0.067 58.3)",
+          "oklch(37.9% 0.067 58.3)",
+          "oklch(49.3% 0.067 58.3)",
+          "oklch(60.7% 0.067 58.3)",
+          "oklch(72.1% 0.067 58.3)",
+          "oklch(83.6% 0.067 58.3)",
+          "oklch(95.0% 0.067 58.3)"
         ]
       },
       "room-seam": {
         "role": "tertiary",
         "displayName": "Room: Wood Plank Seam",
-        "canonical": "#957458",
-        "oklch": "oklch(58.4% 0.058 61.6)",
+        "canonical": "#866349",
+        "oklch": "oklch(52.9% 0.059 57.6)",
         "tonalRamp": [
-          "oklch(15.0% 0.058 61.6)",
-          "oklch(26.4% 0.058 61.6)",
-          "oklch(37.9% 0.058 61.6)",
-          "oklch(49.3% 0.058 61.6)",
-          "oklch(60.7% 0.058 61.6)",
-          "oklch(72.1% 0.058 61.6)",
-          "oklch(83.6% 0.058 61.6)",
-          "oklch(95.0% 0.058 61.6)"
+          "oklch(15.0% 0.059 57.6)",
+          "oklch(26.4% 0.059 57.6)",
+          "oklch(37.9% 0.059 57.6)",
+          "oklch(49.3% 0.059 57.6)",
+          "oklch(60.7% 0.059 57.6)",
+          "oklch(72.1% 0.059 57.6)",
+          "oklch(83.6% 0.059 57.6)",
+          "oklch(95.0% 0.059 57.6)"
         ]
       },
       "room-bed": {
@@ -1116,7 +1116,7 @@
   ],
   "narrative": {
     "northStar": "Winnie's Room",
-    "overview": "The app opens onto a 16-bit room inspired by Winnie's familiar belongings: warm cream walls and sofa, light wood floor, a yellow-covered crate and blush pink bed, with apricot Winnie and his blue gingham bandanna. The top of Today is a living pixel diorama in which pixel Winnie acts out only what the shared log has recorded, under the real San Francisco sky. Everything below it keeps the periwinkle-and-navy game UI: big pixel-edged buttons that press down, square HUD pills, cards drawn with a 2px ink line, sticky notes pinned with a square magnet. Nothing is rounded.\n\nDensity is phone-first and one-handed. Today starts with the room, one status line, two big log tiles, a row of four chips, then permanent Care rows, inside a 560px column. Colour is loud but disciplined: each care type owns exactly one saturated colour and that colour means that type everywhere it appears (tile, chip, timeline square, strip tick, chart bar, sheet button). UI neutrals are cool periwinkle-tinted paper and navy ink; warm cream, wood and fabric colours belong to the room's physical objects.\n\nPersonality lives in the room, the motion, and the family's own words. The interface copy is a label maker. Winnie never speaks; he emotes in pixel bubbles. Rejected and retired: the pastel card-grid pet dashboard with a hero photo and serif headline, and warm taglines (\"our good boy\", \"His story\", \"A life worth remembering\").",
+    "overview": "The app opens onto a 16-bit room inspired by Winnie's familiar belongings: warm cream walls and sofa, medium warm wood floor, a yellow-covered crate and blush pink bed, with apricot Winnie and his blue gingham bandanna. The top of Today is a living pixel diorama in which pixel Winnie acts out only what the shared log has recorded, under the real San Francisco sky. Everything below it keeps the periwinkle-and-navy game UI: big pixel-edged buttons that press down, square HUD pills, cards drawn with a 2px ink line, sticky notes pinned with a square magnet. Nothing is rounded.\n\nDensity is phone-first and one-handed. Today starts with the room, one status line, two big log tiles, a row of four chips, then permanent Care rows, inside a 560px column. Colour is loud but disciplined: each care type owns exactly one saturated colour and that colour means that type everywhere it appears (tile, chip, timeline square, strip tick, chart bar, sheet button). UI neutrals are cool periwinkle-tinted paper and navy ink; warm cream, wood and fabric colours belong to the room's physical objects.\n\nPersonality lives in the room, the motion, and the family's own words. The interface copy is a label maker. Winnie never speaks; he emotes in pixel bubbles. Rejected and retired: the pastel card-grid pet dashboard with a hero photo and serif headline, and warm taglines (\"our good boy\", \"His story\", \"A life worth remembering\").",
     "keyCharacteristics": [
       "One pixel diorama at the top of Today, drawn on an integer art-pixel grid, scaled nearest-neighbour.",
       "One colour per care type, identical everywhere.",

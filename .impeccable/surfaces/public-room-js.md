@@ -20,3 +20,11 @@ FIRST VIEWPORT: Keep the room HUD, photo frame, functional calendar/fridge, door
 FORM: Extend the existing native canvas objects, generated sprite artwork only for Winnie's new clothing. No concept roll or composition replacement: the user's photographs specify these changes. Inspect 320px, 390px and desktop, awake, sleeping, lights at night, and harness. Reduced motion settles immediately; hidden tabs pause animation.
 
 FINISH: Fresh finish review plus documented room palette and asset provenance required before shipping.
+
+## October 14: graduation keepsake and closet
+
+THESIS: Familiar real belongings become useful, playful ways to revisit his life and dress him.
+OWN-WORLD: Extend the same canvas room with the reference home's medium warm wood planks, cream/ochre botanical rug, black arch lamp with tiered wood shade, plant boxes, and a wood wardrobe. Preserve all care controls and the saved photo frame. New striped cream/blue shirt uses generated sprites matching Winnie; source personal photos stay private.
+STORY: Ribbon opens a photo-led CGC memory with its original entry and separate caregiver recollections. A shared pointer binds the photo; absent dates are never guessed. Closet offers bandanna, harness and striped shirt. Shared outfit survives reload; temporary bathroom harness returns to the chosen outfit. Clothing never creates a care event.
+FIRST VIEWPORT: Room objects retain direct touch and keyboard hit targets; wardrobe has a hanger sign. The photo remains uncropped in the graduation sheet. Outfit picker previews the actual sprites, three choices with explicit selected state.
+FORM: Pinned extension of the existing world, no concept replacement. Verify phone 320/390 and desktop, day/night, wardrobe selected state, full photo, empty keepsake, sleep and bathroom outfit transitions. New private-photo hydration follows the authenticated blob pipeline.

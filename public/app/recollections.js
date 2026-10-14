@@ -1,13 +1,13 @@
-import { $, esc, person } from "./format.js?v=4.25";
+import { $, esc, person } from "./format.js?v=4.26";
 import {
   openDialog,
   closeDialog,
   safe,
   toast,
   markDialogDirty,
-} from "./ui.js?v=4.25";
-import { sync } from "./services.js?v=4.25";
-import { hydratePhotos } from "./entries.js?v=4.25";
+} from "./ui.js?v=4.26";
+import { sync } from "./services.js?v=4.26";
+import { hydratePhotos } from "./entries.js?v=4.26";
 
 export function recollectionsHTML(event, exceptPerson) {
   const words = Object.entries(event.recollections || {}).filter(
@@ -20,7 +20,7 @@ export function recollectionsHTML(event, exceptPerson) {
     )
     .join("");
 }
-export function remember(eventId, photoId) {
+export function remember(eventId, photoId, onSaved) {
   const event = sync
     .view()
     .events.find((e) => e.id === eventId && !e.deletedAt);
@@ -43,6 +43,7 @@ export function remember(eventId, photoId) {
         previous: mine,
       });
       closeDialog();
+      onSaved?.();
       toast("Recollection saved on this device.");
       document.dispatchEvent(new Event("winnie:story-change"));
     } finally {

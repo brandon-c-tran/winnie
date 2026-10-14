@@ -154,6 +154,15 @@
         ],
         "createdAt": "2026-10-14T14:23:43.764Z",
         "reason": "Authenticated photo sources are hydrated from real photo IDs by hydratePhotos; WebKit and Chrome tests and responsive captures verify decoded images. No placeholder images ship."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/app/room-memory-view.js"
+        ],
+        "createdAt": "2026-10-14T16:28:06.641Z",
+        "reason": "Authenticated data-photo references are hydrated from private blobs; iPhone WebKit and Chrome tests verify decoded graduation images after reload."
       }
     ]
   }

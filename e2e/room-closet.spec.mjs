@@ -1,0 +1,30 @@
+import { test, expect } from '@playwright/test';
+import { code, join } from './helpers.mjs';
+
+test('closet changes clothes across reload and temporary harness returns to the chosen outfit',async({page},info)=>{
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  const errors=await join(page,code(info));
+  await page.evaluate(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});
+  await page.locator('#room-closet').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-outfit="bandanna"]')).toHaveAttribute('aria-pressed','true');
+  await page.locator('[data-outfit="stripes"]').click();
+  await expect(page.locator('#sync-status')).toHaveText('Up to date');
+  const outfit=()=>page.evaluate(async()=>(await import('/app/services.js?v=4.26')).room.outfit);
+  await expect.poll(outfit).toBe('stripes');
+  await page.reload();
+  await page.evaluate(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});
+  await page.locator('#room-closet').click();
+  await expect(page.locator('[data-outfit="stripes"]')).toHaveAttribute('aria-pressed','true');
+  await page.locator('#dialog-close').click();
+  await expect(page.locator('#dialog')).not.toBeVisible();
+  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.26');room.set({sleep:null,walk:false},{instant:true});room.react('pee');});
+  await expect.poll(outfit).toBe('harness');
+  await expect.poll(outfit,{timeout:12000}).toBe('stripes');
+  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.26');room.set({sleep:'slumber'},{instant:true});});
+  await expect.poll(outfit).toBe('stripes');
+  await page.setViewportSize({width:320,height:740});
+  await page.locator('#room-closet').click();
+  expect(await page.locator('#dialog').evaluate(d=>d.scrollWidth>d.clientWidth)).toBe(false);
+  expect(errors).toEqual([]);
+});
