@@ -17,6 +17,17 @@ const command = (id, kind, eventId, payload, expectedRevision) => ({
   payload,
   expectedRevision,
 });
+
+test("food choices come only from saved foods and respect removals", () => {
+  assert.deepEqual(foodChoices([]), []);
+  const events = [
+    { type: "meal", foods: ["Chicken", " TURKEY "] },
+    { type: "meal", foods: ["Duck"], deletedAt: 1 },
+  ];
+  const pantry = { foods: [{ name: "chicken" }, { name: "Beef" }], hiddenFoods: [" turkey "] };
+  assert.deepEqual(foodChoices(events, pantry), ["Chicken", "Beef"]);
+  assert.deepEqual(events[0].foods, ["Chicken", " TURKEY "]);
+});
 test("SF sleep suggestion follows sunrise and sunset across seasons and midnight", () => {
   for (const day of ["2026-01-08", "2026-06-08", "2026-11-01"]) {
     const { sunrise, sunset } = sleepContext(at(day + "T20:00:00Z"));

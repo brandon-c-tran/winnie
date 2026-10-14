@@ -45,7 +45,8 @@ test("poop quality: tag right after a poop, then it shows by food in Trends", as
   // each poop pairs with the meal before it
   for (const q of ["Firm", "Soft", "Firm"]) {
     await page.locator('#log-row [data-log="meal"]').click();
-    await page.locator('[data-food="Chicken"]').click();
+    await page.locator('#custom-food input').fill("Chicken");
+    await page.locator('#custom-food button[type="submit"]').click();
     await expect(toast(page)).toContainText("Meal logged");
     await page.locator('#care-actions [data-log="poop"]').click();
     await expect(page.locator("#poop-quality")).toBeVisible();
@@ -65,4 +66,56 @@ test("poop quality: tag right after a poop, then it shows by food in Trends", as
   await expect(page.locator(".by-food")).toContainText("Chicken");
   await expect(page.locator(".by-food")).toContainText("1 of 3 soft or loose");
   expect(errors).toEqual([]);
+});
+
+test("food options can be removed, synced and restored without changing past meals", async ({ page, browser }, info) => {
+  const shared = code(info), errors = await join(page, shared);
+  await page.locator('#log-row [data-log="meal"]').click();
+  await expect(page.locator('[data-food]')).toHaveCount(0);
+  await page.locator('#custom-food input').fill("Turkey");
+  await page.locator('#custom-food button[type="submit"]').click();
+  await expect(toast(page)).toContainText("Meal logged");
+  await page.locator('#log-row [data-log="meal"]').click();
+  await expect(page.locator('[data-food="Turkey"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Manage foods', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove Turkey', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Restore Turkey', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to meal', exact: true }).click();
+  await expect(page.locator('[data-food="Turkey"]')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#timeline')).toContainText('Turkey');
+  await expect(page.locator('#sync-status')).toHaveText('Up to date');
+  await page.reload();
+  await page.locator('#log-row [data-log="meal"]').click();
+  await expect(page.locator('[data-food="Turkey"]')).toHaveCount(0);
+
+  const other = await browser.newContext({ baseURL: info.project.use.baseURL });
+  try {
+    const kim = await other.newPage();
+    await join(kim, shared, 'kim');
+    await kim.locator('#log-row [data-log="meal"]').click();
+    await expect(kim.locator('[data-food="Turkey"]')).toHaveCount(0);
+    await kim.getByRole('button', { name: 'Manage foods', exact: true }).click();
+    await kim.getByRole('button', { name: 'Restore Turkey', exact: true }).click();
+    await kim.getByRole('button', { name: 'Back to meal', exact: true }).click();
+    await expect(kim.locator('[data-food="Turkey"]')).toBeVisible();
+  } finally { await other.close(); }
+  expect(errors).toEqual([]);
+});
+
+test("removing pantry stock also removes its historical meal option", async ({ page }, info) => {
+  await join(page, code(info));
+  await page.locator('#plans-tab').click();
+  await addFood(page, 'Beef', 14, 14);
+  await page.locator('#today-tab').click();
+  await page.locator('#log-row [data-log="meal"]').click();
+  await page.locator('[data-food="Beef"]').click();
+  await expect(toast(page)).toContainText('Meal logged');
+  await page.locator('#plans-tab').click();
+  await page.locator('.pantry [data-pantry="edit"]').click();
+  await page.locator('[data-pantry="remove"]').click();
+  await page.locator('#today-tab').click();
+  await expect(page.locator('#timeline')).toContainText('Beef');
+  await page.locator('#log-row [data-log="meal"]').click();
+  await expect(page.locator('[data-food="Beef"]')).toHaveCount(0);
 });

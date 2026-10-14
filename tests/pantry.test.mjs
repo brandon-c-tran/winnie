@@ -96,5 +96,9 @@ test("the server stores a valid pantry in shared settings and rejects a bad one"
   });
   applyCommand(doc, cmd("p1", { foods: [food("Beef", 14, now)], leadDays: 3, ordered: null }), device);
   assert.equal(doc.profile.pantry.foods[0].name, "Beef");
+  applyCommand(doc, cmd("hide-food", { ...doc.profile.pantry, hiddenFoods: [" BEEF ", "beef"] }), device);
+  assert.deepEqual(doc.profile.pantry.hiddenFoods, ["beef"]);
+  assert.equal(doc.profile.pantry.foods[0].count.servings, 14);
+  assert.throws(() => validatePantry({ ...doc.profile.pantry, hiddenFoods: [null] }), /Food options/);
   assert.throws(() => applyCommand(doc, cmd("p2", { foods: [], leadDays: 0, ordered: null }), device), /Delivery time/);
 });
