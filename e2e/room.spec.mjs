@@ -2,8 +2,14 @@ import { test, expect } from '@playwright/test';
 import { code, join } from './helpers.mjs';
 
 test('potty harness returns to bandanna and yields to sleep, replacement and reduced motion', async ({ page }, info) => {
-  const errors = await join(page, code(info));
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const errors = await join(page, code(info));
+  // Font loading and the deferred ResizeObserver both settle the room. Start
+  // the sequence after that initial layout, not during a preference-change event.
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
   await expect.poll(() => page.locator('#room').evaluate(c => Math.abs(c.getBoundingClientRect().width-c.parentElement.clientWidth))).toBeLessThan(1);
   const outfit = () => page.evaluate(async () => (await import('/app/services.js?v=4.25')).room.dog.harness);
   const react = kind => page.evaluate(async kind => {
