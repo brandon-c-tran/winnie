@@ -39,12 +39,12 @@ for(const command of plan.commands) {
   if(!actual)throw Error('Missing imported entry '+command.eventId);
   for(const [key,value] of Object.entries(command.payload)) {
     if(command.kind==='recover' && ['id','photos','revision','deletedAt','loggedBy','deviceId'].includes(key))continue;
-    if(stable(actual[key])!==stable(value))throw Error('Verification differs for '+command.eventId+' '+key+'; inspect concurrent edits.');
+    if(JSON.stringify(stable(actual[key]))!==JSON.stringify(stable(value)))throw Error('Verification differs for '+command.eventId+' '+key+'; inspect concurrent edits.');
   }
 }
 for(const original of JSON.parse(fs.readFileSync(beforePath)).events) {
   const actual=recordMap.get(original.id);
-  if(!actual || stable(actual.photos || [])!==stable(original.photos || []))throw Error('Original photo references changed; inspect '+original.id);
+  if(!actual || JSON.stringify(stable(actual.photos || []))!==JSON.stringify(stable(original.photos || [])))throw Error('Original photo references changed; inspect '+original.id);
 }
 const historyArchive={batch:plan.batch,held:plan.held,sourceDigest:sourceBackup.sha256,importedAt:Date.now(),count:plan.summary.newEntries};
 await request('command',{protocol:4,operationId:'history-profile-'+hash(historyArchive).slice(0,24),kind:'profile',expectedRevision:latest.profile.revision,payload:{historyArchive}});
