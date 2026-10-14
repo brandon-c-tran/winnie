@@ -1,4 +1,4 @@
-import { eraFor } from './lifetime.js?v=4.21';
+import { eraFor } from './lifetime.js?v=4.22';
 // Summaries use San Francisco calendar days, even when a phone is travelling.
 // A missing entry is never treated as a missed care event.
 const DAY = 86400000;

@@ -219,7 +219,7 @@ Density is phone-first and one-handed. Today starts with the room, one status li
 Personality lives in the room, the motion, and the family's own words. The interface copy is a label maker. Winnie never speaks; he emotes in pixel bubbles. Rejected and retired: the pastel card-grid pet dashboard with a hero photo and serif headline, and warm taglines ("our good boy", "His story", "A life worth remembering").
 
 **Key Characteristics:**
-- One pixel diorama at the top of Today, drawn on an integer art-pixel grid, scaled nearest-neighbour; the wall photograph retains its detail at display resolution inside the pixel frame.
+- One pixel diorama at the top of Today, drawn on an integer art-pixel grid, scaled nearest-neighbour; the wall photograph fills its frame with a centered crop and gentle pixel texture sampled at two pixels per room art pixel.
 - One colour per care type, identical everywhere.
 - Square corners only; pixel edges drawn with four 3px ink box-shadow sides.
 - Pressable things sit on a 7px ledge and press down 3px; flat things (cards, lists) do not.
@@ -303,7 +303,7 @@ A single phone column, `max-width: 560px`, centred. Above 640px the page behind 
 
 The side gutter is `gut` (16px), dropping to `gut-narrow` (12px) under 370px. Vertical rhythm on Today: 12px above the log rows, 14px between the two big tiles and 12px between the four chips, 18px above each card, 26px above the day log. Inside cards, 10px gaps; rows use a three-column grid of icon square, flexible text, trailing action.
 
-**Today's order, top to bottom:** the room's full-bleed HUD ledge (64 CSS px plus the top safe area), followed by its canvas (112 art px tall, about 224 CSS px on a phone) with Room lights at the lower left; the status line; pending and active-care notices when present; the two big log tiles (Pee, Poop) in a 2-column grid; the optional post-poop controls; the four-chip row (Meal, Photo, Earlier, More); permanent Care rows; Also today when present; Up next; Notes; On this day when present; and the day log. The room wrapper includes both ledge and canvas height. The tab bar is fixed to the bottom and the shell pads `76px + safe-area` under it. Safe-area insets are respected at the top of the room and the bottom of the tab bar, toast and sheet.
+**Today's order, top to bottom:** the room's full-bleed HUD ledge (64 CSS px plus the top safe area), followed by its canvas (112 art px tall, about 224 CSS px on a phone) with a physical Room lights rocker beside the door; the status line; pending and active-care notices when present; the two big log tiles (Pee, Poop) in a 2-column grid; the optional post-poop controls; the four-chip row (Meal, Photo, Earlier, More); permanent Care rows; Also today when present; Up next; Notes; On this day when present; and the day log. The room wrapper includes both ledge and canvas height. The tab bar is fixed to the bottom and the shell pads `76px + safe-area` under it. Safe-area insets are respected at the top of the room and the bottom of the tab bar, toast and sheet.
 
 Grids elsewhere: 3-column type and food grids in sheets (14px gap), 2-column notes, 2-column photo grid (3 columns at 520px and up).
 
@@ -371,7 +371,7 @@ One line under the room that states the room's state in words.
 - `aria-live="polite"`; the room canvas label mirrors it.
 
 ### HUD pills
-Square labels on the room's dedicated top ledge, clear of the wall photograph: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings. Room lights reuses the pill treatment in a minimum 44px-high button, 10px from the room's left edge and 8px from its bottom. It reads Lights on or Lights off, exposes its pressed state, and uses Sun Yellow when on.
+Square labels on the room's dedicated top ledge, clear of the wall photograph: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings. Room lights is a physical rocker beside the door inside the canvas, with a transparent 44×44px target aligned to its position. The target exposes the Room lights accessible name and pressed state and shows a keyboard focus outline; the rocker itself indicates on or off.
 
 ### People (Brandon and Kim)
 Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). All placements use the existing full-bust `brandon-pixel.png` and `kim-pixel.png` artwork. Today, Timeline and Care photos contain the whole portrait in a frameless 24×24px area inline beside the author's name, below the event, result and optional note. Entry details retain a 64×64px portrait area beside the title and logger attribution. Portraits use `object-fit: contain`, a bottom baseline and pixelated rendering; the close-cropped head assets are not used.
@@ -431,7 +431,8 @@ A canvas diorama, the centre of the identity. Care behavior follows recorded fac
 - **Bowl:** meal. Fills with kibble when a meal is logged and empties as he eats. Tapping logs a meal.
 - **Fridge:** shared notes; shows up to two sticky notes matching the live note count. Tapping opens notes.
 - **Calendar:** today's SF date in a 3x5 pixel font; a red corner dot when care is due today; flashes when a plan is done. Tapping opens Plans.
-- **Picture frame:** the pinned fridge photo, contained without cropping or posterisation and drawn with high-quality smoothing at display resolution. The wooden pixel frame begins at art coordinates (94, 13), is 32 art px tall, and varies from 28 to 42 art px wide with the available space before the door; its inner opening has a 2 art px inset. The ribbon sits below. Tapping retains the existing pinned-photo picker.
+- **Picture frame:** the pinned fridge photo fills the opening with a centered crop, sampled at two pixels per room art pixel and enlarged without smoothing for slight pixelation that retains recognizable detail. The wooden pixel frame begins at art coordinates (94, 13), is 32 art px tall, and varies from 28 to 42 art px wide with the available space before the door; its inner opening has a 2 art px inset. The ribbon sits below. Tapping retains the existing pinned-photo picker.
+- **Room lights:** a small physical rocker is drawn beside the door. A transparent 44×44px button tracks its canvas position, with an accessible name, pressed state and visible keyboard focus outline. The rocker changes position and color with the local lighting preference; it does not add an external labeled control below the room.
 - **Envelope at the door:** pending changes. Shows a red count when more than one is waiting and a yellow envelope with "!" when changes need review; it lifts away when everything sends.
 - **Wall sconce:** switches on after dusk (dithered warm pool of light) unless Winnie is asleep for the night. Room lights on illuminates the full interior and lights the sconce even during recorded sleep, without changing that sleep state.
 - **Sunbeam:** a dithered beam from the window across the floor by day, leaning with the time of day; a faint cool beam at night.
@@ -557,7 +558,19 @@ adding opens a searchable picker of existing
 poop and meal entries so each photo stays attached to its care record. Entry
 detail sheets also offer Take photo and Choose photo beside the Photos heading.
 
-Memories' Highlights view retains its postcard and a flat Trips & places list with an Add
+Memories' Highlights view leads with the age-chapter album in the existing Pixelify,
+Rubik, ink and paper vocabulary. When distinct photos exist, the first and last
+selected photos form a two-column bookend row with age labels. A horizontally
+scrollable month strip precedes one active chapter cover, its date and place,
+saved caption and separately attributed caregiver words. Covers and bookends
+contain the original photograph; this differs from the room's filled wall frame.
+Recollections use readable Rubik text with preserved line breaks and a quiet
+author line. The picker uses three columns, reducing to two at 360px and below,
+with month/search fields and explicit Previous and Next controls. The album title
+and year selector wrap on narrow phones. These are surface-specific additions,
+not a new type ramp or visual system.
+
+The postcard and a flat Trips & places list follow, with an Add
 trip action, recorded-day counts and source-linked collection details. These
 lifetime additions extend the incumbent controls and typography; they introduce
 no new visual identity or token set. Their behavioral limits are recorded in

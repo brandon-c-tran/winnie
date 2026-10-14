@@ -116,7 +116,9 @@ test("photo draft resumes, selected care photo joins Winnie and can be unselecte
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
   await page.locator('[data-filter="memories"]').click();
   await expect(page.locator("#postcard")).toBeVisible();
-  await expect(page.locator("#postcard-photo option")).toHaveCount(1);
+  await page.locator("#postcard-photo").click();
+  await expect(page.locator("#memory-picker-grid button")).toHaveCount(1);
+  await page.locator("#memory-picker-grid button").click();
   await page.locator("#places-home").click();
   await page.locator("#photo-items .memory-card").click();
   await page.locator("[data-keep-photo]").click();

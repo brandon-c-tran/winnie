@@ -362,6 +362,8 @@ export function createRoom(canvas, opts = {}) {
     sky = null,
     hasPhoto = false,
     wallPhoto = null;
+  const wallSample = document.createElement('canvas');
+  let wallSampleKey = '';
   if (still) tick = 60;
 
   function layout() {
@@ -376,6 +378,7 @@ export function createRoom(canvas, opts = {}) {
       frame: { x: 94, y: 13, w: Math.min(42, door.x - 96), h: 32 },
       door,
       hook,
+      lightSwitch: { x: door.x + door.w + 10, y: 57, w: 6, h: 9 },
       sconce: { x: Math.min(W - 9, hook.x + 9), y: 27 },
       bed: { x: W - 53, y: 88, w: 47, h: 18 },
       bowl: { x: 88, y: 100, w: 12, h: 6 },
@@ -407,6 +410,9 @@ export function createRoom(canvas, opts = {}) {
     canvas.style.width = (W * k) / dpr + "px";
     canvas.style.height = (ROOM_H * k) / dpr + "px";
     layout();
+    canvas.parentElement.style.setProperty('--switch-x', `${(L.lightSwitch.x + 3) * k / dpr}px`);
+    // CSS adds the shared HUD inset even when Safari sizes the hidden room.
+    canvas.parentElement.style.setProperty('--switch-y', `${(L.lightSwitch.y + 4.5) * k / dpr}px`);
     paintMask();
     dog.x = Math.min(dog.x, L.spot.max);
     settle();
@@ -1121,22 +1127,34 @@ export function createRoom(canvas, opts = {}) {
       o.fillStyle = `rgba(255,255,255,${flash / 8})`;
       o.fillRect(0, 0, W, ROOM_H);
     }
+    // A physical rocker beside the door, with a larger invisible keyboard/touch target.
+    const sw = L.lightSwitch;
+    R(o, sw.x, sw.y, sw.w, sw.h, '#22264a');
+    R(o, sw.x + 1, sw.y + 1, sw.w - 2, sw.h - 2, st.lights ? '#fff2bc' : '#c4c6d9');
+    R(o, sw.x + 2, sw.y + (st.lights ? 2 : 5), 2, 2, st.lights ? '#ffcf54' : '#626780');
     view.imageSmoothingEnabled = false;
     view.drawImage(out, 0, 0, W, ROOM_H, 0, 0, W * k, ROOM_H * k);
     if (wallPhoto) {
-      // Keep real photographs at display resolution; only the wooden frame is
-      // pixel art. Fit the entire image instead of cropping or posterizing it.
+      // Fill the frame, sampling at two pixels per room pixel. This keeps faces
+      // legible with a gentle pixel texture instead of the old tiny posterization.
       const fr = L.frame, pw = (fr.w - 4) * k, ph = (fr.h - 4) * k;
-      const scale = Math.min(pw / wallPhoto.naturalWidth, ph / wallPhoto.naturalHeight);
-      const w = wallPhoto.naturalWidth * scale, h = wallPhoto.naturalHeight * scale;
-      const x = (fr.x + 2) * k + (pw - w) / 2, y = (fr.y + 2) * k + (ph - h) / 2;
+      const w = pw, h = ph, x = (fr.x + 2) * k, y = (fr.y + 2) * k;
+      const key = `${photoRev}:${fr.w}:${fr.h}`;
+      if (wallSampleKey !== key) {
+        wallSample.width = (fr.w - 4) * 2; wallSample.height = (fr.h - 4) * 2;
+        const ctx = wallSample.getContext('2d');
+        const scale = Math.max(wallSample.width / wallPhoto.naturalWidth, wallSample.height / wallPhoto.naturalHeight);
+        const iw = wallPhoto.naturalWidth * scale, ih = wallPhoto.naturalHeight * scale;
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(wallPhoto, (wallSample.width - iw) / 2, (wallSample.height - ih) / 2, iw, ih);
+        wallSampleKey = key;
+      }
       view.save();
       view.beginPath();
       view.rect((fr.x + 2) * k, (fr.y + 2) * k, pw, ph);
       view.clip();
-      view.imageSmoothingEnabled = true;
-      view.imageSmoothingQuality = "high";
-      view.drawImage(wallPhoto, x, y, w, h);
+      view.imageSmoothingEnabled = false;
+      view.drawImage(wallSample, x, y, w, h);
       view.globalCompositeOperation = "multiply";
       view.fillStyle = css(tint);
       view.fillRect(x, y, w, h);

@@ -257,3 +257,22 @@ test("a form opened before refresh retains its original expected revision", asyn
   assert.ok(s.data.queue[0].error);
   s.db.close();
 });
+
+test("choosing keep mine resolves a same-person recollection conflict", async () => {
+  navigator.onLine = false;
+  const s = await client();
+  await s.enqueue("recollect", "old", { text: "My offline words", previous: "" });
+  await s.request("command", { method: "POST", value: {
+    protocol: 4, operationId: "remote-recollection", kind: "recollect", eventId: "old",
+    expectedRevision: 1, payload: { text: "Words from my other phone", previous: "" },
+  } });
+  navigator.onLine = true;
+  await s.flush();
+  assert.equal(s.data.queue.length, 1);
+  assert.match(s.data.queue[0].error, /another device/);
+  await s.resolve(s.data.queue[0].command.operationId, true);
+  await settled(s);
+  assert.equal(s.data.queue.length, 0);
+  assert.equal(s.data.snapshot.events.find(e => e.id === "old").recollections.brandon.text, "My offline words");
+  s.db.close();
+});

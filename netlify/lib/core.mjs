@@ -349,6 +349,12 @@ export function applyCommand(doc, command, device, now = Date.now()) {
       409,
       { current: doc.profile },
     );
+    if (Object.hasOwn(payload, 'storyCovers')) {
+      const covers = payload.storyCovers;
+      assert(covers && typeof covers === 'object' && !Array.isArray(covers) && Object.keys(covers).length <= 300, 'Invalid story covers.');
+      assert(Object.entries(covers).every(([month, id]) => /^\d{1,3}$/.test(month) && (id === null || validId(id))), 'Invalid story cover.');
+      doc.profile.storyCovers = covers;
+    }
     if (Object.hasOwn(payload, 'historyArchive')) {
       const value=payload.historyArchive;
       assert(value && typeof value==='object' && typeof value.batch==='string' && Array.isArray(value.held) && value.held.length<=500 && value.held.every(row=>typeof row.raw==='string' && row.raw.length<=10000) && JSON.stringify(value).length<=100000, 'Invalid history source archive.');
@@ -496,7 +502,7 @@ export function applyCommand(doc, command, device, now = Date.now()) {
     } else {
       assert(event, "This entry is missing.", 404);
       assert(
-        kind === "react" || event.revision === expectedRevision,
+        ["react", "recollect"].includes(kind) || event.revision === expectedRevision,
         "This entry changed on another device. Review both versions.",
         409,
         { current: event },
@@ -507,7 +513,14 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         409,
         { current: event },
       );
-      if (kind === "react") {
+      if (kind === "recollect") {
+        assert(typeof payload.text === 'string' && payload.text.length <= 1200 && typeof payload.previous === 'string', 'Keep your recollection to 1,200 characters.');
+        const priorText = event.recollections?.[device.person]?.text || '';
+        assert(priorText === payload.previous, 'Your recollection changed on another device. Reopen it to see the latest words.', 409, {current:event});
+        event.recollections ||= {};
+        if (payload.text.trim()) event.recollections[device.person] = {text:payload.text.trim(),at:now};
+        else delete event.recollections[device.person];
+      } else if (kind === "react") {
         assert(
           ["", "❤️", "😂", "👏"].includes(payload.emoji),
           "Choose an available reaction.",

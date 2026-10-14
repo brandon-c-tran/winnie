@@ -1,7 +1,7 @@
-import { readPhotoMetadata, wallInstants, wallTime } from '../photo-metadata.js?v=4.21';
-import { cityFor, cityLabel, loadCities } from '../places.js?v=4.21';
+import { readPhotoMetadata, wallInstants, wallTime } from '../photo-metadata.js?v=4.22';
+import { cityFor, cityLabel, loadCities } from '../places.js?v=4.22';
 // Photo picking, resizing, and saving.
-import { $, clock, dateLabel, esc, uid } from "./format.js?v=4.21";
+import { $, clock, dateLabel, esc, uid } from "./format.js?v=4.22";
 import {
   closeDialog,
   openDialog,
@@ -13,13 +13,13 @@ import {
   draftFields,
   applyDraftFields,
   persistDialogDraft,
-} from "./ui.js?v=4.21";
-import { isCarePhoto } from "../keepsakes.js?v=4.21";
-import { facts, sync, photoURLs } from "./services.js?v=4.21";
-import { detail, eventLabel, hydratePhotos } from "./entries.js?v=4.21";
+} from "./ui.js?v=4.22";
+import { isCarePhoto } from "../keepsakes.js?v=4.22";
+import { facts, sync, photoURLs } from "./services.js?v=4.22";
+import { detail, eventLabel, hydratePhotos } from "./entries.js?v=4.22";
 import { icon } from "../icons.js?v=4.0";
-import { render } from "./today.js?v=4.21";
-import { state } from "./state.js?v=4.21";
+import { render } from "./today.js?v=4.22";
+import { state } from "./state.js?v=4.22";
 
 // The photo composer owns its previews; they never enter the shared log before Save.
 let draft = null;
@@ -58,7 +58,7 @@ export function addPhotos(care = false, restored = null) {
     return;
   }
   openDialog(
-    `<h2 id="dialog-title">Add photos</h2><form id="photo-composer"><div class="photo-composer-pick"><button type="button" class="primary" data-album-library>${icon("photo", "ic sm")} Choose photos</button><button type="button" class="secondary" data-album-camera>Take photo</button></div><div id="photo-draft" class="photo-draft"></div><p id="photo-draft-status" class="fine" role="status">No photos selected</p><label>Caption <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Add a caption"></textarea></label><p class="fine">Each photo keeps its own date and place. Check any missing details below.</p><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary" type="submit" disabled>Save photos</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+    `<h2 id="dialog-title">Add photos</h2><form id="photo-composer"><div class="photo-composer-pick"><button type="button" class="primary" data-album-library>${icon("photo", "ic sm")} Choose photos</button><button type="button" class="secondary" data-album-camera>Take photo</button></div><div id="photo-draft" class="photo-draft"></div><p id="photo-draft-status" class="fine" role="status">No photos selected</p><label>Caption <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Add a caption"></textarea></label><p class="fine">Add up to 100 photos at a time. Each keeps its own date and place; photos already in Winnie are skipped.</p><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary" type="submit" disabled>Save photos</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
   );
   draft = {
     id: restored?.id || uid(),
@@ -296,11 +296,13 @@ function savedPhotos(id, ids) {
 }
 for (const id of ["camera-input", "library-input"])
   $(id).onchange = safe(async (e) => {
-    const files = Array.from(e.target.files || []).slice(0, 20),
+    const files = Array.from(e.target.files || []),
       target = state.photoTarget,
       albumDraft = draft;
     const attached = [];
     if (!files.length) return;
+    if (files.length > 100) throw Error('Choose up to 100 photos at a time. You can add another batch after saving.');
+    const fingerprints = new Set(facts().filter(e=>e.type==='moment').flatMap(e=>(e.photos||[]).map(p=>p.metadata?.fingerprint)).filter(Boolean));
     if (target === "album") {
       if (!albumDraft || albumDraft.busy || albumDraft.preparing) return;
       albumDraft.preparing = true;
@@ -325,7 +327,7 @@ for (const id of ["camera-input", "library-input"])
         if (target === "album") {
           if (!albumDraft || draft !== albumDraft || albumDraft.busy) return;
           if (albumDraft.items.some(item => item.metadata.fingerprint === metadata.fingerprint) ||
-              facts().some(e => e.type === 'moment' && e.photos?.some(p => p.metadata?.fingerprint === metadata.fingerprint))) {
+              fingerprints.has(metadata.fingerprint)) {
             toast('This photo is already in Winnie.'); continue;
           }
           albumDraft.items.push({ id: uid(), photoId: uid(), blob, metadata, url: URL.createObjectURL(blob) });

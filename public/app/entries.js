@@ -1,16 +1,17 @@
-import { recordDay } from '../lifetime.js?v=4.21';
-import { isCarePhoto } from "../keepsakes.js?v=4.21";
-import { createReactionPicker } from "./reaction-picker.js?v=4.21";
+import { recordDay } from '../lifetime.js?v=4.22';
+import { isCarePhoto } from "../keepsakes.js?v=4.22";
+import { createReactionPicker } from "./reaction-picker.js?v=4.22";
+import { recollectionsHTML } from './recollections.js?v=4.22';
 // Entry rows, reactions, the entry detail sheet, and photo loading.
-import { QUALITY } from "../pantry.js?v=4.21";
-import { placeLabel } from "../places.js?v=4.21";
+import { QUALITY } from "../pantry.js?v=4.22";
+import { placeLabel } from "../places.js?v=4.22";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { photoCaption } from "../everyday.js?v=4.21";
-import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.21";
-import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.21";
-import { openDialog, safe, toast } from "./ui.js?v=4.21";
-import { placeSummary } from "./forms.js?v=4.21";
-import { state } from "./state.js?v=4.21";
+import { photoCaption } from "../everyday.js?v=4.22";
+import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.22";
+import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.22";
+import { openDialog, safe, toast } from "./ui.js?v=4.22";
+import { placeSummary } from "./forms.js?v=4.22";
+import { state } from "./state.js?v=4.22";
 
 document.addEventListener("click", safe(async ev => {
   const button = ev.target.closest("[data-keep-photo]");
@@ -205,6 +206,7 @@ export function detail(id) {
       <section class="detail-section detail-place"><div class="detail-section-heading"><h3>Place</h3><button class="text-button" data-place="${esc(id)}">${placeLabel(e) ? "Edit place" : "Add place"}</button></div>${placeLabel(e) ? placeSummary(e) : '<p class="fine">No place recorded</p>'}</section>
       <section class="detail-section"><div class="detail-section-heading"><h3>Photos${e.photos?.length ? ` <span class="fine">${e.photos.length}</span>` : ""}</h3><div class="detail-photo-add"><button class="text-button" data-photo-camera="${esc(id)}">Take photo</button><button class="text-button" data-photo-library="${esc(id)}">Choose photo</button></div></div>${(e.photos || []).map((p) => `<figure class="detail-image"><img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}"><figcaption class="photo-actions">${isCarePhoto(e) ? `<button class="text-button" data-keep-photo="${esc(p.id)}" data-id="${esc(id)}" aria-pressed="${p.keepsake === true}">${p.keepsake ? "Kept in Winnie" : "Keep in Winnie"}</button>` : ""}<button class="text-button" data-edit-photo-meta="${esc(p.id)}" data-id="${esc(id)}">Date & place</button><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove photo</button></figcaption></figure>`).join("")}${!e.photos?.length ? '<p class="fine">No photos attached</p>' : ""}</section>
       ${["pee", "poop"].includes(e.type) ? `<section class="detail-section"><h3>Who started it?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button aria-pressed="${e.signal === s}" data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div></section>` : e.signal ? `<p>${esc(e.signal)}</p>` : ""}
+      ${e.photos?.length || e.milestone ? `<section class="detail-section"><h3>Remembering this day</h3>${recollectionsHTML(e)}<button class="text-button" data-recollect="${esc(id)}">${e.recollections?.[sync.session?.person]?.text?'Edit my recollection':'Add a recollection'}</button></section>`:''}
       <footer class="detail-section"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></footer><p id="form-error" class="error" role="alert"></p>
     </article>`,
   );

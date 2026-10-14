@@ -118,6 +118,33 @@
         ],
         "createdAt": "2026-10-14T02:10:45.774Z",
         "reason": "Agent verified in browser: the flagged .travel-scopes button is a flat region selector with computed border-radius 0px and a 3px bottom selection indicator, not a rounded card. Detector has no value-specific finding; exception scoped to this rule in this stylesheet."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/app/photo-picker.js"
+        ],
+        "createdAt": "2026-10-14T05:34:17.229Z",
+        "reason": "Agent: images use data-photo references hydrated from the authenticated photo store by hydratePhotos; browser coverage verifies decoded photos."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/app/recollections.js"
+        ],
+        "createdAt": "2026-10-14T05:34:17.273Z",
+        "reason": "Agent: images use authenticated data-photo hydration, consistent with existing entry details."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/app/story-album-view.js"
+        ],
+        "createdAt": "2026-10-14T05:34:17.317Z",
+        "reason": "Agent: album images use authenticated data-photo hydration; offline export embeds actual JPEG data URLs."
       }
     ]
   }
