@@ -38,6 +38,11 @@ test('room lights brighten a sleeping room, remember the choice, and leave care 
 test('larger wall photo remains selectable at narrow phone widths', async ({ page }, info) => {
   await page.setViewportSize({width:320, height:740});
   const errors = await join(page, code(info));
+  // The room is first created while Today is hidden. Wait for its deferred
+  // ResizeObserver pass before converting an art coordinate into a real tap.
+  await expect.poll(() => page.locator('#room').evaluate(canvas =>
+    Math.abs(canvas.getBoundingClientRect().width - canvas.parentElement.clientWidth)
+  )).toBeLessThan(1);
   const point = await page.evaluate(async () => {
     const { room } = await import('/app/services.js?v=4.21');
     const { frame, door } = room.layout;
