@@ -4,8 +4,8 @@ import {
   planState,
   completionId,
   validateCarePlans,
-} from "./care-plans.js?v=4.24";
-import { ROUTINE } from "./routine.js?v=4.24";
+} from "./care-plans.js?v=4.25";
+import { ROUTINE } from "./routine.js?v=4.25";
 import { icon } from "./icons.js?v=4.0";
 
 export function createCare({

@@ -2,11 +2,11 @@ import {
   CALENDAR_KINDS,
   calendarMatch,
   calendarStats,
-} from "../calendar.js?v=4.24";
-import { $, esc } from "./format.js?v=4.24";
-import { facts, sync } from "./services.js?v=4.24";
-import { html, openDialog, closeDialog, safe, toast } from "./ui.js?v=4.24";
-import { state } from "./state.js?v=4.24";
+} from "../calendar.js?v=4.25";
+import { $, esc } from "./format.js?v=4.25";
+import { facts, sync } from "./services.js?v=4.25";
+import { html, openDialog, closeDialog, safe, toast } from "./ui.js?v=4.25";
+import { state } from "./state.js?v=4.25";
 
 let period = "upcoming",
   kind = "",

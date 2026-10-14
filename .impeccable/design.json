@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-12T23:15:04.848Z",
+  "generatedAt": "2026-10-14T15:30:37.028Z",
   "title": "Design System: Winnie",
   "extensions": {
     "colorMeta": {
@@ -629,98 +629,98 @@
       },
       "room-wall": {
         "role": "tertiary",
-        "displayName": "Room: Periwinkle Wallpaper",
-        "canonical": "#c6d2f8",
-        "oklch": "oklch(86.7% 0.054 271.4)",
+        "displayName": "Room: Warm Cream Wall",
+        "canonical": "#e9e2d6",
+        "oklch": "oklch(91.5% 0.018 81.3)",
         "tonalRamp": [
-          "#050822",
-          "#1b223e",
-          "#353e5d",
-          "#525c7d",
-          "#747fa1",
-          "#98a3c8",
-          "#bdc9ef",
-          "#e1edff"
+          "oklch(15.0% 0.018 81.3)",
+          "oklch(26.4% 0.018 81.3)",
+          "oklch(37.9% 0.018 81.3)",
+          "oklch(49.3% 0.018 81.3)",
+          "oklch(60.7% 0.018 81.3)",
+          "oklch(72.1% 0.018 81.3)",
+          "oklch(83.6% 0.018 81.3)",
+          "oklch(95.0% 0.018 81.3)"
         ]
       },
       "room-wainscot": {
         "role": "tertiary",
-        "displayName": "Room: Wainscot",
-        "canonical": "#7d95dc",
-        "oklch": "oklch(68.0% 0.109 269.1)",
+        "displayName": "Room: Cream Wainscot",
+        "canonical": "#e0d8c9",
+        "oklch": "oklch(88.5% 0.022 83.3)",
         "tonalRamp": [
-          "#030038",
-          "#101b58",
-          "#293a79",
-          "#45599b",
-          "#667cc1",
-          "#89a1e9",
-          "#aec8ff",
-          "#d1ecff"
+          "oklch(15.0% 0.022 83.3)",
+          "oklch(26.4% 0.022 83.3)",
+          "oklch(37.9% 0.022 83.3)",
+          "oklch(49.3% 0.022 83.3)",
+          "oklch(60.7% 0.022 83.3)",
+          "oklch(72.1% 0.022 83.3)",
+          "oklch(83.6% 0.022 83.3)",
+          "oklch(95.0% 0.022 83.3)"
         ]
       },
       "room-wood": {
         "role": "tertiary",
-        "displayName": "Room: Honey Wood",
-        "canonical": "#dc9b56",
-        "oklch": "oklch(73.9% 0.116 66.0)",
+        "displayName": "Room: Light Wood",
+        "canonical": "#bd997a",
+        "oklch": "oklch(70.8% 0.061 62.3)",
         "tonalRamp": [
-          "#260000",
-          "#460f00",
-          "#672e00",
-          "#884d00",
-          "#ae7028",
-          "#d69550",
-          "#febb76",
-          "#ffdf99"
+          "oklch(15.0% 0.061 62.3)",
+          "oklch(26.4% 0.061 62.3)",
+          "oklch(37.9% 0.061 62.3)",
+          "oklch(49.3% 0.061 62.3)",
+          "oklch(60.7% 0.061 62.3)",
+          "oklch(72.1% 0.061 62.3)",
+          "oklch(83.6% 0.061 62.3)",
+          "oklch(95.0% 0.061 62.3)"
         ]
       },
       "room-seam": {
         "role": "tertiary",
-        "displayName": "Room: Plank Seam",
-        "canonical": "#a9692f",
-        "oklch": "oklch(58.0% 0.110 59.9)",
+        "displayName": "Room: Wood Plank Seam",
+        "canonical": "#957458",
+        "oklch": "oklch(58.4% 0.058 61.6)",
         "tonalRamp": [
-          "#270000",
-          "#470d00",
-          "#672d00",
-          "#894c07",
-          "#af6f35",
-          "#d7945b",
-          "#ffb980",
-          "#ffdda3"
+          "oklch(15.0% 0.058 61.6)",
+          "oklch(26.4% 0.058 61.6)",
+          "oklch(37.9% 0.058 61.6)",
+          "oklch(49.3% 0.058 61.6)",
+          "oklch(60.7% 0.058 61.6)",
+          "oklch(72.1% 0.058 61.6)",
+          "oklch(83.6% 0.058 61.6)",
+          "oklch(95.0% 0.058 61.6)"
         ]
       },
       "room-bed": {
         "role": "tertiary",
-        "displayName": "Room: Bed Rim",
-        "canonical": "#3e52b0",
-        "oklch": "oklch(47.6% 0.151 270.6)",
+        "displayName": "Room: Blush Bed Rim",
+        "canonical": "#d9aca7",
+        "oklch": "oklch(78.4% 0.053 25.7)",
         "tonalRamp": [
-          "#040039",
-          "#100d6b",
-          "#25328e",
-          "#3f53b1",
-          "#5f78d9",
-          "#819dff",
-          "#a6c4ff",
-          "#c8e9ff"
+          "oklch(15.0% 0.053 25.7)",
+          "oklch(26.4% 0.053 25.7)",
+          "oklch(37.9% 0.053 25.7)",
+          "oklch(49.3% 0.053 25.7)",
+          "oklch(60.7% 0.053 25.7)",
+          "oklch(72.1% 0.053 25.7)",
+          "oklch(83.6% 0.053 25.7)",
+          "oklch(95.0% 0.053 25.7)"
         ]
       },
       "room-door": {
         "role": "tertiary",
-        "displayName": "Room: Door",
-        "canonical": "#b9713d",
-        "oklch": "oklch(61.7% 0.113 54.6)",
+        "displayName": "Room: Cream Door",
+        "canonical": "#eee9df",
+        "oklch": "oklch(93.5% 0.014 84.6)",
         "tonalRamp": [
-          "#290000",
-          "#490700",
-          "#6b2900",
-          "#8d490d",
-          "#b46c38",
-          "#db915d",
-          "#ffb682",
-          "#ffdaa5"
+          "oklch(15.0% 0.014 84.6)",
+          "oklch(26.4% 0.014 84.6)",
+          "oklch(37.9% 0.014 84.6)",
+          "oklch(49.3% 0.014 84.6)",
+          "oklch(60.7% 0.014 84.6)",
+          "oklch(72.1% 0.014 84.6)",
+          "oklch(83.6% 0.014 84.6)",
+          "oklch(95.0% 0.014 84.6)"
         ]
       },
       "room-gingham": {
@@ -737,6 +737,38 @@
           "#7e9fff",
           "#a3c6ff",
           "#c5ebff"
+        ]
+      },
+      "room-sofa": {
+        "role": "tertiary",
+        "displayName": "Room: Cream Sofa",
+        "canonical": "#c8bcaa",
+        "oklch": "oklch(80.0% 0.028 78.2)",
+        "tonalRamp": [
+          "oklch(15.0% 0.028 78.2)",
+          "oklch(26.4% 0.028 78.2)",
+          "oklch(37.9% 0.028 78.2)",
+          "oklch(49.3% 0.028 78.2)",
+          "oklch(60.7% 0.028 78.2)",
+          "oklch(72.1% 0.028 78.2)",
+          "oklch(83.6% 0.028 78.2)",
+          "oklch(95.0% 0.028 78.2)"
+        ]
+      },
+      "room-crate-cover": {
+        "role": "tertiary",
+        "displayName": "Room: Yellow Crate Cover",
+        "canonical": "#ecd59e",
+        "oklch": "oklch(87.9% 0.076 87.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.076 87.9)",
+          "oklch(26.4% 0.076 87.9)",
+          "oklch(37.9% 0.076 87.9)",
+          "oklch(49.3% 0.076 87.9)",
+          "oklch(60.7% 0.076 87.9)",
+          "oklch(72.1% 0.076 87.9)",
+          "oklch(83.6% 0.076 87.9)",
+          "oklch(95.0% 0.076 87.9)"
         ]
       }
     },
@@ -766,19 +798,19 @@
       "source": "public/room.js C",
       "values": {
         "ink": "#22264a",
-        "wall1": "#c6d2f8",
-        "wall2": "#b6c5f3",
-        "wall3": "#a8b9ee",
-        "wain": "#7d95dc",
-        "wainHi": "#93a9e6",
-        "wainLo": "#6a82c9",
-        "rail": "#eef1ff",
-        "base": "#eef1ff",
-        "baseLo": "#c9d1f1",
-        "wood": "#dc9b56",
-        "woodLo": "#c6853f",
-        "woodHi": "#e8ae6f",
-        "seam": "#a9692f",
+        "wall1": "#e9e2d6",
+        "wall2": "#e6dfd3",
+        "wall3": "#e3dccf",
+        "wain": "#e0d8c9",
+        "wainHi": "#eee7dc",
+        "wainLo": "#d2c9b9",
+        "rail": "#eee7dc",
+        "base": "#f7f1e5",
+        "baseLo": "#c8bfaf",
+        "wood": "#bd997a",
+        "woodLo": "#ab8668",
+        "woodHi": "#c9a78a",
+        "seam": "#957458",
         "white": "#f6f7ff",
         "whiteLo": "#d3d9f2",
         "note1": "#ffe066",
@@ -788,20 +820,26 @@
         "green": "#5cbb63",
         "greenLo": "#3d9150",
         "greenHi": "#8fdc7f",
-        "pot": "#3f4f9e",
-        "potHi": "#5a6cc0",
+        "pot": "#ddd7c7",
+        "potHi": "#f6f0df",
         "red": "#e8505b",
         "redHi": "#ff8a8f",
         "frame": "#8a5a33",
         "frameLo": "#6e4426",
-        "door": "#b9713d",
-        "doorLo": "#9a5a2d",
-        "doorHi": "#d08b53",
+        "door": "#eee9df",
+        "doorLo": "#c9c1b4",
+        "doorHi": "#fff9ed",
         "knob": "#ffd84a",
+        "metal": "#a7a5a2",
         "dark": "#11152e",
-        "bedRim": "#3e52b0",
-        "bedHi": "#5a70cf",
-        "bedLo": "#2b3a87",
+        "sofa": "#c8bcaa",
+        "sofaHi": "#e2d8c8",
+        "sofaLo": "#a99b88",
+        "cover": "#ecd59e",
+        "coverHi": "#fff3d6",
+        "bedRim": "#d9aca7",
+        "bedHi": "#f4d4cd",
+        "bedLo": "#b98c88",
         "g1": "#f6f7ff",
         "g2": "#9fb5f0",
         "g3": "#5c7ad6",
@@ -810,13 +848,13 @@
         "cat2": "#4fa85a",
         "sconce": "#ffe9a8",
         "sconceLo": "#e3bf55",
-        "mat": "#e8505b",
-        "matLo": "#b93d4c"
+        "mat": "#c4c19a",
+        "matLo": "#94966b"
       },
       "sky": "SKY keyed by solar altitude (deg): -18 #070b26/#141c4c, -10 #0d1440/#28306e, -5 #1d2763/#5a4c98, -1.5 #34449a/#c46d98, 1 #4d68c6/#ff9b6a, 6 #5b8fe6/#ffcf8f, 16 #4a9af2/#b8e1ff, 60 #3d93f0/#a7dbff",
       "tint": "TINT multiply keyed by solar altitude: -18 #3a417c, -9 #474f8f, -4 #7468aa, -0.5 #cf9aae, 3 #ffdcb8, 9 #fff3e6, 15 #ffffff",
       "artGrid": "112 art px tall; W art px wide (about 180-260); integer device px per art px chosen near W=220; nearest-neighbour blit; 4x4 Bayer dither for light and sky",
-      "sprite": "public/photos/winnie-room-v1.png, 3x2 cells of 64 art px: sit, blink, sleep, walkA, walkB, happy",
+      "sprite": "public/photos/winnie-room-v3.png, 3x10 cells of 64 art px; packed by scripts/pack-poses.mjs",
       "emotes": [
         "z",
         "!",
@@ -824,7 +862,19 @@
         "~",
         "nom",
         "heart"
-      ]
+      ],
+      "furniture": "Warm cream wall and sofa, rust throw, sage pillow, light wood floor, yellow crate cover with cream lattice and pink rectangular bolster bed. The sofa and crate stay behind Winnie; the bed rim overlays him only while asleep in bed.",
+      "ribbon": "Flat blue CGC ribbon, 9x20 art px, with gold marks; tapping names it without inferring a graduation date or creating a milestone.",
+      "harness": {
+        "sprite": "public/photos/winnie-harness-v1.png",
+        "grid": "3x2 cells of 64 art px",
+        "appearance": "Cream chest piece, red/yellow straps and green hardware, replacing the bandanna.",
+        "behavior": "After a current pee/poop log while awake and home: harness on, walk toward door, happy pose and sparkles, walk back, sit, bandanna restored. Saving and offline queuing do not wait for animation. Interruptions and reduced motion clear the harness; active sleep/walk reactions remain unchanged. Missing harness artwork falls back to the normal sprite.",
+        "provenance": "assets/animation/harness-prompt.md",
+        "packer": "scripts/pack-harness.mjs",
+        "privacy": "Personal reference photograph is not bundled or published."
+      },
+      "lighting": "Real San Francisco sky and weather remain unchanged. Device-local Room lights warms the interior while retaining the real window sky; off restores natural lighting. Hidden tabs pause animation."
     },
     "typographyMeta": {
       "display": {
@@ -1066,7 +1116,7 @@
   ],
   "narrative": {
     "northStar": "Winnie's Room",
-    "overview": "The app is a 16-bit game bedroom dressed in Winnie's bandana colours: blue gingham, apricot Winnie, navy ink outlines, honey-wood floor, periwinkle wallpaper. The top of Today is a living pixel diorama in which pixel Winnie acts out only what the shared log has recorded, under the real San Francisco sky. Everything below it is game UI from the same world: big pixel-edged buttons that press down, square HUD pills, cards drawn with a 2px ink line, sticky notes pinned with a square magnet. Nothing is rounded.\n\nDensity is phone-first and one-handed. The first viewport is room, one status line, two big log tiles, a row of four chips, and the start of Up next, inside a 560px column. Colour is loud but disciplined: each care type owns exactly one saturated colour and that colour means that type everywhere it appears (tile, chip, timeline square, strip tick, chart bar, sheet button). Neutrals are cool periwinkle-tinted paper and navy ink, never warm grey or brown.\n\nPersonality lives in the room, the motion, and the family's own words. The interface copy is a label maker. Winnie never speaks; he emotes in pixel bubbles. Rejected and retired: the pastel card-grid pet dashboard with a hero photo and serif headline, and warm taglines (\"our good boy\", \"His story\", \"A life worth remembering\").",
+    "overview": "The app opens onto a 16-bit room inspired by Winnie's familiar belongings: warm cream walls and sofa, light wood floor, a yellow-covered crate and blush pink bed, with apricot Winnie and his blue gingham bandanna. The top of Today is a living pixel diorama in which pixel Winnie acts out only what the shared log has recorded, under the real San Francisco sky. Everything below it keeps the periwinkle-and-navy game UI: big pixel-edged buttons that press down, square HUD pills, cards drawn with a 2px ink line, sticky notes pinned with a square magnet. Nothing is rounded.\n\nDensity is phone-first and one-handed. Today starts with the room, one status line, two big log tiles, a row of four chips, then permanent Care rows, inside a 560px column. Colour is loud but disciplined: each care type owns exactly one saturated colour and that colour means that type everywhere it appears (tile, chip, timeline square, strip tick, chart bar, sheet button). UI neutrals are cool periwinkle-tinted paper and navy ink; warm cream, wood and fabric colours belong to the room's physical objects.\n\nPersonality lives in the room, the motion, and the family's own words. The interface copy is a label maker. Winnie never speaks; he emotes in pixel bubbles. Rejected and retired: the pastel card-grid pet dashboard with a hero photo and serif headline, and warm taglines (\"our good boy\", \"His story\", \"A life worth remembering\").",
     "keyCharacteristics": [
       "One pixel diorama at the top of Today, drawn on an integer art-pixel grid, scaled nearest-neighbour.",
       "One colour per care type, identical everywhere.",
@@ -1083,8 +1133,8 @@
         "section": "colors"
       },
       {
-        "name": "The Navy Not Brown Rule",
-        "body": "Outlines and text on colour are navy ink (`ink`), in the UI and in the pixel art alike. No brown or black outlines.",
+        "name": "The Navy Ink Rule",
+        "body": "UI outlines and text on colour use navy ink (`ink`). Room controls retain that ink; physical furniture, wood joints, fabric edges and the ribbon use their own darker material shades.",
         "section": "colors"
       },
       {
@@ -1112,8 +1162,8 @@
       "Do let Winnie respond to a log with an action in the room while the toast offers Undo.",
       "Do derive every room state from a recorded fact: an active sleep, an active walk, a logged meal, pending changes, notes on the fridge, a plan due.",
       "Do use `steps()` timing and whole-pixel moves for any new motion, and give reduced motion a still, settled pose.",
-      "Do use gingham as Winnie's signature pattern on surfaces that belong to him (the bed, window curtains, the active tab square, the desktop backdrop).",
-      "Do use navy ink for outlines and for text on coloured surfaces, in the UI and in new pixel art."
+      "Do retain gingham in Winnie's bandanna, the active tab square and the desktop backdrop; render the room's furniture in its observed cream, pink and yellow materials.",
+      "Do use navy ink for UI outlines and text on coloured surfaces; use darker material shades where the room's physical objects need edges."
     ],
     "donts": [
       "Don't show Winnie sad, hungry, needy or waiting, or infer any state from gaps in the log. No streaks, scores or guilt.",
@@ -1124,7 +1174,7 @@
       "Don't use taglines, \"our / together / moments / story / little\", exclamation marks, em dashes or rhetorical questions in UI copy.",
       "Don't set paragraphs in Pixelify Sans or use all-caps labels.",
       "Don't smooth-scale pixel art or draw it off the art grid; scale by integers with `image-rendering: pixelated`.",
-      "Don't use brown or black outlines in the UI or the room.",
+      "Don't replace navy UI outlines with brown or black; room material shading is separate from the UI palette.",
       "Don't lead with a hero photo or a pastel card grid; the room is the top of Today."
     ]
   }

@@ -1,22 +1,22 @@
 // Today: the room's state, the log buttons, Also today, the day strip, and partner greetings.
-import { careStates, careDay } from "../care-plans.js?v=4.24";
-import { fridgeState, onFridge } from "../fridge-model.js?v=4.24";
-import { latestCare, elapsed } from "../care-state.js?v=4.24";
+import { careStates, careDay } from "../care-plans.js?v=4.25";
+import { fridgeState, onFridge } from "../fridge-model.js?v=4.25";
+import { latestCare, elapsed } from "../care-state.js?v=4.25";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
 import { getTimes } from "../vendor/suncalc.js";
-import { weatherKind } from "../room.js?v=4.24";
+import { weatherKind } from "../room.js?v=4.25";
 import {
   cachedWeather,
   refreshWeather,
   weatherWords,
-} from "./weather.js?v=4.24";
-import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.24";
-import { rhythmInsights, durationLabel } from "../insights.js?v=4.24";
-import { care, facts, fridge, room, sync } from "./services.js?v=4.24";
-import { setTab, showPhotos } from "./nav.js?v=4.24";
-import { pantryHTML } from "./pantry-view.js?v=4.24";
-import { QUALITY } from "../pantry.js?v=4.24";
-import { finishWalk, log } from "./logging.js?v=4.24";
+} from "./weather.js?v=4.25";
+import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.25";
+import { rhythmInsights, durationLabel } from "../insights.js?v=4.25";
+import { care, facts, fridge, room, sync } from "./services.js?v=4.25";
+import { setTab, showPhotos } from "./nav.js?v=4.25";
+import { pantryHTML } from "./pantry-view.js?v=4.25";
+import { QUALITY } from "../pantry.js?v=4.25";
+import { finishWalk, log } from "./logging.js?v=4.25";
 import {
   $,
   TYPES,
@@ -27,15 +27,15 @@ import {
   esc,
   person,
   when,
-} from "./format.js?v=4.24";
-import { html, toast } from "./ui.js?v=4.24";
-import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.24";
-import { legacyDiff } from "./settings.js?v=4.24";
-import { renderLastTimes, renderStory } from "./library.js?v=4.24";
-import { state } from "./state.js?v=4.24";
-import { ROUTINE, lastRoutine } from "../routine.js?v=4.24";
-import { suppliesHTML } from "./supplies-view.js?v=4.24";
-import { trainingHTML } from "./trainer.js?v=4.24";
+} from "./format.js?v=4.25";
+import { html, toast } from "./ui.js?v=4.25";
+import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.25";
+import { legacyDiff } from "./settings.js?v=4.25";
+import { renderLastTimes, renderStory } from "./library.js?v=4.25";
+import { state } from "./state.js?v=4.25";
+import { ROUTINE, lastRoutine } from "../routine.js?v=4.25";
+import { suppliesHTML } from "./supplies-view.js?v=4.25";
+import { trainingHTML } from "./trainer.js?v=4.25";
 
 let shownWeather = 0;
 let roomReady = false,
