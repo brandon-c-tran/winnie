@@ -17,11 +17,14 @@ test('room lights brighten a sleeping room, remember the choice, and leave care 
   });
   const before = await sample();
   const lights = page.getByRole('button', { name: 'Room lights', exact: true });
+  // The target must follow the HUD inset without waiting for canvas measurement.
+  await page.locator('#room-wrap').evaluate(el=>el.style.setProperty('--room-hud-height','84px'));
   expect(await page.evaluate(async()=>{
     const {room}=await import('/app/services.js?v=4.22');
     const canvas=document.querySelector('#room').getBoundingClientRect(),button=document.querySelector('#room-lights').getBoundingClientRect(),s=room.layout.lightSwitch;
     return Math.abs(button.y+button.height/2-(canvas.y+(s.y+s.h/2)*canvas.height/112));
   })).toBeLessThan(1);
+  await page.locator('#room-wrap').evaluate(el=>el.style.removeProperty('--room-hud-height'));
   await expect(lights).toHaveAttribute('aria-pressed', 'false');
   await lights.click();
   await expect(lights).toHaveAttribute('aria-pressed', 'true');

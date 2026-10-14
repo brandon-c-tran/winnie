@@ -411,7 +411,8 @@ export function createRoom(canvas, opts = {}) {
     canvas.style.height = (ROOM_H * k) / dpr + "px";
     layout();
     canvas.parentElement.style.setProperty('--switch-x', `${(L.lightSwitch.x + 3) * k / dpr}px`);
-    canvas.parentElement.style.setProperty('--switch-y', `${canvas.offsetTop + (L.lightSwitch.y + 4.5) * k / dpr}px`);
+    // CSS adds the shared HUD inset even when Safari sizes the hidden room.
+    canvas.parentElement.style.setProperty('--switch-y', `${(L.lightSwitch.y + 4.5) * k / dpr}px`);
     paintMask();
     dog.x = Math.min(dog.x, L.spot.max);
     settle();

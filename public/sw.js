@@ -1,5 +1,5 @@
 // Versioned files are served cache-first: change a file, bump its ?v= tag and CACHE.
-const CACHE = "winnie-v4-20261014-album";
+const CACHE = "winnie-v4-20261014-album-2";
 const SHELL = [
   "/story-album.js?v=4.22",
   "/app/story-album-view.js?v=4.22",

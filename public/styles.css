@@ -381,7 +381,8 @@ main:focus {
   position: relative;
   line-height: 0;
   background: #7d95dc;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 64px);
+  --room-hud-height: calc(env(safe-area-inset-top, 0px) + 64px);
+  padding-top: var(--room-hud-height);
   overflow: hidden;
 }
 .room canvas {
@@ -427,7 +428,7 @@ main:focus {
 .room-lights {
   position: absolute;
   left: var(--switch-x, 86%);
-  top: var(--switch-y, 56%);
+  top: calc(var(--room-hud-height) + var(--switch-y, 56%));
   transform: translate(-50%, -50%);
   width: 44px;
   height: 44px;
