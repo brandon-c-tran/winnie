@@ -439,7 +439,7 @@ A canvas diorama, the centre of the identity. Care behavior follows recorded fac
 - **Plant, toy caterpillar:** set dressing; the toy is an idle sniffing spot.
 - **Snuggle Puppy:** his real plush, in the bed. He sleeps with it, carries it when he plays, and tapping it starts a play. Hidden from the bed while he holds it or sleeps.
 - **CGC ribbon:** his Canine Good Citizen rosette under the picture. Tapping names it.
-- **Trophy shelf:** one trophy per milestone from the last 30 days, up to three; no shelf when there are none. Tapping opens Album.
+- **Trophy shelf:** one trophy per milestone from the last 30 days, up to three; no shelf when there are none. Tapping opens Life.
 - **Seasons:** a pumpkin by the door in October (its face glows after dark), string lights along the rail from December 1 to January 6, flowers on the plant in spring.
 
 **Poses.** The sheet is `public/photos/winnie-room-v2.png`, built by `scripts/build-poses.mjs` from the six cleaned frames: sit, blink, sleep, walk (2), happy, plus tail wag, eating (2), sniffing (2), yawn, wet with towel, holding the Snuggle Puppy, and asleep with it. Idle time mixes wandering, wagging, sniffing, playing with the plush, and an evening yawn; night sleep starts with a yawn. New poses that need real art are specified in `ASTRA_HANDOFF.md`.
@@ -494,8 +494,8 @@ which also use labeled date/time fields. Prefer concise
 sentences when a relationship genuinely needs prose. This is a standing user
 preference for future interfaces as well as the care log.
 
-Story owns Album, Photos, Places and Journal beneath one shared heading.
-Album is the initial view. Search, type and date filters belong to Journal;
+Story owns Life, Photos, Places and Journal beneath one shared heading.
+Life is the initial view. Search, type and date filters belong to Journal;
 Browse by month & milestones opens a drilldown with Back to Journal. The drilldown
 uses the same flat sections, Pixelify labels and Rubik reading text for source search,
 monthly photos and recorded days, milestones and source notes. Its age label explicitly
@@ -536,7 +536,7 @@ in Pixelify Sans 700 at 24px and logger attribution. Labeled date/time fields,
 full notes, recorded facts, consistency, place and photos follow. Logger and
 care-provider attribution remain distinct.
 
-Album, Photos, Places and Journal share a stable primary navigation row beneath
+Life, Photos, Places and Journal share a stable primary navigation row beneath
 the Story heading. Flat, equal-width controls use an ink underline and sunk fill
 for the selected view. Journal's month/milestone and Add entry actions are tools
 below that row; the month drilldown has an explicit back action.
@@ -559,8 +559,23 @@ adding opens a searchable picker of existing
 poop and meal entries so each photo stays attached to its care record. Entry
 detail sheets also offer Take photo and Choose photo beside the Photos heading.
 
-Album leads with the age-chapter album in the existing Pixelify,
-Rubik, ink and paper vocabulary. When distinct photos exist, the first and last
+Life uses a continuous chronological photo stream in the existing Pixelify,
+Rubik, ink and paper vocabulary. A wrapping toolbar holds Jump to an age, Latest
+and Make an album. Birthday-based age headings use square markers beside a fine
+vertical chronology line; each dated group pairs its date with the age calculated
+from that day. Birth, homecoming, saved milestones and named trips remain in context.
+The lead photo spans the stream, followed by subordinate pairs, all contained
+without cropping against the sunk ground. Dates, age headings and places use Pixelify;
+captions and attributed recollections use Rubik. Each photo opens its source entry.
+Age headings are 28px, reducing to 25px at 360px and below; the stream inset reduces
+from 24px to 18px, and date/age rows wrap. Photo presses move two whole pixels with
+stepped timing and settle without that motion when reduced motion is requested.
+Eight dated groups and three photos per day bound the initial display; further
+days and photos expand incrementally, with Earlier memories after a jump beyond
+the current window. The existing 560px desktop column and light/dark palettes remain.
+
+Make a yearly album is a secondary disclosure below the stream, opened directly
+by Make an album. It retains the age-chapter album: when distinct photos exist, the first and last
 selected photos form a two-column bookend row with age labels. A horizontally
 scrollable month strip precedes one active chapter cover, its date and place,
 saved caption and separately attributed caregiver words. Covers and bookends
@@ -578,7 +593,7 @@ no new visual identity or token set. Their behavioral limits are recorded in
 PRODUCT.md and `.impeccable/surfaces/public-app-library-js.md`.
 
 Places leads with region controls and a bordered local atlas beneath the Story heading
-and the Album / Photos / Places / Journal row. Natural Earth geography uses restrained
+and the Life / Photos / Places / Journal row. Natural Earth geography uses restrained
 land and water fills; pink destination markers, square map controls and Pixelify
 labels connect it to the incumbent world. Selected destinations and dated replay
 appear below the map, followed by a horizontal outing list and a divided directory.

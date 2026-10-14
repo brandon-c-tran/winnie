@@ -6,12 +6,12 @@ test("Story has one navigation row and keeps exploration, calendar and chart evi
   const errors = await join(page, code(info));
   await page.locator("#story-tab").click();
   await expect(page.locator("#story-navigation button")).toHaveText([
-    "Album",
+    "Life",
     "Photos",
     "Places",
     "Journal",
   ]);
-  await expect(page.locator("#album-title")).toBeVisible();
+  await expect(page.locator(".life-timeline")).toBeVisible();
   await page.locator("#places-home").click();
   await page.locator("#photo-search").fill("beach");
   await page.locator("#photo-collection").selectOption("care-photos");

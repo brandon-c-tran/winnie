@@ -1,22 +1,23 @@
-import { collectionsHTML } from './lifetime-view.js?v=4.23';
-import { storyAlbumHTML, bindStoryAlbum, choosePostcard } from './story-album-view.js?v=4.23';
-import { state } from './state.js?v=4.23';
+import { lifeTimelineHTML, bindLifeTimeline } from './life-timeline-view.js?v=4.24';
+import { collectionsHTML } from './lifetime-view.js?v=4.24';
+import { storyAlbumHTML, bindStoryAlbum, choosePostcard } from './story-album-view.js?v=4.24';
+import { state } from './state.js?v=4.24';
 // Memories: this week's postcard, on this day, milestones, and the year so far.
-import { memoryEvents } from "../keepsakes.js?v=4.23";
-import { placeLabel } from "../places.js?v=4.23";
+import { memoryEvents } from "../keepsakes.js?v=4.24";
+import { placeLabel } from "../places.js?v=4.24";
 import {
   milestones,
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.23";
-import { cityFor } from "../places.js?v=4.23";
+} from "../memories.js?v=4.24";
+import { cityFor } from "../places.js?v=4.24";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.23";
-import { $, esc } from "./format.js?v=4.23";
-import { html, toast } from "./ui.js?v=4.23";
-import { hydratePhotos } from "./entries.js?v=4.23";
-import { download } from "./photos.js?v=4.23";
+import { facts, sync } from "./services.js?v=4.24";
+import { $, esc } from "./format.js?v=4.24";
+import { html, toast } from "./ui.js?v=4.24";
+import { hydratePhotos } from "./entries.js?v=4.24";
+import { download } from "./photos.js?v=4.24";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -50,6 +51,7 @@ export const recentTrophies = () =>
 let recapYear = new Date().getFullYear();
 let postcardPhoto = "";
 export function renderMemories() {
+  const yearbookOpen = document.querySelector('.yearbook-tool')?.open;
   const postcardOpen = document.querySelector('.postcard-tool')?.open;
   const collectionsOpen = document.querySelector('.album-collections')?.open;
   const events = facts(),
@@ -105,7 +107,7 @@ export function renderMemories() {
   ];
   html(
     "photo-items",
-    `${storyAlbumHTML()}<details class="postcard-tool" ${postcardOpen ? 'open' : ''}><summary>Make a postcard</summary><section class="card mem" aria-labelledby="week-title">
+    `${lifeTimelineHTML()}<details id="life-yearbook-tool" class="yearbook-tool" ${yearbookOpen ? 'open' : ''}><summary>Make a yearly album</summary>${yearbookOpen ? storyAlbumHTML() : ''}</details><details class="postcard-tool" ${postcardOpen ? 'open' : ''}><summary>Make a postcard</summary><section class="card mem" aria-labelledby="week-title">
       <div class="card-head"><h2 id="week-title">Postcard</h2><span class="muted">${range}</span></div>
       ${chosen ? `<div class="button-row"><button class="secondary" id="postcard-photo">Choose photo</button><button class="text-button" data-edit="${esc(chosen.e.id)}">Edit caption</button></div>` : `<p>No keepsakes yet.</p><button class="px btn" data-add-photos>Add photos</button>`}
       <canvas ${chosen ? "" : "hidden"} id="postcard" class="postcard" width="1080" height="1350" role="img" aria-label="Winnie postcard: ${esc(range)}${week.caption ? ", " + esc(week.caption) : ""}"></canvas>
@@ -129,6 +131,8 @@ export function renderMemories() {
       renderMemories();
       $("postcard-photo")?.focus();
     });
+  $("life-yearbook-tool").ontoggle = () => { if($("life-yearbook-tool").open && !$("album-title"))renderMemories(); };
+  bindLifeTimeline();
   bindStoryAlbum();
   hydratePhotos();
   drawPostcard(week, range).catch(() => {});

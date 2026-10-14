@@ -3742,3 +3742,35 @@ details {
 .heat-row > div .heat-missing { grid-column:1/-1; background:transparent; color:var(--muted); height:auto; font-size:11px; }
 @media(max-width:420px) { .life-plot text { font-size:21px; } }
 @media(min-width:421px) and (max-width:580px) { .life-plot text { font-size:17px; } }
+/* A continuous chronology. The line marks time, not a card edge. */
+.life-browse { display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; padding:12px 0 22px; }
+.life-browse label { flex:1 1 160px; min-width:0; margin:0; }
+.life-browse select { margin:0; }
+.life-browse .text-button { flex:none; }
+.life-age { position:relative; margin:26px 0 18px; padding-left:24px; font:700 28px/1.1 var(--px); }
+.life-age::before { content:""; position:absolute; width:9px; height:9px; left:0; top:9px; background:var(--text); }
+.life-day { position:relative; padding:0 0 32px 24px; scroll-margin-top:20px; }
+.life-day::before { content:""; position:absolute; width:1px; background:var(--line); left:4px; top:0; bottom:0; }
+.life-date { display:flex; justify-content:space-between; gap:8px; align-items:baseline; margin-bottom:12px; }
+.life-date time { font:600 17px var(--px); }
+.life-date > span { color:var(--muted); font:12px var(--ui); }
+.life-landmark { padding:8px 0 14px; }
+.life-landmark h3, .life-landmark .text-button { font:700 23px/1.2 var(--px); text-align:left; white-space:normal; }
+.life-landmark .text-button { padding:0; }
+.life-photos { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.life-photo { padding:0; min-width:0; border:0; background:var(--sunk); }
+.life-photo img { display:block; width:100%; height:auto; aspect-ratio:1; object-fit:contain; }
+.life-photo.lead { grid-column:1/-1; }
+.life-photo.lead img { aspect-ratio:4/5; max-height:480px; }
+.life-place { font:600 17px var(--px); margin-top:12px; }
+.life-caption, .life-note { font:16px/1.55 var(--ui); white-space:pre-wrap; overflow-wrap:anywhere; margin:12px 0; }
+.life-note { display:block; text-align:left; background:transparent; border:0; padding:0; text-decoration:underline; text-underline-offset:4px; }
+.life-recollect { margin-top:8px; }
+.life-more-photos { white-space:normal; text-align:left; margin-top:8px; }
+.life-continue { padding:8px 0 26px 24px; display:flex; flex-wrap:wrap; align-items:center; gap:12px 20px; }
+.life-earlier { margin-bottom:16px; }
+.yearbook-tool { margin:20px 0; padding-top:20px; border-top:1px solid var(--line); }
+.yearbook-tool > summary { cursor:pointer; min-height:44px; font:600 19px var(--px); }
+.life-day:focus { outline:2px solid var(--muted); outline-offset:4px; }
+@media(max-width:360px) { .life-age { font-size:25px; padding-left:18px; } .life-day { padding-left:18px; } .life-date { flex-wrap:wrap; } .life-continue { padding-left:18px; } }
+@media(prefers-reduced-motion:no-preference) { .life-photo:active { transform:translateY(2px); transition:transform 120ms steps(2,end); } }
