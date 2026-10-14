@@ -1,6 +1,6 @@
 // Evidence-based views over Winnie's records. Missing logs never mean no activity.
-import { cityFor, placeName } from './places.js?v=4.25';
-import { winniePhotos } from './keepsakes.js?v=4.25';
+import { cityFor, placeName } from './places.js?v=4.26';
+import { winniePhotos } from './keepsakes.js?v=4.26';
 export const BIRTHDAY = '2025-07-25';
 export const HOMECOMING = '2025-10-04';
 export const ERAS = [

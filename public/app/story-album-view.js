@@ -1,12 +1,12 @@
-import { albumChapters, ageMonth } from "../story-album.js?v=4.25";
-import { ageAt, recordDay, selectedPhotos } from "../lifetime.js?v=4.25";
-import { facts, sync } from "./services.js?v=4.25";
-import { $, esc } from "./format.js?v=4.25";
-import { closeDialog, safe, toast } from "./ui.js?v=4.25";
-import { pickMemoryPhoto } from "./photo-picker.js?v=4.25";
-import { recollectionsHTML } from "./recollections.js?v=4.25";
-import { detail } from "./entries.js?v=4.25";
-import { download, addPhotos } from "./photos.js?v=4.25";
+import { albumChapters, ageMonth } from "../story-album.js?v=4.26";
+import { ageAt, recordDay, selectedPhotos } from "../lifetime.js?v=4.26";
+import { facts, sync } from "./services.js?v=4.26";
+import { $, esc } from "./format.js?v=4.26";
+import { closeDialog, safe, toast } from "./ui.js?v=4.26";
+import { pickMemoryPhoto } from "./photo-picker.js?v=4.26";
+import { recollectionsHTML } from "./recollections.js?v=4.26";
+import { detail } from "./entries.js?v=4.26";
+import { download, addPhotos } from "./photos.js?v=4.26";
 
 let year = 0,
   chapterMonth = null;

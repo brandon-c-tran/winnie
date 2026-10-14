@@ -385,6 +385,36 @@ main:focus {
   padding-top: var(--room-hud-height);
   overflow: hidden;
 }
+.room-ribbon {
+  position: absolute;
+  z-index: 2;
+  left: var(--ribbon-x);
+  top: calc(var(--room-hud-height) + var(--ribbon-y));
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.room-ribbon:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.room-ribbon:hover, .room-ribbon:active { background: transparent; transform: translate(-50%, -50%); box-shadow: none; }
+.room-closet { position:absolute; z-index:2; left:var(--closet-x); top:calc(var(--room-hud-height) + var(--closet-y)); transform:translate(-50%,-50%); width:44px; height:52px; padding:0; border:0; background:transparent; box-shadow:none; }
+.room-closet:hover, .room-closet:active { background:transparent; transform:translate(-50%,-50%); box-shadow:none; }
+.room-closet:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+.closet-outfits { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:24px 0; }
+.closet-outfit { display:flex; align-items:center; flex-direction:column; gap:8px; padding:12px 6px; min-width:0; background:var(--surface); border:2px solid var(--line); box-shadow:none; }
+.closet-outfit[aria-pressed="true"] { border-color:var(--ink); background:var(--sticky-yellow); color:#22264a; }
+.closet-outfit strong { font:500 15px/1.35 var(--ui); }
+.closet-outfit > span:last-child { font:400 12px/1.4 var(--ui); }
+.outfit-preview { display:block; width:64px; height:64px; background-size:192px auto; background-position:0 0; background-repeat:no-repeat; image-rendering:pixelated; }
+.closet-note { margin-bottom:0; }
+@media(max-width:360px) { .closet-outfits { gap:6px; } .closet-outfit { padding:10px 2px; } .closet-outfit strong { font-size:13px; } }
+.graduation-memory figure { margin: 20px 0; }
+.graduation-photo { display: block; width: 100%; max-height: 52svh; object-fit: contain; }
+.graduation-memory figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 12px; color: var(--muted); }
+.graduation-memory .cgc-change { margin-top: 20px; }
 .room canvas {
   display: block;
   image-rendering: pixelated;
@@ -1846,7 +1876,7 @@ dialog.closing::backdrop {
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
-#dialog-content > h2 {
+#dialog-content > h2, .graduation-memory > h2 {
   font: 700 24px var(--px);
 }
 #dialog-content h3 {

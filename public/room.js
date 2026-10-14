@@ -59,10 +59,10 @@ const C = {
   rail: "#eee7dc",
   base: "#f7f1e5",
   baseLo: "#c8bfaf",
-  wood: "#bd997a",
-  woodLo: "#ab8668",
-  woodHi: "#c9a78a",
-  seam: "#957458",
+  wood: "#a98061",
+  woodLo: "#967052",
+  woodHi: "#b68f70",
+  seam: "#866349",
   white: "#f6f7ff",
   whiteLo: "#d3d9f2",
   note1: "#ffe066",
@@ -285,7 +285,7 @@ export function sfEpoch(minute, base = Date.now()) {
 }
 
 export function createRoom(canvas, opts = {}) {
-  const { sprite, harnessSprite, onObject = () => {}, still = false } = opts;
+  const { sprite, harnessSprite, shirtSprite, onObject = () => {}, still = false } = opts;
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   let reduced = opts.reduced ?? motion.matches;
   const view = canvas.getContext("2d");
@@ -326,6 +326,7 @@ export function createRoom(canvas, opts = {}) {
     error: false,
     due: false,
     lights: false,
+    outfit: 'bandanna',
   };
   const dog = {
     x: 64,
@@ -372,7 +373,9 @@ export function createRoom(canvas, opts = {}) {
       hook = { x: door.x + door.w + 4, y: 33 };
     L = {
       fridge: { x: 3, y: 22, w: 18, h: 54 },
-      plant: { x: 22, y: 60 },
+      plant: { x: 22, y: 30 },
+      closet: { x: 23, y: 45, w: 16, h: 32 },
+      archLamp: { x: 101, y: 80 },
       win: { x: 37, y: 12, w: 32, h: 30 },
       cal: { x: 80, y: 15, w: 13, h: 16 },
       frame: { x: 94, y: 13, w: Math.min(42, door.x - 96), h: 32 },
@@ -384,7 +387,7 @@ export function createRoom(canvas, opts = {}) {
       bowl: { x: 88, y: 100, w: 12, h: 6 },
       toy: { x: 56, y: 103 },
       ribbon: { x: 108, y: 47, w: 9, h: 20 },
-      couch: { x: 34, y: 56, w: 65, h: 26 },
+      couch: { x: 40, y: 58, w: 59, h: 26 },
       crate: { x: W - 55, y: 59, w: 51, h: 48 },
       shelf: { x: 75, y: 44, w: 18, h: 6 },
     };
@@ -415,6 +418,10 @@ export function createRoom(canvas, opts = {}) {
     canvas.parentElement.style.setProperty('--switch-x', `${(L.lightSwitch.x + 3) * k / dpr}px`);
     // CSS adds the shared HUD inset even when Safari sizes the hidden room.
     canvas.parentElement.style.setProperty('--switch-y', `${(L.lightSwitch.y + 4.5) * k / dpr}px`);
+    canvas.parentElement.style.setProperty('--ribbon-x', `${(L.ribbon.x + L.ribbon.w / 2) * k / dpr}px`);
+    canvas.parentElement.style.setProperty('--ribbon-y', `${(L.ribbon.y + L.ribbon.h / 2) * k / dpr}px`);
+    canvas.parentElement.style.setProperty('--closet-x', `${(L.closet.x + L.closet.w / 2) * k / dpr}px`);
+    canvas.parentElement.style.setProperty('--closet-y', `${(L.closet.y + L.closet.h / 2) * k / dpr}px`);
     paintMask();
     dog.x = Math.min(dog.x, L.spot.max);
     settle();
@@ -449,8 +456,18 @@ export function createRoom(canvas, opts = {}) {
       R(c, 0, y, W, 5, C.wood);
       R(c, 0, y, W, 1, C.woodHi);
       R(c, 0, y + 4, W, 1, C.woodLo);
-      for (let x = (row * 17) % 31; x < W; x += 31)
+      for (let x = (row * 17) % 41; x < W; x += 41) {
         R(c, x, y + 1, 1, 3, C.seam);
+        R(c, x + 4, y + 2, 14, 1, row % 2 ? C.woodLo : C.woodHi);
+        R(c, x + 21, y + 3, 9, 1, C.woodHi);
+      }
+    }
+    // His cream and ochre rug: irregular botanical shapes, beneath every actor.
+    R(c, 35, 81, 94, 28, '#b99b66');
+    R(c, 36, 81, 92, 27, '#e2d3ad');
+    for (const [x,y,w,h] of [[38,83,12,5],[48,87,8,4],[66,82,15,4],[88,85,12,5],[112,82,11,6],[39,99,15,6],[57,103,9,4],[80,98,16,6],[108,101,14,5]]) {
+      R(c,x,y,w,h,'#c4a259');R(c,x+3,y-1,w-5,h+2,'#c4a259');
+      R(c,x+2,y+1,Math.max(2,w-7),1,'#d3b777');
     }
     // fridge
     const f = L.fridge;
@@ -476,6 +493,10 @@ export function createRoom(canvas, opts = {}) {
     R(c, f.x + 8, f.y + 25, 3, 3, C.red);
     R(c, f.x + 13, f.y + 30, 3, 3, C.g3);
     R(c, f.x + 9, f.y + 36, 3, 3, C.knob);
+    // Open wood plant box above the closet.
+    R(c, 21, 24, 13, 14, C.frame);
+    R(c, 23, 25, 9, 11, C.wall2);
+    R(c, 21, 38, 13, 2, C.frameLo);
     // plant
     const p = L.plant;
     R(c, p.x, p.y + 8, 9, 8, C.ink);
@@ -492,6 +513,20 @@ export function createRoom(canvas, opts = {}) {
       R(c, p.x + x, p.y + y, w, h, i % 2 ? C.greenLo : C.green);
       R(c, p.x + x, p.y + y, 1, 1, C.greenHi);
     });
+    // Trailing vine.
+    for (let y=32;y<44;y+=3) {
+      R(c,32,y,1,4,C.greenLo);R(c,30+(y%2),y,3,2,C.green);
+    }
+    const closet=L.closet;
+    R(c,closet.x,closet.y,closet.w,closet.h,C.frameLo);
+    R(c,closet.x+1,closet.y+1,closet.w-2,closet.h-2,'#b89169');
+    R(c,closet.x+2,closet.y+2,5,closet.h-5,'#cba77f');
+    R(c,closet.x+9,closet.y+2,5,closet.h-5,'#cba77f');
+    R(c,closet.x+7,closet.y+1,1,closet.h-2,C.frameLo);
+    R(c,closet.x+5,closet.y+17,1,3,C.knob);
+    R(c,closet.x+10,closet.y+17,1,3,C.knob);
+    // A little hanger on the doors makes this an outfit affordance.
+    for (const [x,y,w] of [[7,5,2],[8,6,1],[6,8,5],[4,9,9],[4,10,9]]) R(c,closet.x+x,closet.y+y,w,1,'#f8e7c6');
     // window frame (glass painted per frame)
     const wn = L.win;
     R(c, wn.x - 7, wn.y - 4, wn.w + 14, 1, C.ink);
@@ -527,6 +562,20 @@ export function createRoom(canvas, opts = {}) {
     R(c, sofa.x + 9, sofa.y + 8, 1, 14, "#d49b81");
     R(c, sofa.x + 46, sofa.y + 4, 11, 9, "#91aa90");
     R(c, sofa.x + 47, sofa.y + 4, 9, 1, "#b0c2a6");
+    // The real black arc and tiered wooden shade, behind Winnie.
+    const lamp=L.archLamp;
+    R(c,lamp.x-3,lamp.y,8,2,'#48413b');
+    R(c,lamp.x,lamp.y-20,1,20,'#48413b');
+    let previous=null;
+    for(let x=51;x<=lamp.x;x++) {
+      const y=Math.round(47 + 13*((x-72)/29)**2);
+      if(previous) R(c,x,Math.min(y,previous),1,Math.abs(y-previous)+1,'#48413b');
+      previous=y;
+    }
+    R(c,51,54,1,5,'#48413b');
+    for(const [y,w] of [[58,9],[60,13],[62,17],[65,15],[68,11],[70,7]]) {
+      const x=52-Math.floor(w/2);R(c,x,y,w,3,'#be8e58');R(c,x,y,w,1,'#dcaf79');
+    }
     // calendar
     const cl = L.cal;
     R(c, cl.x + cl.w / 2 - 1, cl.y - 3, 2, 2, C.ink);
@@ -935,10 +984,11 @@ export function createRoom(canvas, opts = {}) {
   }
   function paintDog(c) {
     if (dog.hidden || dog.alpha <= 0) return;
-    const dressed = dog.harness && harnessSprite?.complete && harnessSprite.naturalWidth > 0;
+    const clothing = dog.harness || st.outfit === 'harness' ? harnessSprite : st.outfit === 'stripes' ? shirtSprite : null;
+    const dressed = clothing?.complete && clothing.naturalWidth > 0;
     const requested = frameOf();
-    const name = dressed && FRAMES[requested]?.[1] > 1 ? "sit" : requested;
-    const sheet = dressed ? harnessSprite : sprite;
+    const name = dressed && FRAMES[requested]?.[1] > 1 ? dog.pose === 'sleep' ? 'sleep' : 'sit' : requested;
+    const sheet = dressed ? clothing : sprite;
     const [fx, fy, dx, dy] = FRAMES[name];
     let x = Math.round(dog.x),
       y = Math.round(dog.y - 57 + dy + dog.bob);
@@ -1454,6 +1504,7 @@ export function createRoom(canvas, opts = {}) {
       dog.shake ? tick % 2 : 0,
       dog.toy,
       dog.harness,
+      st.outfit,
       dog.face,
       dog.hidden,
       dog.bed,
@@ -1846,6 +1897,7 @@ export function createRoom(canvas, opts = {}) {
     if (inR(L.door) || inR({ x: L.door.x - 4, y: 77, w: L.door.w + 8, h: 6 }))
       return "door";
     if (inR(L.fridge)) return "fridge";
+    if (inR(L.closet)) return "closet";
     if (inR(L.cal)) return "calendar";
     if (inR(L.frame)) return "photo";
     if (inR(L.ribbon)) return "ribbon";
@@ -1904,6 +1956,7 @@ export function createRoom(canvas, opts = {}) {
     });
   }
   harnessSprite?.addEventListener("load", draw, { once: true });
+  shirtSprite?.addEventListener("load", draw, { once: true });
   if (sprite.complete) size();
   else sprite.addEventListener("load", size, { once: true });
   return {
@@ -1911,6 +1964,7 @@ export function createRoom(canvas, opts = {}) {
     react,
     setPhoto,
     get lights() { return st.lights; },
+    get outfit() { return dog.harness ? 'harness' : st.outfit; },
     setLights(on) { st.lights = !!on; draw(); },
     draw: () => draw(),
     pause(on) {

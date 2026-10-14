@@ -1,20 +1,20 @@
 // Logging: one-tap logs, sleep and walks, grooming, Earlier, meals, More, press-and-hold.
-import { careStates, completionId } from "../care-plans.js?v=4.25";
-import { elapsed } from "../care-state.js?v=4.25";
+import { careStates, completionId } from "../care-plans.js?v=4.26";
+import { elapsed } from "../care-state.js?v=4.26";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { durationLabel } from "../insights.js?v=4.25";
+import { durationLabel } from "../insights.js?v=4.26";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
-} from "../everyday.js?v=4.25";
+} from "../everyday.js?v=4.26";
 import {
   autoPlace,
   autoPlaceEnabled,
   facts,
   room,
   sync,
-} from "./services.js?v=4.25";
+} from "./services.js?v=4.26";
 import {
   $,
   TYPES,
@@ -23,7 +23,7 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.25";
+} from "./format.js?v=4.26";
 import {
   closeDialog,
   retainDialogDraft,
@@ -35,12 +35,12 @@ import {
   renderedHTML,
   safe,
   toast,
-} from "./ui.js?v=4.25";
-import { editForm } from "./forms.js?v=4.25";
-import { render } from "./today.js?v=4.25";
-import { state } from "./state.js?v=4.25";
-import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.25";
-import { pantryNow, savePantry } from "./pantry-view.js?v=4.25";
+} from "./ui.js?v=4.26";
+import { editForm } from "./forms.js?v=4.26";
+import { render } from "./today.js?v=4.26";
+import { state } from "./state.js?v=4.26";
+import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.26";
+import { pantryNow, savePantry } from "./pantry-view.js?v=4.26";
 
 let mealSubmitting = false;
 let pressTimer = 0;
@@ -410,7 +410,7 @@ const roomActionsHTML = `<details class="room-actions"><summary>Explore the room
   ["winnie", "Pet Winnie"], ["toy", "Play with toy"], ["photo", "Change wall photo"],
   ["fridge", "Leave a note"], ["calendar", "Open plans"], ["bowl", "Log meal"],
   ["bed", "Sleep timer"], ["door", "Walk timer"], ["window", "Weather and daylight"],
-  ["shelf", "Open memories"], ["ribbon", "Training ribbon"]
+  ["shelf", "Open memories"], ["ribbon", "Training ribbon"], ["closet", "Winnie's closet"]
 ].map(([action,label]) => `<button class="text-button" data-room-action="${action}">${label}</button>`).join("")}</div></details>`;
 export function moreCare() {
   const events = facts(),
