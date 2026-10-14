@@ -1,4 +1,4 @@
-import { notificationState } from "./everyday.js?v=4.15";
+import { notificationState } from "./everyday.js?v=4.16";
 const API = "/.netlify/functions/api";
 const empty = () => ({
   snapshot: {
@@ -88,8 +88,10 @@ export function project(data) {
       if (c.kind === "attach")
         e.photos = [
           ...(e.photos || []),
-          { id: c.payload.photoId, addedBy: item.person },
+          { id: c.payload.photoId, addedBy: item.person, ...(c.payload.metadata ? {metadata: c.payload.metadata} : {}) },
         ];
+      if (c.kind === "photoMetadata")
+        e.photos = (e.photos || []).map(p => p.id === c.payload.photoId ? {...p, metadata:c.payload.metadata} : p);
       if (c.kind === "keepPhoto")
         e.photos = (e.photos || []).map(p => p.id === c.payload.photoId ? {...p, keepsake: c.payload.keep} : p);
       if (c.kind === "removePhoto")
@@ -341,8 +343,8 @@ export class WinnieSync extends EventTarget {
     this.flush();
     return id;
   }
-  async addPhoto(eventId, blob) {
-    const id = uid();
+  async addPhoto(eventId, blob, metadata = null, id = uid()) {
+    if (this.view().events.find(e => e.id === eventId)?.photos?.some(p => p.id === id)) return id;
     // Store bytes rather than a Blob: WebKit can abort IndexedDB writes of
     // canvas-created Blobs. Existing Blob records remain readable below.
     const stored = { bytes: await blob.arrayBuffer(), type: blob.type };
@@ -360,6 +362,7 @@ export class WinnieSync extends EventTarget {
         throw new Error(
           "The entry was removed. Your photo remains on this device.",
         );
+      if (event.photos?.some(p => p.id === id)) return;
       d.queue.push({
         command: {
           protocol: 4,
@@ -367,7 +370,7 @@ export class WinnieSync extends EventTarget {
           kind: "attach",
           eventId,
           expectedRevision: event.revision,
-          payload: { photoId: id },
+          payload: { photoId: id, metadata },
         },
         person: this.session.person,
         queuedAt: Date.now(),

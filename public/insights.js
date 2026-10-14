@@ -1,3 +1,4 @@
+import { eraFor } from './lifetime.js?v=4.16';
 // Summaries use San Francisco calendar days, even when a phone is travelling.
 // A missing entry is never treated as a missed care event.
 const DAY = 86400000;
@@ -43,7 +44,7 @@ const range = (values) => ({
 });
 const daysOf = (rows) => new Set(rows.map((e) => localParts(e.time).day)).size;
 const idsOf = (rows) => rows.map((e) => e.id);
-const knownTime = (e) => !["day", "date", "unknown"].includes(e.time_precision);
+const knownTime = (e) => !["day", "date", "unknown", "interval"].includes(e.time_precision);
 
 function pottySummary(rows, type) {
   const entries = rows.filter((e) => e.type === type && knownTime(e));
@@ -163,7 +164,7 @@ export function rhythmInsights(events, days = 28, now = Date.now()) {
     start = shiftDay(end, 1 - days),
     previousStart = shiftDay(start, -days);
   const valid = events
-    .filter((e) => !e.deletedAt && Number.isFinite(e.time) && e.time <= now)
+    .filter((e) => !e.deletedAt && !e.analysisExcluded && !e.tags?.includes("_diagnostic") && Number.isFinite(e.time) && e.time <= now)
     .sort(
       (a, b) => a.time - b.time || String(a.id).localeCompare(String(b.id)),
     );
@@ -180,13 +181,17 @@ export function rhythmInsights(events, days = 28, now = Date.now()) {
       : [];
   const night = nightSummary(recent, now),
     oldNight = nightSummary(earlier, now);
+  const sameEra = (a,b) => {const eras=new Set([...a,...b].map(eraFor));return eras.size===1;};
+  if (!sameEra(earlier,recent)) oldNight.enough=false;
   const pastNight = nightSummary(previous, now);
+  if (!sameEra(previous,recent)) pastNight.enough=false;
   const potty = Object.fromEntries(
     ["pee", "poop"].map((type) => [type, pottySummary(recent, type)]),
   );
   const pastPotty = Object.fromEntries(
     ["pee", "poop"].map((type) => [type, pottySummary(previous, type)]),
   );
+  if (!sameEra(previous,recent)) for (const p of Object.values(pastPotty)) {p.enough=false;p.gapEnough=false;}
   return {
     days,
     start,

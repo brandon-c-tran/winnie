@@ -1,19 +1,20 @@
+import { collectionsHTML } from './lifetime-view.js?v=4.16';
 // Memories: this week's postcard, on this day, milestones, and the year so far.
-import { memoryEvents } from "../keepsakes.js?v=4.15";
-import { placeLabel } from "../places.js?v=4.15";
+import { memoryEvents } from "../keepsakes.js?v=4.16";
+import { placeLabel } from "../places.js?v=4.16";
 import {
   milestones,
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.15";
-import { cityFor } from "../places.js?v=4.15";
+} from "../memories.js?v=4.16";
+import { cityFor } from "../places.js?v=4.16";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.15";
-import { $, esc } from "./format.js?v=4.15";
-import { html, toast } from "./ui.js?v=4.15";
-import { hydratePhotos } from "./entries.js?v=4.15";
-import { download } from "./photos.js?v=4.15";
+import { facts, sync } from "./services.js?v=4.16";
+import { $, esc } from "./format.js?v=4.16";
+import { html, toast } from "./ui.js?v=4.16";
+import { hydratePhotos } from "./entries.js?v=4.16";
+import { download } from "./photos.js?v=4.16";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
@@ -72,7 +73,7 @@ export function renderMemories() {
   week.caption = chosen?.e.note || "";
   week.place = chosen ? placeLabel(chosen.e) : "";
   const range = chosen
-    ? full.format(chosen.e.time)
+    ? chosen.e.photoDay || full.format(chosen.e.time)
     : "";
   const agoHTML = ago.length
     ? `<section class="card mem" aria-labelledby="ago-title"><div class="card-head"><h2 id="ago-title">On this day</h2></div>${ago
@@ -108,6 +109,7 @@ export function renderMemories() {
       <div class="button-row" ${chosen ? "" : "hidden"}><button class="px btn ink" data-act="postcard-share">Share</button><button class="px btn" data-act="postcard-save">Save</button></div>
     </section>
     ${agoHTML}
+    ${collectionsHTML()}
     <details class="card mem"><summary>Care milestones and totals</summary><section aria-labelledby="ms-title">
       <div class="card-head"><h2 id="ms-title">Milestones</h2><span class="muted">${list.length}</span></div>
       ${list.length ? `<div class="mem-list">${list.map((m) => `<button class="mem-row" data-open="${esc(m.eventId)}"><span class="sq" style="--c:var(--pee)">${icon("star", "ic sm")}</span><b>${esc(m.title)}</b><span class="muted">${full.format(m.time)}</span></button>`).join("")}</div>` : `<p class="muted">None yet.</p>`}

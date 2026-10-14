@@ -1,3 +1,4 @@
+import { validatePhotoMetadata } from '../../public/photo-fields.js';
 import { validateFridge } from "../../public/fridge-model.js";
 import { validatePantry } from "../../public/pantry.js";
 import { validateSupplies } from "../../public/routine.js";
@@ -164,6 +165,10 @@ function eventFields(input, old = {}) {
     "carePlanId",
     "careDue",
     "careTitle",
+    "historical",
+    "provenance",
+    "analysisExcluded",
+    "milestone",
   ];
   const fields = Object.fromEntries(
     allowed.filter((k) => Object.hasOwn(input, k)).map((k) => [k, input[k]]),
@@ -190,6 +195,12 @@ function eventFields(input, old = {}) {
       capturedAt: p.capturedAt,
     };
   }
+  for (const key of ['historical', 'analysisExcluded'])
+    if (Object.hasOwn(fields, key)) assert(typeof fields[key] === 'boolean', 'Invalid history flag.');
+  if (Object.hasOwn(fields, 'provenance'))
+    assert(fields.provenance && typeof fields.provenance === 'object' && JSON.stringify(fields.provenance).length <= 12000, 'Invalid source note.');
+  if (Object.hasOwn(fields, 'milestone'))
+    assert(fields.milestone === null || (typeof fields.milestone === 'string' && fields.milestone.trim().length > 0 && fields.milestone.length <= 120), 'Name this milestone in 120 characters or fewer.');
   const event = { ...old, ...fields };
   if (old.carePlanId)
     assert(
@@ -287,6 +298,7 @@ function eventFields(input, old = {}) {
 function ensureActivity(doc, event) {
   if (
     !event.deletedAt &&
+    !event.historical &&
     event.end_time == null &&
     (SLEEP.includes(event.type) || event.type === "walk")
   ) {
@@ -294,6 +306,7 @@ function ensureActivity(doc, event) {
       (e) =>
         e.id !== event.id &&
         !e.deletedAt &&
+        !e.historical &&
         e.end_time == null &&
         (SLEEP.includes(event.type)
           ? SLEEP.includes(e.type)
@@ -335,6 +348,11 @@ export function applyCommand(doc, command, device, now = Date.now()) {
       409,
       { current: doc.profile },
     );
+    if (Object.hasOwn(payload, 'historyArchive')) {
+      const value=payload.historyArchive;
+      assert(value && typeof value==='object' && typeof value.batch==='string' && Array.isArray(value.held) && value.held.length<=500 && value.held.every(row=>typeof row.raw==='string' && row.raw.length<=10000) && JSON.stringify(value).length<=100000, 'Invalid history source archive.');
+      doc.profile.historyArchive=value;
+    }
     if (Object.hasOwn(payload, "carePlans")) {
       try {
         doc.profile.carePlans = validateCarePlans(payload.carePlans);
@@ -521,16 +539,23 @@ export function applyCommand(doc, command, device, now = Date.now()) {
         ensureActivity(doc, event);
       } else if (kind === "attach") {
         assert(validId(payload.photoId), "Invalid photo.");
+        let metadata;
+        try { metadata = validatePhotoMetadata(payload.metadata); } catch (error) { throw new Fault(400, error.message); }
         event.photos ||= [];
         assert(event.photos.length < 20, "This moment already has 20 photos.");
         if (!event.photos.some((p) => p.id === payload.photoId)) {
           event.photos.push({
             id: payload.photoId,
+            ...(metadata ? {metadata} : {}),
             addedAt: now,
             addedBy: device.person,
           });
           notify = true;
         }
+      } else if (kind === "photoMetadata") {
+        const photo=event.photos?.find(p=>p.id===payload.photoId);
+        assert(photo, 'This photo is no longer attached.', 409);
+        try { photo.metadata=validatePhotoMetadata(payload.metadata); } catch(error) { throw new Fault(400,error.message); }
       } else if (kind === "keepPhoto") {
         assert(typeof payload.keep === "boolean", "Choose whether to keep this photo.");
         const photo = event.photos?.find(p => p.id === payload.photoId);
@@ -556,7 +581,7 @@ export function applyCommand(doc, command, device, now = Date.now()) {
     eventId,
   };
   doc.receipts[command.operationId] = receipt;
-  if (notify) {
+  if (notify && !event?.historical) {
     const recipient = device.person === "kim" ? "brandon" : "kim";
     for (const target of Object.values(doc.devices).filter(
       (d) => !d.revoked && d.person === recipient && d.subscription,

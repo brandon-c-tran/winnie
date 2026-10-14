@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createHandler } from '../netlify/lib/api.mjs';
+import { MemoryStore } from './store.mjs';
+test('historical batches require verified backup, commit atomically and replay without duplicates or pushes',async()=>{
+  const stores={main:new MemoryStore(),legacy:new MemoryStore(),photos:new MemoryStore(),backup:new MemoryStore()};
+  await stores.legacy.setJSON('history-import-test',{events:[]});
+  const api=createHandler(()=>stores,{runDispatch:async()=>{}});
+  const paired=await (await api(new Request('http://local/.netlify/functions/api?action=pair',{method:'POST',body:JSON.stringify({code:'history-import-test',person:'brandon',deviceId:'importer',secret:'a'.repeat(64)})}))).json();
+  const call=(action,value)=>api(new Request('http://local/.netlify/functions/api?action='+action,{method:value?'POST':'GET',headers:{Authorization:'Bearer '+paired.token,'X-Winnie-Home':paired.home},...(value?{body:JSON.stringify(value)}:{})}));
+  const time=Date.now()-86400000;
+  const recover={protocol:4,operationId:'recover-one',kind:'recover',eventId:'one',payload:{id:'one',type:'pee',time,historical:true,note:'Original note'}};
+  assert.equal((await call('history-import',{archiveSha256:'0'.repeat(64),commands:[recover]})).status,409);
+  const backup=await(await call('archive',{events:[],reason:'Before import'})).json();
+  const invalid={protocol:4,operationId:'invalid-edit',kind:'edit',eventId:'one',expectedRevision:1,payload:{historical:true,end_time:time-1}};
+  assert.equal((await call('history-import',{archiveSha256:backup.sha256,commands:[recover,invalid]})).status,400);
+  assert.equal((await(await call('export')).json()).events.length,0);
+  const payload={archiveSha256:backup.sha256,commands:[recover]};
+  assert.equal((await call('history-import',payload)).status,200);
+  assert.equal((await call('history-import',payload)).status,200);
+  const data=await(await call('export')).json();assert.equal(data.events.length,1);assert.equal(data.events[0].note,'Original note');
+  const stored=await stores.main.get('home/'+paired.home,{type:'json'});assert.equal(Object.keys(stored.jobs || {}).length,0);
+});

@@ -1,5 +1,5 @@
-import { winniePhotos } from "./keepsakes.js?v=4.15";
-import { placeDirectory, loadCities, placeDay } from "./places.js?v=4.15";
+import { winniePhotos } from "./keepsakes.js?v=4.16";
+import { placeDirectory, loadCities, placeDay } from "./places.js?v=4.16";
 
 export function createPlacesView({ root, esc, entry, hydratePhotos }) {
   let events = [],

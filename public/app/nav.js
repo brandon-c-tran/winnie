@@ -1,8 +1,8 @@
 // Tabs and day navigation.
 import { icon } from "../icons.js?v=4.0";
-import { $, dayKey } from "./format.js?v=4.15";
-import { render } from "./today.js?v=4.15";
-import { state } from "./state.js?v=4.15";
+import { $, dayKey } from "./format.js?v=4.16";
+import { render } from "./today.js?v=4.16";
+import { state } from "./state.js?v=4.16";
 
 $("day-picker").value = dayKey(Date.now());
 let historySection = "care",
@@ -61,12 +61,12 @@ document
   .querySelectorAll("[data-filter]")
   .forEach((b) => (b.onclick = () => showPhotos(b.dataset.filter)));
 // Open the History log with no filters, optionally narrowed to one type.
-export function openHistory({ type = "" } = {}) {
+export function openHistory({ type = "", from = "", to = "" } = {}) {
   historySection = "care";
   $("history-type").value = type;
   $("story-search").value = "";
   for (const id of ["history-from", "history-to"]) {
-    $(id).value = "";
+    $(id).value = id === "history-from" ? from : to;
     $(id).dispatchEvent(new Event("change"));
   }
   setTab("history");

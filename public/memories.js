@@ -128,7 +128,7 @@ export function onThisDay(events, now = Date.now()) {
       (e) => e.photos?.length && e.time < now - DAY / 2,
     );
   const sameDay = (e, months) => {
-    const t = new Date(e.time),
+    const t = e.photoDay ? new Date(e.photoDay+"T12:00") : new Date(e.time),
       target = new Date(today);
     target.setMonth(target.getMonth() - months);
     return (

@@ -493,7 +493,11 @@ which also use labeled date/time fields. Prefer concise
 sentences when a relationship genuinely needs prose. This is a standing user
 preference for future interfaces as well as the care log.
 
-History owns its Daily log and Trends sections, search, type and date filters.
+History owns Daily log, Trends and By age. Search, type and date filters belong
+to Daily log. By age uses the same flat sections, Pixelify labels and Rubik
+reading text for source search, monthly photos and recorded days, milestones
+and source notes. Its age label explicitly describes age at mid-month. Trends
+places monthly comparisons and expandable training history before recent patterns.
 Entries are grouped by day as compact signed records. The text column contains
 the event, one useful result when recorded (such as stool consistency, food or
 duration), an optional note limited to two visible lines, then a frameless 24px
@@ -525,18 +529,26 @@ Photos, Memories and Places share a stable primary navigation row beneath the
 current destination's heading. Add photos appears only in Photos. Winnie and
 Care photos are subordinate collection controls shown only within Photos;
 returning to Photos restores the selected collection. Winnie groups photos by
-month in a two-column album and excludes poop
-and meal entries. Care photos groups those entries by day, using the same signed
+their capture month in a two-column album, including individually selected care
+keepsakes. Care photos groups care entries by day, using the same signed
 record heading with a large uncropped photo below. The `fullPhoto` entry option
 keeps the image across the full row with `object-fit: contain`, automatic height
 and a 300px maximum height. Its type filter offers All care photos, Poop photos and Meal
 photos. Switching tabs preserves each tab's filters.
 
 Adding Winnie photos opens a photo-first composer: choose photos or take a
-photo, review removable previews, then enter an optional caption and date taken
-before saving. From Care photos, adding opens a searchable picker of existing
+photo, review each removable preview's date and place summary and expandable
+Date & place fields, then enter an optional caption before saving. Each photo
+keeps its own capture metadata; missing dates open for review. From Care photos,
+adding opens a searchable picker of existing
 poop and meal entries so each photo stays attached to its care record. Entry
 detail sheets also offer Take photo and Choose photo beside the Photos heading.
+
+Memories retains its postcard and adds a flat Trips & places list with an Add
+trip action, recorded-day counts and source-linked collection details. These
+lifetime additions extend the incumbent controls and typography; they introduce
+no new visual identity or token set. Their behavioral limits are recorded in
+PRODUCT.md and `.impeccable/surfaces/public-app-library-js.md`.
 
 Places uses a divided destination list grouped by region. Its own heading and
 the primary Photos / Memories / Places row precede search, year and order controls. Flat rows pair a

@@ -1,14 +1,14 @@
 // Entry, shared plan, and place forms.
-import { eventPosition, placeName, placeLabel } from "../places.js?v=4.15";
+import { eventPosition, placeName, placeLabel } from "../places.js?v=4.16";
 import {
   validPin,
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "../care-state.js?v=4.15";
+} from "../care-state.js?v=4.16";
 import { GROOMING } from "../icons.js?v=4.0";
-import { normalizeFood } from "../everyday.js?v=4.15";
-import { autoPlace, facts, fridge, sync } from "./services.js?v=4.15";
+import { normalizeFood } from "../everyday.js?v=4.16";
+import { autoPlace, facts, fridge, sync } from "./services.js?v=4.16";
 import {
   $,
   TYPES,
@@ -17,7 +17,7 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.15";
+} from "./format.js?v=4.16";
 import {
   closeDialog,
   openDialog,
@@ -28,10 +28,10 @@ import {
   draftFields,
   applyDraftFields,
   persistDialogDraft,
-} from "./ui.js?v=4.15";
-import { render } from "./today.js?v=4.15";
-import { detail, eventLabel } from "./entries.js?v=4.15";
-import { state } from "./state.js?v=4.15";
+} from "./ui.js?v=4.16";
+import { render } from "./today.js?v=4.16";
+import { detail, eventLabel } from "./entries.js?v=4.16";
+import { state } from "./state.js?v=4.16";
 
 export function editForm(
   type = "note",
@@ -179,7 +179,8 @@ export function editForm(
         .events.find((e) => e.id === eventId)?.revision;
       persistDialogDraft();
       while (state.formPhotos.length) {
-        await sync.addPhoto(eventId, state.formPhotos[0]);
+        const photo = state.formPhotos[0];
+        await sync.addPhoto(eventId, photo.blob || photo, photo.metadata || null, photo.photoId);
         state.formPhotos.shift();
         savedRevision = sync
           .view()

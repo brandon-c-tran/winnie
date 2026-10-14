@@ -1,15 +1,16 @@
-import { isCarePhoto } from "../keepsakes.js?v=4.15";
-import { createReactionPicker } from "./reaction-picker.js?v=4.15";
+import { recordDay } from '../lifetime.js?v=4.16';
+import { isCarePhoto } from "../keepsakes.js?v=4.16";
+import { createReactionPicker } from "./reaction-picker.js?v=4.16";
 // Entry rows, reactions, the entry detail sheet, and photo loading.
-import { QUALITY } from "../pantry.js?v=4.15";
-import { placeLabel } from "../places.js?v=4.15";
+import { QUALITY } from "../pantry.js?v=4.16";
+import { placeLabel } from "../places.js?v=4.16";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { photoCaption } from "../everyday.js?v=4.15";
-import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.15";
-import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.15";
-import { openDialog, safe, toast } from "./ui.js?v=4.15";
-import { placeSummary } from "./forms.js?v=4.15";
-import { state } from "./state.js?v=4.15";
+import { photoCaption } from "../everyday.js?v=4.16";
+import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.16";
+import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.16";
+import { openDialog, safe, toast } from "./ui.js?v=4.16";
+import { placeSummary } from "./forms.js?v=4.16";
+import { state } from "./state.js?v=4.16";
 
 document.addEventListener("click", safe(async ev => {
   const button = ev.target.closest("[data-keep-photo]");
@@ -114,8 +115,13 @@ function entryFacts(e, duration) {
     .join("");
 }
 
+const entryClock = e => {
+  if (["date","day","unknown","interval"].includes(e.time_precision)) return 'Time not exact';
+  try { return new Intl.DateTimeFormat([], {timeZone:e.timezone || 'America/Los_Angeles',hour:'numeric',minute:'2-digit'}).format(e.time); } catch {return clock(e.time);}
+};
+const entryDay = e => dateLabel(new Date(recordDay(e)+'T12:00').getTime());
 function entryDate(e) {
-  return `<dl class="entry-dates"><div><dt>Date</dt><dd>${dateLabel(e.time)}</dd></div><div><dt>${e.end_time != null ? "Started" : "Time"}</dt><dd>${clock(e.time)}</dd></div>${e.end_time != null ? `<div><dt>Ended</dt><dd>${dateLabel(e.end_time) !== dateLabel(e.time) ? dateLabel(e.end_time) + "<br>" : ""}${clock(e.end_time)}</dd></div>` : ""}</dl>`;
+  return `<dl class="entry-dates"><div><dt>Date</dt><dd>${entryDay(e)}</dd></div><div><dt>${e.end_time != null ? "Started" : "Time"}</dt><dd>${entryClock(e)}</dd></div>${e.end_time != null ? `<div><dt>Ended</dt><dd>${dateLabel(e.end_time) !== dateLabel(e.time) ? dateLabel(e.end_time) + "<br>" : ""}${clock(e.end_time)}</dd></div>` : ""}</dl>`;
 }
 
 function rowResult(e) {
@@ -132,7 +138,7 @@ function rowResult(e) {
     return e.end_time < e.time
       ? "Time needs review"
       : `${Math.round((e.end_time - e.time) / 60000)} min`;
-  if (["nap", "slumber", "walk"].includes(e.type)) return "In progress";
+  if (["nap", "slumber", "walk"].includes(e.type)) return e.historical ? "End not recorded" : "In progress";
   return "";
 }
 
@@ -147,7 +153,7 @@ export function entry(e, { photoRecord = false, fullPhoto = false } = {}) {
   return `<div class="feed-entry signed-entry${photo ? ` care-photo-record${fullPhoto ? " full-photo-record" : " compact-photo-record"}` : ""}${e.id === state.freshEntry ? " fresh" : ""}">
     <button class="entry" data-open="${esc(e.id)}"><span class="entry-body"><span class="entry-title">${esc(eventLabel(e))}</span>${result ? `<span class="entry-result">${esc(result)}</span>` : ""}${e.note && e.note !== eventLabel(e) ? `<span class="entry-note">${esc(e.note)}</span>` : ""}${signature}${e.pending ? '<span class="pending-dot">Not sent</span>' : ""}</span></button>
     ${photo ? `<button class="record-photo" data-open="${esc(e.id)}" aria-label="Open ${e.photos.length} ${e.photos.length === 1 ? "photo" : "photos"} from ${esc(eventLabel(e))}"><img data-photo="${esc(photo.id)}" alt="${esc(photoCaption(e))}" loading="lazy">${e.photos.length > 1 ? `<span>${e.photos.length} photos</span>` : ""}</button>` : ""}
-    <div class="entry-footer"><time class="entry-time" datetime="${new Date(e.time).toISOString()}">${clock(e.time)}</time>${!photo && e.photos?.length ? `<button class="entry-photo-link" data-open="${esc(e.id)}">${icon("photo", "ic sm")}<span>${e.photos.length} ${e.photos.length === 1 ? "photo" : "photos"}</span></button>` : ""}${reactions(e)}</div>
+    <div class="entry-footer"><time class="entry-time" datetime="${new Date(e.time).toISOString()}">${entryClock(e)}</time>${!photo && e.photos?.length ? `<button class="entry-photo-link" data-open="${esc(e.id)}">${icon("photo", "ic sm")}<span>${e.photos.length} ${e.photos.length === 1 ? "photo" : "photos"}</span></button>` : ""}${reactions(e)}</div>
   </div>`;
 }
 
@@ -190,13 +196,14 @@ export function detail(id) {
     `<article class="entry-detail">
       <div class="detail-intro">${face(e.loggedBy, "detail-portrait") || `<span class="sq" style="--c:${typeColor(e.type)}">${icon(typeIcon(e.type, e.careTitle), "ic sm")}</span>`}<div class="detail-intro-copy"><header class="detail-heading"><h2 id="dialog-title">${esc(eventLabel(e))}</h2><button class="text-button" data-edit="${esc(id)}">Edit entry</button></header><p class="detail-author">${person(e.loggedBy) ? `Logged by <strong>${esc(person(e.loggedBy))}</strong>` : "Person not recorded"}</p></div></div>
       <div class="detail-byline">${entryDate(e)}${reactions(e)}</div>
+      ${e.provenance ? `<details class="detail-section"><summary>Original note</summary><p>${esc(e.provenance.header || '')}</p><pre class="source-note">${esc(e.provenance.raw || e.provenance.text || '')}</pre><p class="fine">${esc((e.provenance.flags || []).join('; '))}</p>${!e.provenance.reviewed && e.provenance.flags?.length ? `<button class="text-button" data-review-note="${esc(e.id)}">Mark source question reviewed</button>` : ''}<p class="fine">${esc(e.provenance.file || '')} ${e.provenance.line ? 'line '+e.provenance.line : ''}</p></details>` : ''}
       ${e.pending ? '<p class="pending-dot">Not sent yet</p>' : ""}
       ${e.end_time != null && e.end_time < e.time ? '<p class="error">This historical end time is before its start. Edit the entry to correct it; its original value has been preserved.</p>' : ""}
       ${e.note ? `<p class="detail-notes">${esc(e.note)}</p>` : ""}
       ${e.foods?.length || (e.who && e.who !== "us") || e.tags?.some((t) => !QUALITY.includes(t)) ? `<div class="detail-facts">${entryFacts({ foods: e.foods, tags: (e.tags || []).filter((t) => !QUALITY.includes(t)) }, "")}${e.who && e.who !== "us" ? `<span class="entry-fact"><span class="fact-label">Care by</span><span>${esc(e.who)}</span></span>` : ""}</div>` : ""}
       ${e.type === "poop" ? `<section class="detail-section"><h3>Consistency</h3><div class="signal-buttons">${QUALITY.map((q) => `<button aria-pressed="${e.tags?.includes(q) || false}" data-quality="${q}" data-id="${esc(id)}" class="${e.tags?.includes(q) ? "selected" : ""}">${q[0].toUpperCase() + q.slice(1)}</button>`).join("")}</div></section>` : ""}
       <section class="detail-section detail-place"><div class="detail-section-heading"><h3>Place</h3><button class="text-button" data-place="${esc(id)}">${placeLabel(e) ? "Edit place" : "Add place"}</button></div>${placeLabel(e) ? placeSummary(e) : '<p class="fine">No place recorded</p>'}</section>
-      <section class="detail-section"><div class="detail-section-heading"><h3>Photos${e.photos?.length ? ` <span class="fine">${e.photos.length}</span>` : ""}</h3><div class="detail-photo-add"><button class="text-button" data-photo-camera="${esc(id)}">Take photo</button><button class="text-button" data-photo-library="${esc(id)}">Choose photo</button></div></div>${(e.photos || []).map((p) => `<figure class="detail-image"><img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}"><figcaption class="photo-actions">${isCarePhoto(e) ? `<button class="text-button" data-keep-photo="${esc(p.id)}" data-id="${esc(id)}" aria-pressed="${p.keepsake === true}">${p.keepsake ? "Kept in Winnie" : "Keep in Winnie"}</button>` : ""}<button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove photo</button></figcaption></figure>`).join("")}${!e.photos?.length ? '<p class="fine">No photos attached</p>' : ""}</section>
+      <section class="detail-section"><div class="detail-section-heading"><h3>Photos${e.photos?.length ? ` <span class="fine">${e.photos.length}</span>` : ""}</h3><div class="detail-photo-add"><button class="text-button" data-photo-camera="${esc(id)}">Take photo</button><button class="text-button" data-photo-library="${esc(id)}">Choose photo</button></div></div>${(e.photos || []).map((p) => `<figure class="detail-image"><img class="detail-photo" data-photo="${esc(p.id)}" alt="${esc(photoCaption(e))}"><figcaption class="photo-actions">${isCarePhoto(e) ? `<button class="text-button" data-keep-photo="${esc(p.id)}" data-id="${esc(id)}" aria-pressed="${p.keepsake === true}">${p.keepsake ? "Kept in Winnie" : "Keep in Winnie"}</button>` : ""}<button class="text-button" data-edit-photo-meta="${esc(p.id)}" data-id="${esc(id)}">Date & place</button><button class="text-button" data-download-photo="${esc(p.id)}">Save photo</button><button class="text-button danger" data-remove-photo="${esc(p.id)}" data-id="${esc(id)}">Remove photo</button></figcaption></figure>`).join("")}${!e.photos?.length ? '<p class="fine">No photos attached</p>' : ""}</section>
       ${["pee", "poop"].includes(e.type) ? `<section class="detail-section"><h3>Who started it?</h3><div class="signal-buttons">${["He asked", "We took him out"].map((s) => `<button aria-pressed="${e.signal === s}" data-signal="${s}" data-id="${esc(id)}" class="${e.signal === s ? "selected" : ""}">${s}</button>`).join("")}</div></section>` : e.signal ? `<p>${esc(e.signal)}</p>` : ""}
       <footer class="detail-section"><button class="text-button danger" data-delete="${esc(id)}">Remove entry</button></footer><p id="form-error" class="error" role="alert"></p>
     </article>`,

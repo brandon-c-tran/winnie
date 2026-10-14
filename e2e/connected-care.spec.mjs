@@ -143,6 +143,8 @@ test("photo draft resumes, selected care photo joins Winnie and can be unselecte
   await expect(page.locator('#photo-composer [name="note"]')).toHaveValue(
     "Draft photo caption",
   );
+  await page.locator('[data-photo-field="wall"]').fill('2025-12-24T10:30');
+  await page.locator('[data-photo-field="timezone"]').selectOption('America/Chicago');
   await page.locator('#photo-composer [type="submit"]').click();
   await expect(page.locator("#dialog")).not.toBeVisible();
 });
