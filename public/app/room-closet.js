@@ -1,11 +1,11 @@
-import { sync, room } from './services.js?v=4.26';
-import { $, esc } from './format.js?v=4.26';
-import { openDialog, closeDialog, safe, toast } from './ui.js?v=4.26';
+import { sync, room } from './services.js?v=4.27';
+import { $, esc } from './format.js?v=4.27';
+import { openDialog, closeDialog, safe, toast } from './ui.js?v=4.27';
 
 const outfits = [
   ['bandanna', 'Blue bandanna', '/photos/winnie-room-v3.png'],
-  ['harness', 'Adventure harness', '/photos/winnie-harness-v1.png'],
-  ['stripes', 'Striped shirt', '/photos/winnie-stripes-v1.png'],
+  ['harness', 'Adventure harness', '/photos/winnie-harness-v2.png'],
+  ['stripes', 'Striped shirt', '/photos/winnie-stripes-v2.png'],
 ];
 
 export function openCloset() {

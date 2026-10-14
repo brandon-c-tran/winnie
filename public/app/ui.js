@@ -1,9 +1,9 @@
 // Toasts, the sheet (one <dialog>), error handling, and memoised HTML writes.
 import { icon } from "../icons.js?v=4.0";
-import { $ } from "./format.js?v=4.26";
-import { room, sync } from "./services.js?v=4.26";
-import { state } from "./state.js?v=4.26";
-import { createDraftStore } from "../draft-store.js?v=4.26";
+import { $ } from "./format.js?v=4.27";
+import { room, sync } from "./services.js?v=4.27";
+import { state } from "./state.js?v=4.27";
+import { createDraftStore } from "../draft-store.js?v=4.27";
 
 let toastTimer;
 export function toast(message, undo = null, actions = []) {

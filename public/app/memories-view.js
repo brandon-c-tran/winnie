@@ -1,23 +1,23 @@
-import { lifeTimelineHTML, bindLifeTimeline } from './life-timeline-view.js?v=4.26';
-import { collectionsHTML } from './lifetime-view.js?v=4.26';
-import { storyAlbumHTML, bindStoryAlbum, choosePostcard } from './story-album-view.js?v=4.26';
-import { state } from './state.js?v=4.26';
+import { lifeTimelineHTML, bindLifeTimeline } from './life-timeline-view.js?v=4.27';
+import { collectionsHTML } from './lifetime-view.js?v=4.27';
+import { storyAlbumHTML, bindStoryAlbum, choosePostcard } from './story-album-view.js?v=4.27';
+import { state } from './state.js?v=4.27';
 // Memories: this week's postcard, on this day, milestones, and the year so far.
-import { memoryEvents } from "../keepsakes.js?v=4.26";
-import { placeLabel } from "../places.js?v=4.26";
+import { memoryEvents } from "../keepsakes.js?v=4.27";
+import { placeLabel } from "../places.js?v=4.27";
 import {
   milestones,
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.26";
-import { cityFor } from "../places.js?v=4.26";
+} from "../memories.js?v=4.27";
+import { cityFor } from "../places.js?v=4.27";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.26";
-import { $, esc } from "./format.js?v=4.26";
-import { html, toast } from "./ui.js?v=4.26";
-import { hydratePhotos } from "./entries.js?v=4.26";
-import { download } from "./photos.js?v=4.26";
+import { facts, sync } from "./services.js?v=4.27";
+import { $, esc } from "./format.js?v=4.27";
+import { html, toast } from "./ui.js?v=4.27";
+import { hydratePhotos } from "./entries.js?v=4.27";
+import { download } from "./photos.js?v=4.27";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });

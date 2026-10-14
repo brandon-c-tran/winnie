@@ -1,17 +1,17 @@
 // Long-lived services: the shared log, the room, plans, notes, places, location.
-import { createCare } from "../care-view.js?v=4.26";
-import { createPlacesView } from "../places-view.js?v=4.26";
-import { createFridge } from "../fridge.js?v=4.26";
-import { createAutoPlace } from "../auto-place.js?v=4.26";
-import { createRoom } from "../room.js?v=4.26";
-import { WinnieSync } from "../sync.js?v=4.26";
-import { $, esc, person } from "./format.js?v=4.26";
-import { detail, entry, hydratePhotos } from "./entries.js?v=4.26";
-import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.26";
-import { editForm } from "./forms.js?v=4.26";
-import { log, routineSheet } from "./logging.js?v=4.26";
-import { roomObject } from "./today.js?v=4.26";
-import { pantryNextHTML } from "./pantry-view.js?v=4.26";
+import { createCare } from "../care-view.js?v=4.27";
+import { createPlacesView } from "../places-view.js?v=4.27";
+import { createFridge } from "../fridge.js?v=4.27";
+import { createAutoPlace } from "../auto-place.js?v=4.27";
+import { createRoom } from "../room.js?v=4.27";
+import { WinnieSync } from "../sync.js?v=4.27";
+import { $, esc, person } from "./format.js?v=4.27";
+import { detail, entry, hydratePhotos } from "./entries.js?v=4.27";
+import { closeDialog, openDialog, safe, toast } from "./ui.js?v=4.27";
+import { editForm } from "./forms.js?v=4.27";
+import { log, routineSheet } from "./logging.js?v=4.27";
+import { roomObject } from "./today.js?v=4.27";
+import { pantryNextHTML } from "./pantry-view.js?v=4.27";
 
 export const sync = new WinnieSync();
 export const places = createPlacesView({
@@ -88,9 +88,9 @@ export function facts() {
 const roomSprite = new Image();
 roomSprite.src = "/photos/winnie-room-v3.png";
 const harnessSprite = new Image();
-harnessSprite.src = "/photos/winnie-harness-v1.png";
+harnessSprite.src = "/photos/winnie-harness-v2.png";
 const shirtSprite = new Image();
-shirtSprite.src = "/photos/winnie-stripes-v1.png";
+shirtSprite.src = "/photos/winnie-stripes-v2.png";
 export const room = createRoom($("room"), {
   sprite: roomSprite,
   harnessSprite,

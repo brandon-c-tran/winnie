@@ -10,7 +10,7 @@ test('closet changes clothes across reload and temporary harness returns to the 
   await expect(page.locator('[data-outfit="bandanna"]')).toHaveAttribute('aria-pressed','true');
   await page.locator('[data-outfit="stripes"]').click();
   await expect(page.locator('#sync-status')).toHaveText('Up to date');
-  const outfit=()=>page.evaluate(async()=>(await import('/app/services.js?v=4.26')).room.outfit);
+  const outfit=()=>page.evaluate(async()=>(await import('/app/services.js?v=4.27')).room.outfit);
   await expect.poll(outfit).toBe('stripes');
   await page.reload();
   await page.evaluate(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});
@@ -18,10 +18,10 @@ test('closet changes clothes across reload and temporary harness returns to the 
   await expect(page.locator('[data-outfit="stripes"]')).toHaveAttribute('aria-pressed','true');
   await page.locator('#dialog-close').click();
   await expect(page.locator('#dialog')).not.toBeVisible();
-  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.26');room.set({sleep:null,walk:false},{instant:true});room.react('pee');});
+  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.27');room.set({sleep:null,walk:false},{instant:true});room.react('pee');});
   await expect.poll(outfit).toBe('harness');
   await expect.poll(outfit,{timeout:12000}).toBe('stripes');
-  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.26');room.set({sleep:'slumber'},{instant:true});});
+  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.27');room.set({sleep:'slumber'},{instant:true});});
   await expect.poll(outfit).toBe('stripes');
   await page.setViewportSize({width:320,height:740});
   await page.locator('#room-closet').click();

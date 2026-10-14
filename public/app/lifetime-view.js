@@ -1,10 +1,10 @@
-import { BIRTHDAY, HOMECOMING, ERAS, recordDay, ageAt, chapters, selectedPhotos, trainingMonths, comparePeriods, milestoneCandidates, destinationCollections, answerRecords } from '../lifetime.js?v=4.26';
-import { facts, sync } from './services.js?v=4.26';
-import { $, esc, uid } from './format.js?v=4.26';
-import { html, openDialog, closeDialog, safe, toast } from './ui.js?v=4.26';
-import { entry, hydratePhotos } from './entries.js?v=4.26';
-import { openHistory } from './nav.js?v=4.26';
-import { wallInstants } from '../photo-metadata.js?v=4.26';
+import { BIRTHDAY, HOMECOMING, ERAS, recordDay, ageAt, chapters, selectedPhotos, trainingMonths, comparePeriods, milestoneCandidates, destinationCollections, answerRecords } from '../lifetime.js?v=4.27';
+import { facts, sync } from './services.js?v=4.27';
+import { $, esc, uid } from './format.js?v=4.27';
+import { html, openDialog, closeDialog, safe, toast } from './ui.js?v=4.27';
+import { entry, hydratePhotos } from './entries.js?v=4.27';
+import { openHistory } from './nav.js?v=4.27';
+import { wallInstants } from '../photo-metadata.js?v=4.27';
 let month = '', question = '', answerLimit = 20;
 const monthName = value => new Date(value+'-15T12:00Z').toLocaleDateString([], {month:'long',year:'numeric',timeZone:'UTC'});
 const photosHTML = photos => `<div class="chapter-photos">${photos.map(p => `<button data-open="${esc(p.event.id)}" aria-label="Photo from ${esc(p.day)}"><img data-photo="${esc(p.photo.id)}" alt="${esc(p.event.note || 'Winnie')}" loading="lazy"></button>`).join('')}</div>`;

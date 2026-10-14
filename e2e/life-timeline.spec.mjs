@@ -4,7 +4,7 @@ import {join,code} from './helpers.mjs';
 test('Life scrolls through photo days, jumps by age, and preserves source memories and album tools', async ({page},info)=>{
   const errors=await join(page,code(info));
   await page.evaluate(async()=>{
-    const {sync}=await import('/app/services.js?v=4.26');
+    const {sync}=await import('/app/services.js?v=4.27');
     const blob=await(await fetch('/photos/winnie-wall.jpg')).blob();
     for(let i=0;i<12;i++) {
       const day=`2025-${i<6?'10':'11'}-${String(i%6+4).padStart(2,'0')}`,time=Date.parse(day+'T12:00:00-08:00');

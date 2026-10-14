@@ -39,7 +39,30 @@ The personal clothing reference photograph is not bundled or published.
 Run `node scripts/pack-harness.mjs` using [the harness packer](../../scripts/pack-harness.mjs)
 to produce `public/photos/winnie-harness-v1.png`. It aligns each generated pose
 to the corresponding existing 64px room frame using nearest-neighbour sampling
-and preserves the source sheet. `public/app/services.js` loads both room and
-harness sheets; `public/room.js` shows the harness for the current pee/poop
-acknowledgment, then restores the bandanna. Interruptions and reduced motion
-clear the accessory; loading failure retains the normal Winnie sprite.
+and preserves the source sheet. This six-pose v1 sheet is retained as an input
+to the full outfit packer below.
+
+## Current runtime outfits
+
+The room loads `public/photos/winnie-room-v3.png`,
+`public/photos/winnie-harness-v2.png` and `public/photos/winnie-stripes-v2.png`
+through `public/app/services.js`. All three sheets are 192×640px: three columns
+by ten rows of 64px cells, with identical pose coordinates and animation timing.
+Both clothing choices include all toy, eating, scratching, rolling, bowing,
+jumping and shaking poses.
+
+Run `node scripts/pack-outfits.mjs` to rebuild the two v2 clothing sheets from
+`winnie-harness-full.png` and `winnie-stripes-full.png`. The packer preserves the
+first six poses from each released v1 sheet byte-for-byte and fits the remaining
+24 generated silhouettes to the bandanna grid using nearest-neighbor sampling
+and an alpha threshold of 220. Generated sources remain untouched. Generation
+prompts, references and source sizes are in
+[full-outfits-prompt.md](full-outfits-prompt.md); the original striped-shirt
+source is documented in [stripes-prompt.md](stripes-prompt.md).
+
+`public/room.js` uses the selected clothing for every action. A missing or
+incomplete clothing sheet uses the corresponding bandanna pose. The temporary
+pee/poop harness acknowledgment restores the selected shared outfit afterward;
+interruptions clear the temporary override, and reduced motion settles directly
+into the logged state. Personal clothing reference photographs are not bundled
+or published.
