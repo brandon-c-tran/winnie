@@ -161,8 +161,11 @@ test("small screens fit and accessible status describes facts", async ({
     viewport: innerWidth,
   }));
   expect(width.page).toBeLessThanOrEqual(width.viewport);
-  await page.locator(".room-actions summary").click();
+  await expect(page.locator("#today-view .room-actions")).toHaveCount(0);
+  await page.locator('[data-act="more"]').click();
+  await page.getByText("Explore the room", { exact: true }).click();
   await page.getByRole("button", { name: "Pet Winnie", exact: true }).click();
+  await expect(page.locator("#dialog")).not.toBeVisible();
   await page.locator("#history-tab").click();
   await expect(page.locator("#history-title")).toBeFocused();
 });

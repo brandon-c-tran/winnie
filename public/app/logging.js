@@ -1,20 +1,20 @@
 // Logging: one-tap logs, sleep and walks, grooming, Earlier, meals, More, press-and-hold.
-import { careStates, completionId } from "../care-plans.js?v=4.16";
-import { elapsed } from "../care-state.js?v=4.16";
+import { careStates, completionId } from "../care-plans.js?v=4.17";
+import { elapsed } from "../care-state.js?v=4.17";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { durationLabel } from "../insights.js?v=4.16";
+import { durationLabel } from "../insights.js?v=4.17";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
-} from "../everyday.js?v=4.16";
+} from "../everyday.js?v=4.17";
 import {
   autoPlace,
   autoPlaceEnabled,
   facts,
   room,
   sync,
-} from "./services.js?v=4.16";
+} from "./services.js?v=4.17";
 import {
   $,
   TYPES,
@@ -23,7 +23,7 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.16";
+} from "./format.js?v=4.17";
 import {
   closeDialog,
   retainDialogDraft,
@@ -35,12 +35,12 @@ import {
   renderedHTML,
   safe,
   toast,
-} from "./ui.js?v=4.16";
-import { editForm } from "./forms.js?v=4.16";
-import { render } from "./today.js?v=4.16";
-import { state } from "./state.js?v=4.16";
-import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.16";
-import { pantryNow } from "./pantry-view.js?v=4.16";
+} from "./ui.js?v=4.17";
+import { editForm } from "./forms.js?v=4.17";
+import { render } from "./today.js?v=4.17";
+import { state } from "./state.js?v=4.17";
+import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.17";
+import { pantryNow } from "./pantry-view.js?v=4.17";
 
 let mealSubmitting = false;
 let pressTimer = 0;
@@ -381,6 +381,12 @@ export async function saveMeal(food) {
     mealSubmitting = false;
   }
 }
+const roomActionsHTML = `<details class="room-actions"><summary>Explore the room</summary><div class="button-row">${[
+  ["winnie", "Pet Winnie"], ["toy", "Play with toy"], ["photo", "Change wall photo"],
+  ["fridge", "Leave a note"], ["calendar", "Open plans"], ["bowl", "Log meal"],
+  ["bed", "Sleep timer"], ["door", "Walk timer"], ["window", "Weather and daylight"],
+  ["shelf", "Open memories"], ["ribbon", "Training ribbon"]
+].map(([action,label]) => `<button class="text-button" data-room-action="${action}">${label}</button>`).join("")}</div></details>`;
 export function moreCare() {
   const events = facts(),
     sleeping = events.find(
@@ -392,6 +398,6 @@ export function moreCare() {
       return e ? elapsed(e.time) : "Not yet";
     };
   openDialog(
-    `<h2 id="dialog-title">More</h2><section class="sheet-section"><h3>Grooming</h3><div class="type-grid">${GROOMING.map(([t, i]) => `<button class="px" style="--c:var(--groom)" data-groom="${t}">${icon(i)}${t}<small>${lastOf((x) => x.type === "grooming" && (x.careTitle || "").toLowerCase() === t.toLowerCase())}</small></button>`).join("")}</div></section><section class="sheet-section"><h3>Walks and sleep</h3><div class="type-grid"><button class="px" style="--c:var(--walk)" data-act="${walk ? "finish-walk" : "start-walk"}">${icon("walk")}${walk ? "Finish walk" : "Start walk"}</button><button class="px" style="--c:var(--sleep)" data-act="${sleeping ? "end-sleep" : "start-sleep"}">${icon("sleep")}${sleeping ? (sleeping.type === "nap" ? "End nap" : "End sleep") : sleepContext().type === "nap" ? "Start nap" : "Start night sleep"}</button><button class="px" style="--c:var(--walk)" data-new-type="outing">${icon("walk")}Outing</button></div></section><section class="sheet-section"><h3>Health and training</h3><div class="type-grid">${["medication", "enrichment", "appointment", "vomit", "episode", "travel", "covered_gap", "note"].map((t) => `<button class="px" style="--c:${typeColor(t)}" data-new-type="${t}">${icon(typeIcon(t))}${TYPES[t][1]}</button>`).join("")}<button class="px" style="--c:var(--care)" data-act="trainer">${icon("whistle")}Trainer visit</button></div></section>`,
+    `<h2 id="dialog-title">More</h2><section class="sheet-section"><h3>Grooming</h3><div class="type-grid">${GROOMING.map(([t, i]) => `<button class="px" style="--c:var(--groom)" data-groom="${t}">${icon(i)}${t}<small>${lastOf((x) => x.type === "grooming" && (x.careTitle || "").toLowerCase() === t.toLowerCase())}</small></button>`).join("")}</div></section><section class="sheet-section"><h3>Walks and sleep</h3><div class="type-grid"><button class="px" style="--c:var(--walk)" data-act="${walk ? "finish-walk" : "start-walk"}">${icon("walk")}${walk ? "Finish walk" : "Start walk"}</button><button class="px" style="--c:var(--sleep)" data-act="${sleeping ? "end-sleep" : "start-sleep"}">${icon("sleep")}${sleeping ? (sleeping.type === "nap" ? "End nap" : "End sleep") : sleepContext().type === "nap" ? "Start nap" : "Start night sleep"}</button><button class="px" style="--c:var(--walk)" data-new-type="outing">${icon("walk")}Outing</button></div></section><section class="sheet-section"><h3>Health and training</h3><div class="type-grid">${["medication", "enrichment", "appointment", "vomit", "episode", "travel", "covered_gap", "note"].map((t) => `<button class="px" style="--c:${typeColor(t)}" data-new-type="${t}">${icon(typeIcon(t))}${TYPES[t][1]}</button>`).join("")}<button class="px" style="--c:var(--care)" data-act="trainer">${icon("whistle")}Trainer visit</button></div></section>${roomActionsHTML}`,
   );
 }

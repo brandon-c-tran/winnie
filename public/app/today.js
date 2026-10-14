@@ -1,22 +1,22 @@
 // Today: the room's state, the log buttons, Also today, the day strip, and partner greetings.
-import { careStates, careDay } from "../care-plans.js?v=4.16";
-import { fridgeState, onFridge } from "../fridge-model.js?v=4.16";
-import { latestCare, elapsed } from "../care-state.js?v=4.16";
+import { careStates, careDay } from "../care-plans.js?v=4.17";
+import { fridgeState, onFridge } from "../fridge-model.js?v=4.17";
+import { latestCare, elapsed } from "../care-state.js?v=4.17";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
 import { getTimes } from "../vendor/suncalc.js";
-import { weatherKind } from "../room.js?v=4.16";
+import { weatherKind } from "../room.js?v=4.17";
 import {
   cachedWeather,
   refreshWeather,
   weatherWords,
-} from "./weather.js?v=4.16";
-import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.16";
-import { rhythmInsights, durationLabel } from "../insights.js?v=4.16";
-import { care, facts, fridge, room, sync } from "./services.js?v=4.16";
-import { setTab, showPhotos } from "./nav.js?v=4.16";
-import { pantryHTML } from "./pantry-view.js?v=4.16";
-import { QUALITY } from "../pantry.js?v=4.16";
-import { finishWalk, log } from "./logging.js?v=4.16";
+} from "./weather.js?v=4.17";
+import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.17";
+import { rhythmInsights, durationLabel } from "../insights.js?v=4.17";
+import { care, facts, fridge, room, sync } from "./services.js?v=4.17";
+import { setTab, showPhotos } from "./nav.js?v=4.17";
+import { pantryHTML } from "./pantry-view.js?v=4.17";
+import { QUALITY } from "../pantry.js?v=4.17";
+import { finishWalk, log } from "./logging.js?v=4.17";
 import {
   $,
   TYPES,
@@ -27,29 +27,16 @@ import {
   esc,
   person,
   when,
-} from "./format.js?v=4.16";
-import { html, toast } from "./ui.js?v=4.16";
-import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.16";
-import { legacyDiff } from "./settings.js?v=4.16";
-import { renderLastTimes, renderStory } from "./library.js?v=4.16";
-import { state } from "./state.js?v=4.16";
-import { ROUTINE, lastRoutine } from "../routine.js?v=4.16";
-import { suppliesHTML } from "./supplies-view.js?v=4.16";
-import { trainingHTML } from "./trainer.js?v=4.16";
+} from "./format.js?v=4.17";
+import { html, toast } from "./ui.js?v=4.17";
+import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.17";
+import { legacyDiff } from "./settings.js?v=4.17";
+import { renderLastTimes, renderStory } from "./library.js?v=4.17";
+import { state } from "./state.js?v=4.17";
+import { ROUTINE, lastRoutine } from "../routine.js?v=4.17";
+import { suppliesHTML } from "./supplies-view.js?v=4.17";
+import { trainingHTML } from "./trainer.js?v=4.17";
 
-const roomActions = document.createElement("details");
-roomActions.className = "room-actions";
-roomActions.innerHTML = '<summary>Room actions</summary><div class="button-row">' + [
-  ["winnie", "Pet Winnie"], ["toy", "Play with toy"], ["photo", "Change wall photo"],
-  ["fridge", "Leave a note"], ["calendar", "Open plans"], ["bowl", "Log meal"],
-  ["bed", "Sleep timer"], ["door", "Walk timer"], ["window", "Weather and daylight"],
-  ["shelf", "Open memories"], ["ribbon", "Training ribbon"]
-].map(([action, label]) => '<button class="text-button" data-room-action="' + action + '">' + label + '</button>').join('') + '</div>';
-$("room-status").after(roomActions);
-roomActions.addEventListener("click", event => {
-  const button = event.target.closest("[data-room-action]");
-  if (button) roomObject(button.dataset.roomAction);
-});
 let shownWeather = 0;
 let roomReady = false,
   wallKey = null;
@@ -276,7 +263,7 @@ function renderToday(events, sleeping, walk) {
     ? `<span class="grow"><b>Unfinished ${run.type === "walk" ? "walk" : "sleep"} entry</b><span class="status-last">Started ${when(run.time)}</span></span><button class="px btn" data-edit="${esc(run.id)}">Correct time</button>`
     : run
     ? `<span class="sq run-ic" style="--c:${typeColor(run.type)}" aria-hidden="true">${icon(typeIcon(run.type), "ic sm")}</span><span class="grow"><b>${run.type === "walk" ? "Walk timer running" : run.type === "nap" ? "Nap timer running" : "Sleep timer running"}</b> <span>${durationLabel(Math.max(1, Math.round((now - run.time) / 60000)))}${run.loggedBy ? `<span class="status-person">${face(run.loggedBy, "xs")}${esc(person(run.loggedBy))}</span>` : ""}</span></span><button class="px btn" data-act="${run.type === "walk" ? "finish-walk" : "end-sleep"}">${run.type === "walk" ? "Finish walk" : run.type === "nap" ? "End nap" : "End sleep"}</button>`
-    : last ? `<b>Last logged</b><span class="status-last">${esc(eventLabel(last))} ${when(last.time)}${last.loggedBy ? `<span class="status-person">${esc(person(last.loggedBy))}</span>` : ""}</span>` : `<span>No care logged yet</span>`;
+    : last ? `<span class="status-last">${esc(eventLabel(last))} ${elapsed(last.time).toLowerCase()}${last.loggedBy ? `, logged by ${esc(person(last.loggedBy))}` : ""}.</span>` : `<span>No care logged yet</span>`;
   $("room").setAttribute(
     "aria-label",
     run && !stale

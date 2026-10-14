@@ -1,8 +1,8 @@
-import { SUPPLIES, STOCK, validateSupplies } from "../routine.js?v=4.16";
-import { careStates } from "../care-plans.js?v=4.16";
-import { sync } from "./services.js?v=4.16";
-import { $, esc, dateLabel } from "./format.js?v=4.16";
-import { openDialog, closeDialog, safe, toast } from "./ui.js?v=4.16";
+import { SUPPLIES, STOCK, validateSupplies } from "../routine.js?v=4.17";
+import { careStates } from "../care-plans.js?v=4.17";
+import { sync } from "./services.js?v=4.17";
+import { $, esc, dateLabel } from "./format.js?v=4.17";
+import { openDialog, closeDialog, safe, toast } from "./ui.js?v=4.17";
 
 export function suppliesHTML() {
   const profile = sync.view().profile,
