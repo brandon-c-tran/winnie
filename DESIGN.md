@@ -283,7 +283,7 @@ Both are preloaded in `index.html` with `font-display: swap`, and `font-synthesi
 **Character:** Pixelify Sans is the room's voice on the UI: every heading, button, tile name, time and count. Rubik carries anything that reads as a sentence or a name list, so the pixel face never has to set a paragraph.
 
 ### Hierarchy
-- **Display** (Pixelify 700, 34px, 1.1): view titles on Plans, History, Photos. The join screen uses the same face at 52px.
+- **Display** (Pixelify 700, 34px, 1.1): view titles on Plans, Story and Insights. The join screen uses the same face at 52px.
 - **Headline** (Pixelify 700, 22px): the day heading in the Today log; sheet titles at 24px.
 - **Title** (Pixelify 700, 17-20px): card heads (18px), section heads (19px), tile names (20px), status line lead (17px), empty-state heads (17px).
 - **Numeral** (Pixelify 700, 30px, 1.05, tabular figures): the last-time on the Pee and Poop tiles (26px under 370px wide). Entry times in the timeline use Pixelify 600 13.5px, tabular.
@@ -374,7 +374,7 @@ One line under the room that states the room's state in words.
 Square labels floating over the room: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings.
 
 ### People (Brandon and Kim)
-Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). All placements use the existing full-bust `brandon-pixel.png` and `kim-pixel.png` artwork. Today, History and Care photos contain the whole portrait in a frameless 24×24px area inline beside the author's name, below the event, result and optional note. Entry details retain a 64×64px portrait area beside the title and logger attribution. Portraits use `object-fit: contain`, a bottom baseline and pixelated rendering; the close-cropped head assets are not used.
+Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). All placements use the existing full-bust `brandon-pixel.png` and `kim-pixel.png` artwork. Today, Timeline and Care photos contain the whole portrait in a frameless 24×24px area inline beside the author's name, below the event, result and optional note. Entry details retain a 64×64px portrait area beside the title and logger attribution. Portraits use `object-fit: contain`, a bottom baseline and pixelated rendering; the close-cropped head assets are not used.
 - Other placements retain the full artwork: `xs` and `sm` occupy 28×32px, Notes byline portraits occupy 28×28px, `md` occupies 44×52px, and the room's Settings portrait occupies 32×32px, centred inside its 44×44px target. Names remain separate text and portraits are decorative.
 - **Dialogue box.** When the other phone logs something, a game dialogue box rises over the bottom of the room: the 48px full portrait, the name in Pixelify 700, "Logged meal 12:40 PM" in Rubik. Cream paper, 3px ink edge, gold inner rim. Tap opens the entry; it leaves on its own after 7 seconds. It replaces the old "Kim logged" toast.
 - The weekly postcard puts both faces on the footer line with each person's count for the week.
@@ -386,7 +386,7 @@ Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-po
 - The meal sheet orders foods by rotation (eaten longest ago first) and adds "3d ago · 8 left" under each.
 
 ### Poop quality
-Right after a poop, a bar under the tiles: poop icon, the time, and Firm, Soft and Loose pixel buttons in poop colour. One tap tags the poop and the bar goes. It stays for 30 minutes, then gives up. The entry sheet carries the same three choices. Trends, on the Poop topic, shows "Poop by food": one bar per food (firm in poop brown, soft in amber, loose in sick green), from the first poop within a day after each meal.
+Right after a poop, a bar under the tiles: poop icon, the time, and Firm, Soft and Loose pixel buttons in poop colour. One tap tags the poop and the bar goes. It stays for 30 minutes, then gives up. The entry sheet carries the same three choices. Insights, on the Poop topic, shows "Poop by food": one bar per food (firm in poop brown, soft in amber, loose in sick green), from the first poop within a day after each meal.
 
 ### Toast
 The receipt after every action.
@@ -412,7 +412,7 @@ Plans orders Supplies, Winnie’s calendar and Reminders as flat sections. Suppl
 Reminder creation uses a two-column named-task chooser. Known tasks omit the entry-kind selector; custom reminders label it Kind. Stock editing uses a two-column radio grid with a distinct selected border and sunk fill. These extensions reuse the incumbent palette, square edges and type families.
 
 ### Navigation (tab bar)
-Fixed bottom bar, ink fill, four equal tabs (Today, Plans, History, Photos), 24px pixel icons over Pixelify 600 12.5px labels in pale periwinkle (`tabbar-text`), min 52px. The current tab's label turns white and its icon sits in a gingham square with a 2px white outline.
+Fixed bottom bar, ink fill, four equal tabs (Today, Plans, Story, Insights), 24px pixel icons over Pixelify 600 12.5px labels in pale periwinkle (`tabbar-text`), min 52px. The current tab's label turns white and its icon sits in a gingham square with a 2px white outline. Story restores its last view when returning from another bottom tab.
 
 ### Day strip
 A 52px bordered lane per day: care spans and ticks as small care-colour blocks with 2px ink borders, a red "now" post with a square flag, and Pixelify 10px hour labels (12a, 6a, 12p, 6p, 12a).
@@ -476,14 +476,14 @@ All motion is stepped. CSS uses `steps()` timing only: button press `60ms steps(
 - **Don't** add a second colour for a care type or reuse a care colour for an unrelated meaning.
 - **Don't** round UI corners or use blurred shadows (pixel art draws its own curves on the grid).
 - **Don't** use eased or springy CSS curves; use stepped timing.
-- **Don't** use taglines, "our / together / moments / story / little", exclamation marks, em dashes or rhetorical questions in UI copy.
+- **Don't** use taglines, "our / together / moments / little", exclamation marks, em dashes or rhetorical questions in UI copy. Story is the functional destination label for the combined history and photo views; warm abstractions such as "His story" remain retired.
 - **Don't** write copy that explains how the interface works: no hint lines, tutorials, or sentences about what a tap does, where something will show up, or how a date is worked out ("One tap logs it", "Shows up here when it's due", "Tap a group to zoom"). Labels and results speak for themselves. Keep a sentence only when it states a fact the person cannot see and that changes what they do: an error and its fix, when a code expires, that nothing is tracked between logs.
 - **Don't** set paragraphs in Pixelify Sans or use all-caps labels.
 - **Don't** smooth-scale pixel art or draw it off the art grid; scale by integers with `image-rendering: pixelated`.
 - **Don't** use brown or black outlines in the UI or the room.
 - **Don't** lead with a hero photo or a pastel card grid; the room is the top of Today.
 
-## History, photos and reactions
+## Story, insights and reactions
 
 Do not flatten metadata into strings separated by bullets or middle dots.
 Use placement and hierarchy: the row's useful result has its own line,
@@ -493,10 +493,12 @@ which also use labeled date/time fields. Prefer concise
 sentences when a relationship genuinely needs prose. This is a standing user
 preference for future interfaces as well as the care log.
 
-History owns Daily log, Trends, By age and Calendar. Search, type and date filters belong
-to Daily log. By age uses the same flat sections, Pixelify labels and Rubik
+Story owns Timeline, Photos, Places and Memories beneath one shared heading.
+Timeline contains Daily log and Calendar; Memories contains Highlights and By age.
+Search, type and date filters belong to Daily log. By age uses the same flat sections, Pixelify labels and Rubik
 reading text for source search, monthly photos and recorded days, milestones
-and source notes. Its age label explicitly describes age at mid-month. Trends
+and source notes. Its age label explicitly describes age at mid-month. Insights is
+an independent bottom destination for the former Trends views and
 places monthly comparisons and expandable training history before recent patterns.
 Calendar reuses the agenda rows beneath month headings. Upcoming and Past use
 pressed-state buttons; the visit-kind selector wraps beside them, with search and
@@ -518,7 +520,8 @@ the details, before the right-hand time and reaction column. The contained previ
 is 80×88px, reducing to 64×80px at widths of 360px or less. Rows use 12px padding
 and gaps, reducing to 10px horizontal padding and 8px gaps at that breakpoint.
 A count overlays the preview when there are multiple photos; opening it leads
-to the entry details. History retains its compact photo-count links.
+to the entry details. Timeline uses the same compact preview for standalone moments
+with photos; care records retain their compact photo-count links.
 
 After a quick poop log saves, an optional Poop photo sheet opens with Take photo,
 Choose photo, Consistency and Not now. Consistency updates in place so the photo
@@ -531,16 +534,20 @@ in Pixelify Sans 700 at 24px and logger attribution. Labeled date/time fields,
 full notes, recorded facts, consistency, place and photos follow. Logger and
 care-provider attribution remain distinct.
 
-Photos, Memories and Places share a stable primary navigation row beneath the
-current destination's heading. Add photos appears only in Photos. Winnie and
-Care photos are subordinate collection controls shown only within Photos;
-returning to Photos restores the selected collection. Winnie groups photos by
+Timeline, Photos, Places and Memories share a stable primary navigation row beneath
+the Story heading. Flat, equal-width controls use an ink underline and sunk fill
+for the selected view. Timeline's Daily log / Calendar and Memories' Highlights /
+By age controls sit below that row, using the existing square pressed-state buttons.
+Add photos remains in the Story header across views; Care photos changes it to
+Attach photos. Winnie and Care photos are subordinate collection controls shown
+only within Photos; returning to Photos restores the selected collection. Switching
+Story views preserves their filters. Winnie groups photos by
 their capture month in a two-column album, including individually selected care
 keepsakes. Care photos groups care entries by day, using the same signed
 record heading with a large uncropped photo below. The `fullPhoto` entry option
 keeps the image across the full row with `object-fit: contain`, automatic height
 and a 300px maximum height. Its type filter offers All care photos, Poop photos and Meal
-photos. Switching tabs preserves each tab's filters.
+photos.
 
 Adding Winnie photos opens a photo-first composer: choose photos or take a
 photo, review each removable preview's date and place summary and expandable
@@ -550,14 +557,14 @@ adding opens a searchable picker of existing
 poop and meal entries so each photo stays attached to its care record. Entry
 detail sheets also offer Take photo and Choose photo beside the Photos heading.
 
-Memories retains its postcard and adds a flat Trips & places list with an Add
+Memories' Highlights view retains its postcard and a flat Trips & places list with an Add
 trip action, recorded-day counts and source-linked collection details. These
 lifetime additions extend the incumbent controls and typography; they introduce
 no new visual identity or token set. Their behavioral limits are recorded in
 PRODUCT.md and `.impeccable/surfaces/public-app-library-js.md`.
 
-Places leads with region controls and a bordered local atlas beneath its heading
-and the Photos / Memories / Places row. Natural Earth geography uses restrained
+Places leads with region controls and a bordered local atlas beneath the Story heading
+and the Timeline / Photos / Places / Memories row. Natural Earth geography uses restrained
 land and water fills; pink destination markers, square map controls and Pixelify
 labels connect it to the incumbent world. Selected destinations and dated replay
 appear below the map, followed by a horizontal outing list and a divided directory.
@@ -570,7 +577,7 @@ images; care keepsakes retain their source attachment. Saved-trip photo-only day
 remain visible without invented map pins. Photo capture dates and locations take
 priority when present. Suggested outings are labeled; replay draws no travel route.
 
-Selecting a destination hides the shared heading and primary navigation and opens
+Selecting a destination retains the Story heading, Add photos and primary navigation and opens
 its age, first/latest dates, selected photos, optional named-spot selector and
 expandable recorded days with original signed entry rows. Back to places restores
 the previous view and scroll position. City map opens an external map, while source

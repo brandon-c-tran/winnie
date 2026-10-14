@@ -1,3 +1,4 @@
+import { goTimeline, goPhotos } from './helpers.mjs';
 import { test, expect } from "@playwright/test";
 import { code, join } from "./helpers.mjs";
 
@@ -111,7 +112,7 @@ test("photo draft resumes, selected care photo joins Winnie and can be unselecte
   await page.locator("[data-keep-photo]").click();
   await expect(page.locator("[data-keep-photo]")).toHaveText("Kept in Winnie");
   await page.locator("#dialog-close").click();
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
   await page.locator('[data-filter="memories"]').click();
   await expect(page.locator("#postcard")).toBeVisible();
@@ -166,6 +167,6 @@ test("small screens fit and accessible status describes facts", async ({
   await page.getByText("Explore the room", { exact: true }).click();
   await page.getByRole("button", { name: "Pet Winnie", exact: true }).click();
   await expect(page.locator("#dialog")).not.toBeVisible();
-  await page.locator("#history-tab").click();
-  await expect(page.locator("#history-title")).toBeFocused();
+  await goTimeline(page);
+  await expect(page.locator("#story-title")).toBeFocused();
 });

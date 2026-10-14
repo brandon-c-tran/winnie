@@ -1,3 +1,4 @@
+import { goPhotos } from './helpers.mjs';
 import { test, expect } from "@playwright/test";
 import { code, join } from "./helpers.mjs";
 
@@ -6,7 +7,7 @@ test("Places groups care evidence by destination, spot and recorded day", async 
 }, info) => {
   const errors = await join(page, code(info));
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.19");
+    const { sync } = await import("/app/services.js?v=4.20");
     for (const row of [
       {
         type: "pee",
@@ -49,9 +50,10 @@ test("Places groups care evidence by destination, spot and recorded day", async 
     ])
       await sync.enqueue("create", crypto.randomUUID(), row);
   });
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await page.locator('[data-filter="places"]').click();
-  await expect(page.locator("#photos-title")).toHaveText("Places");
+  await expect(page.locator("#story-title")).toHaveText("Story");
+  await expect(page.locator('[data-filter="places"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator("#travel-map")).toBeVisible();
   await expect(
     page.locator(".place-city", { hasText: "San Francisco" }),
@@ -84,7 +86,7 @@ test("Places groups care evidence by destination, spot and recorded day", async 
   await expect(page.getByRole("link", { name: "City map" })).toHaveCount(0);
   await page.getByRole("button", { name: "Back to places", exact: true }).click();
   await page.locator("#places-home").click();
-  await expect(page.locator("#photos-title")).toHaveText("Photos");
+  await expect(page.locator("#places-home")).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator("#story-add")).toBeVisible();
   expect(errors).toEqual([]);
 });

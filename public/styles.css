@@ -3176,6 +3176,17 @@ details {
 }
 
 /* History, Gallery and Places: independent tools, one clear reading order. */
+.story-subnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-inline: var(--gut);
+}
+.story-subnav .photo-kinds { margin: 0; }
+#memory-navigation { margin: 0 var(--gut) 18px; }
+#story-navigation .px { min-width: 0; }
 .section-tabs {
   display: flex;
   gap: 0;

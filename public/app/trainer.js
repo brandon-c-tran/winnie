@@ -1,9 +1,9 @@
-import {calendarPlansHTML, calendarSheet} from './calendar-view.js?v=4.19';
+import {calendarPlansHTML, calendarSheet} from './calendar-view.js?v=4.20';
 // Trainer visits imported from the calendar.
-import { validateTrainerImport } from "../everyday.js?v=4.19";
-import { $, clock, dateLabel, esc } from "./format.js?v=4.19";
-import { facts, sync } from "./services.js?v=4.19";
-import { openDialog, safe, toast } from "./ui.js?v=4.19";
+import { validateTrainerImport } from "../everyday.js?v=4.20";
+import { $, clock, dateLabel, esc } from "./format.js?v=4.20";
+import { facts, sync } from "./services.js?v=4.20";
+import { openDialog, safe, toast } from "./ui.js?v=4.20";
 
 export function visitRow(v, events = facts()) {
   const logged = events.find(

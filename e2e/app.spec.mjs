@@ -1,3 +1,4 @@
+import { goTimeline, goPhotos } from './helpers.mjs';
 import { test, expect } from "@playwright/test";
 import { code, join, toast } from "./helpers.mjs";
 
@@ -12,7 +13,7 @@ test("Today opens on the room with the log buttons and tabs", async ({
   await expect(page.locator('#care-actions [data-log="poop"]')).toContainText(
     "Poop",
   );
-  for (const tab of ["Today", "Plans", "History", "Photos"])
+  for (const tab of ["Today", "Plans", "Story", "Insights"])
     await expect(page.locator("#tabbar")).toContainText(tab);
   await expect(page.locator("#room-status")).toHaveText(/Pee .+ago\./);
   expect(errors).toEqual([]);
@@ -50,7 +51,7 @@ test("a bath from More shows up in History's last-time counters", async ({
   await page.locator('#dialog [data-groom="Bath"]').click();
   await page.getByRole("button", {name: "Save bath", exact: true}).click();
   await expect(toast(page)).toContainText("Bath saved");
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await expect(page.locator("#last-times")).toContainText("Bath");
 });
 
@@ -62,7 +63,7 @@ test("Earlier logs poop 30 minutes ago", async ({ page }, info) => {
   await page.locator("[data-early-save]").click();
   await expect(toast(page)).toContainText("Poop logged for");
   // Check History, not today's list: 30 minutes ago can be yesterday just after midnight.
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await expect(page.locator("#story-items")).toContainText("Poop");
 });
 
@@ -130,10 +131,10 @@ test("History searches and Trends draws the selected-window chart", async ({
   await join(page, code(info));
   await page.locator('#care-actions [data-log="poop"]').click();
   await page.getByRole('button', { name: 'Not now', exact: true }).click();
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await page.locator("#story-search").fill("poop");
   await expect(page.locator("#story-items")).toContainText("Poop");
-  await page.locator('[data-history="patterns"]').click();
+  await page.locator('#insights-tab').click();
   await expect(page.locator("#story-items")).toContainText(
     "Pee and poop, last 28 days",
   );
@@ -143,8 +144,8 @@ test("All entries in Trends opens the full History log", async ({
   page,
 }, info) => {
   await join(page, code(info));
-  await page.locator("#history-tab").click();
-  await page.locator('[data-history="patterns"]').click();
+  await goTimeline(page);
+  await page.locator('#insights-tab').click();
   await page.locator('[data-act="all-history"]').click();
   await expect(page.locator('[data-history="care"]')).toHaveAttribute(
     "aria-pressed",
@@ -155,7 +156,7 @@ test("All entries in Trends opens the full History log", async ({
 
 test("Photos switches to Places and back", async ({ page }, info) => {
   await join(page, code(info));
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await page.locator('[data-filter="places"]').click();
   await expect(page.locator("#places-view")).toBeVisible();
   await expect(page.locator('[data-filter="places"]')).toHaveAttribute(
@@ -174,7 +175,7 @@ test("a bath makes Winnie shake off, and Memories counts it", async ({
   await page.locator('#dialog [data-groom="Bath"]').click();
   await page.getByRole("button", {name:"Save bath", exact:true}).click();
   await expect(toast(page)).toContainText("Bath saved");
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await page.locator('[data-filter="memories"]').click();
   await expect(page.locator("#week-title")).toHaveText("Postcard");
   await expect(page.locator("#photo-items")).toContainText("First bath logged");
@@ -252,9 +253,9 @@ test("a log the size of the real one opens and stays responsive", async ({
     type: "pee tap to toast (ms)",
     description: String(Date.now() - t),
   });
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await expect(page.locator("#story-count")).toContainText("entries");
-  await page.locator('[data-history="patterns"]').click();
+  await page.locator('#insights-tab').click();
   await expect(page.locator("#story-items")).toContainText(/poop timing/i);
   expect(errors).toEqual([]);
 });

@@ -1,3 +1,4 @@
+import { goTimeline, goPhotos } from './helpers.mjs';
 import { test, expect } from "@playwright/test";
 import { code, join } from "./helpers.mjs";
 
@@ -40,7 +41,7 @@ test("History and Gallery keep independent filters and actual photos", async ({
   const errors = await join(page, code(info));
   // Isolated fixture through the actual offline queue and photo upload pipeline.
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.19");
+    const { sync } = await import("/app/services.js?v=4.20");
     const image = new Image();
     image.src = "/photos/winnie-smile.png";
     await image.decode();
@@ -60,10 +61,10 @@ test("History and Gallery keep independent filters and actual photos", async ({
       await sync.addPhoto(id, blob);
     }
   });
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await page.locator("#story-search").fill("Photo poop");
   await expect(page.locator("#story-count")).toHaveText("1 entry");
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await expect(page.locator('[data-filter="moments"]')).toHaveAttribute(
     "aria-pressed",
     "true",
@@ -81,7 +82,7 @@ test("History and Gallery keep independent filters and actual photos", async ({
   await expect(page.locator("#photo-count")).toHaveText("2 photos");
   await page.locator("#photo-search").fill("Photo meal");
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
-  await page.locator("#history-tab").click();
+  await goTimeline(page);
   await expect(page.locator("#story-search")).toHaveValue("Photo poop");
   await expect(page.locator("#story-count")).toHaveText("1 entry");
   await page.locator("#history-clear").click();
@@ -89,7 +90,7 @@ test("History and Gallery keep independent filters and actual photos", async ({
     path: info.outputPath("history.png"),
     fullPage: true,
   });
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await expect(page.locator("#photo-search")).toHaveValue("Photo meal");
   expect(errors).toEqual([]);
 });
@@ -99,7 +100,7 @@ test("Places opens destinations and their source logs without losing the list", 
 }, info) => {
   const errors = await join(page, code(info));
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.19");
+    const { sync } = await import("/app/services.js?v=4.20");
     for (const [lat, lng] of [
       [37.7749, -122.4194],
       [37.8044, -122.2712],
@@ -112,7 +113,7 @@ test("Places opens destinations and their source logs without losing the list", 
       });
     }
   });
-  await page.locator("#photos-tab").click();
+  await goPhotos(page);
   await page.locator('[data-filter="places"]').click();
   await expect(page.locator(".place-city")).toHaveCount(3);
   await page.screenshot({
@@ -139,7 +140,7 @@ test("new room poses render, settle after interruption and respect reduced motio
 }, info) => {
   const errors = await join(page, code(info));
   const result = await page.evaluate(async () => {
-    const { room } = await import("/app/services.js?v=4.19");
+    const { room } = await import("/app/services.js?v=4.20");
     for (const pose of [
       "belly",
       "roll",
@@ -168,7 +169,7 @@ test("new room poses render, settle after interruption and respect reduced motio
   await expect
     .poll(() =>
       page.evaluate(async () => {
-        const { room } = await import("/app/services.js?v=4.19");
+        const { room } = await import("/app/services.js?v=4.20");
         room.react("toy");
         return { pose: room.dog.pose, toy: room.dog.toy };
       }),

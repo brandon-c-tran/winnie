@@ -1,9 +1,9 @@
 // Toasts, the sheet (one <dialog>), error handling, and memoised HTML writes.
 import { icon } from "../icons.js?v=4.0";
-import { $ } from "./format.js?v=4.19";
-import { room, sync } from "./services.js?v=4.19";
-import { state } from "./state.js?v=4.19";
-import { createDraftStore } from "../draft-store.js?v=4.19";
+import { $ } from "./format.js?v=4.20";
+import { room, sync } from "./services.js?v=4.20";
+import { state } from "./state.js?v=4.20";
+import { createDraftStore } from "../draft-store.js?v=4.20";
 
 let toastTimer;
 export function toast(message, undo = null, actions = []) {
@@ -270,7 +270,7 @@ $("dialog").addEventListener("close", () => {
   room?.pause(false);
   const target = state.dialogReturn;
   if (target?.isConnected) target.focus();
-  else document.querySelector(`#${state.tab}-view h1`)?.focus();
+  else document.querySelector(`#${state.tab}-view h1, #story-view:not([hidden]) h1`)?.focus();
 });
 $("dialog").addEventListener("click", (ev) => {
   // Tapping the dimmed area above a sheet closes it.

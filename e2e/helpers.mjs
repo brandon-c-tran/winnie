@@ -22,3 +22,13 @@ export async function join(page, shared, who = "brandon") {
 }
 
 export const toast = (page) => page.locator("#toast-text");
+
+export async function goTimeline(page) {
+  await page.locator('#story-tab').click();
+  await page.locator('[data-story="care"]').click();
+  await page.locator('[data-history="care"]').click();
+}
+export async function goPhotos(page) {
+  await page.locator('#story-tab').click();
+  await page.locator('#places-home').click();
+}
