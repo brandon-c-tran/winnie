@@ -1,20 +1,20 @@
-import { collectionsHTML } from './lifetime-view.js?v=4.20';
+import { collectionsHTML } from './lifetime-view.js?v=4.21';
 // Memories: this week's postcard, on this day, milestones, and the year so far.
-import { memoryEvents } from "../keepsakes.js?v=4.20";
-import { placeLabel } from "../places.js?v=4.20";
+import { memoryEvents } from "../keepsakes.js?v=4.21";
+import { placeLabel } from "../places.js?v=4.21";
 import {
   milestones,
   weekStats,
   onThisDay,
   yearRecap,
-} from "../memories.js?v=4.20";
-import { cityFor } from "../places.js?v=4.20";
+} from "../memories.js?v=4.21";
+import { cityFor } from "../places.js?v=4.21";
 import { icon, TYPES as TYPE_META } from "../icons.js?v=4.0";
-import { facts, sync } from "./services.js?v=4.20";
-import { $, esc } from "./format.js?v=4.20";
-import { html, toast } from "./ui.js?v=4.20";
-import { hydratePhotos } from "./entries.js?v=4.20";
-import { download } from "./photos.js?v=4.20";
+import { facts, sync } from "./services.js?v=4.21";
+import { $, esc } from "./format.js?v=4.21";
+import { html, toast } from "./ui.js?v=4.21";
+import { hydratePhotos } from "./entries.js?v=4.21";
+import { download } from "./photos.js?v=4.21";
 
 const DAY = 86400000;
 const short = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });

@@ -298,8 +298,6 @@ export function createRoom(canvas, opts = {}) {
     r = relit.getContext("2d");
   const mask = document.createElement("canvas"),
     mk = mask.getContext("2d");
-  const pic = document.createElement("canvas"),
-    pc = pic.getContext("2d", { willReadFrequently: true });
   const tiny = document.createElement("canvas"),
     tc = tiny.getContext("2d");
   const roomCache = document.createElement("canvas"),
@@ -315,8 +313,6 @@ export function createRoom(canvas, opts = {}) {
     skyAlt = 0,
     lastSig = "",
     paused = false;
-  pic.width = 18;
-  pic.height = 14;
   tiny.width = 14;
   tiny.height = 14;
   let W = 195,
@@ -330,6 +326,7 @@ export function createRoom(canvas, opts = {}) {
     pending: 0,
     error: false,
     due: false,
+    lights: false,
   };
   const dog = {
     x: 64,
@@ -363,7 +360,8 @@ export function createRoom(canvas, opts = {}) {
     blinkAt = 0,
     visible = true,
     sky = null,
-    hasPhoto = false;
+    hasPhoto = false,
+    wallPhoto = null;
   if (still) tick = 60;
 
   function layout() {
@@ -375,15 +373,15 @@ export function createRoom(canvas, opts = {}) {
       plant: { x: 22, y: 60 },
       win: { x: 37, y: 12, w: 32, h: 30 },
       cal: { x: 80, y: 15, w: 13, h: 16 },
-      frame: { x: 97, y: 13, w: 22, h: 18 },
+      frame: { x: 94, y: 13, w: Math.min(42, door.x - 96), h: 32 },
       door,
       hook,
       sconce: { x: Math.min(W - 9, hook.x + 9), y: 27 },
       bed: { x: W - 53, y: 88, w: 47, h: 18 },
       bowl: { x: 88, y: 100, w: 12, h: 6 },
       toy: { x: 56, y: 103 },
-      ribbon: { x: 104, y: 34, w: 9, h: 12 },
-      shelf: { x: 77, y: 44, w: 22, h: 6 },
+      ribbon: { x: 108, y: 47, w: 9, h: 12 },
+      shelf: { x: 75, y: 44, w: 18, h: 6 },
     };
     L.spot = {
       door: door.x + door.w / 2 - 32,
@@ -543,11 +541,8 @@ export function createRoom(canvas, opts = {}) {
     R(c, fr.x - 1, fr.y - 1, fr.w + 2, fr.h + 2, C.ink);
     R(c, fr.x, fr.y, fr.w, fr.h, C.frame);
     R(c, fr.x, fr.y + fr.h - 1, fr.w, 1, C.frameLo);
-    if (hasPhoto) c.drawImage(pic, fr.x + 2, fr.y + 2);
-    else {
-      R(c, fr.x + 2, fr.y + 2, 18, 14, C.g2);
-      glyphs(c, "*", fr.x + 9, fr.y + 6, C.red);
-    }
+    R(c, fr.x + 2, fr.y + 2, fr.w - 4, fr.h - 4, C.whiteLo);
+    if (!hasPhoto) glyphs(c, "*", fr.x + Math.floor(fr.w / 2) - 2, fr.y + 12, C.red);
     R(c, fr.x + 1, fr.y + 1, fr.w - 2, 1, C.ink);
     R(c, fr.x + 1, fr.y + fr.h - 2, fr.w - 2, 1, C.ink);
     R(c, fr.x + 1, fr.y + 1, 1, fr.h - 2, C.ink);
@@ -1091,14 +1086,15 @@ export function createRoom(canvas, opts = {}) {
       alt > 0
     )
       tint = mix(tint, [214, 220, 236], 0.6);
-    if (tint[0] < 254) {
+    if (st.lights) tint = [255, 239, 214];
+    if (tint.some((channel) => channel < 254)) {
       o.globalCompositeOperation = "multiply";
       o.fillStyle = css(tint);
       o.fillRect(0, 0, W, ROOM_H);
       o.globalCompositeOperation = "source-over";
     }
-    lampOn = alt < -2.5 && st.sleep !== "slumber";
-    if (lampOn) {
+    lampOn = st.lights || (alt < -2.5 && st.sleep !== "slumber");
+    if (lampOn && !st.lights) {
       r.globalCompositeOperation = "source-over";
       r.clearRect(0, 0, W, ROOM_H);
       r.drawImage(scene, 0, 0);
@@ -1108,9 +1104,10 @@ export function createRoom(canvas, opts = {}) {
       r.globalCompositeOperation = "destination-in";
       r.drawImage(mask, 0, 0);
       o.drawImage(relit, 0, 0);
-      const sc = L.sconce;
-      R(o, sc.x, sc.y + 1, 6, 3, "#fff6cc");
     }
+    if (lampOn) R(o, L.sconce.x, L.sconce.y + 1, 6, 3, "#fff6cc");
+    // Interior lighting never turns the real night sky into daytime.
+    if (st.lights) o.drawImage(skyLayer, 0, 0);
     paintGlow(o, alt < -2);
     paintParts(o);
     if (calFlash > 0 && calFlash % 4 < 2) {
@@ -1126,6 +1123,30 @@ export function createRoom(canvas, opts = {}) {
     }
     view.imageSmoothingEnabled = false;
     view.drawImage(out, 0, 0, W, ROOM_H, 0, 0, W * k, ROOM_H * k);
+    if (wallPhoto) {
+      // Keep real photographs at display resolution; only the wooden frame is
+      // pixel art. Fit the entire image instead of cropping or posterizing it.
+      const fr = L.frame, pw = (fr.w - 4) * k, ph = (fr.h - 4) * k;
+      const scale = Math.min(pw / wallPhoto.naturalWidth, ph / wallPhoto.naturalHeight);
+      const w = wallPhoto.naturalWidth * scale, h = wallPhoto.naturalHeight * scale;
+      const x = (fr.x + 2) * k + (pw - w) / 2, y = (fr.y + 2) * k + (ph - h) / 2;
+      view.save();
+      view.beginPath();
+      view.rect((fr.x + 2) * k, (fr.y + 2) * k, pw, ph);
+      view.clip();
+      view.imageSmoothingEnabled = true;
+      view.imageSmoothingQuality = "high";
+      view.drawImage(wallPhoto, x, y, w, h);
+      view.globalCompositeOperation = "multiply";
+      view.fillStyle = css(tint);
+      view.fillRect(x, y, w, h);
+      view.globalCompositeOperation = "source-over";
+      if (flash > 0) {
+        view.fillStyle = `rgba(255,255,255,${flash / 8})`;
+        view.fillRect(x, y, w, h);
+      }
+      view.restore();
+    }
   }
 
   // ---------- behaviour ----------
@@ -1430,6 +1451,7 @@ export function createRoom(canvas, opts = {}) {
       st.notes,
       st.due,
       st.sleep,
+      st.lights,
       st.walk,
       hasPhoto,
       photoRev,
@@ -1770,34 +1792,8 @@ export function createRoom(canvas, opts = {}) {
     }
   }
   function setPhoto(img) {
-    if (!img) {
-      hasPhoto = false;
-      return draw();
-    }
-    const ratio = img.naturalWidth / img.naturalHeight,
-      tw = 18,
-      th = 14;
-    const sw =
-        ratio > tw / th ? img.naturalHeight * (tw / th) : img.naturalWidth,
-      sh = sw / (tw / th);
-    pc.imageSmoothingEnabled = true;
-    pc.drawImage(
-      img,
-      (img.naturalWidth - sw) / 2,
-      (img.naturalHeight - sh) / 2,
-      sw,
-      sh,
-      0,
-      0,
-      tw,
-      th,
-    );
-    const data = pc.getImageData(0, 0, tw, th),
-      d = data.data;
-    for (let i = 0; i < d.length; i += 4)
-      for (let j = 0; j < 3; j++) d[i + j] = Math.round(d[i + j] / 36) * 36; // posterize
-    pc.putImageData(data, 0, 0);
-    hasPhoto = true;
+    wallPhoto = img || null;
+    hasPhoto = !!img;
     photoRev++;
     draw();
   }
@@ -1889,6 +1885,8 @@ export function createRoom(canvas, opts = {}) {
     set,
     react,
     setPhoto,
+    get lights() { return st.lights; },
+    setLights(on) { st.lights = !!on; draw(); },
     draw: () => draw(),
     pause(on) {
       paused = !!on;

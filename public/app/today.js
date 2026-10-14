@@ -1,22 +1,22 @@
 // Today: the room's state, the log buttons, Also today, the day strip, and partner greetings.
-import { careStates, careDay } from "../care-plans.js?v=4.20";
-import { fridgeState, onFridge } from "../fridge-model.js?v=4.20";
-import { latestCare, elapsed } from "../care-state.js?v=4.20";
+import { careStates, careDay } from "../care-plans.js?v=4.21";
+import { fridgeState, onFridge } from "../fridge-model.js?v=4.21";
+import { latestCare, elapsed } from "../care-state.js?v=4.21";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
 import { getTimes } from "../vendor/suncalc.js";
-import { weatherKind } from "../room.js?v=4.20";
+import { weatherKind } from "../room.js?v=4.21";
 import {
   cachedWeather,
   refreshWeather,
   weatherWords,
-} from "./weather.js?v=4.20";
-import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.20";
-import { rhythmInsights, durationLabel } from "../insights.js?v=4.20";
-import { care, facts, fridge, room, sync } from "./services.js?v=4.20";
-import { setTab, showPhotos } from "./nav.js?v=4.20";
-import { pantryHTML } from "./pantry-view.js?v=4.20";
-import { QUALITY } from "../pantry.js?v=4.20";
-import { finishWalk, log } from "./logging.js?v=4.20";
+} from "./weather.js?v=4.21";
+import { onThisDayToday, recentTrophies } from "./memories-view.js?v=4.21";
+import { rhythmInsights, durationLabel } from "../insights.js?v=4.21";
+import { care, facts, fridge, room, sync } from "./services.js?v=4.21";
+import { setTab, showPhotos } from "./nav.js?v=4.21";
+import { pantryHTML } from "./pantry-view.js?v=4.21";
+import { QUALITY } from "../pantry.js?v=4.21";
+import { finishWalk, log } from "./logging.js?v=4.21";
 import {
   $,
   TYPES,
@@ -27,20 +27,25 @@ import {
   esc,
   person,
   when,
-} from "./format.js?v=4.20";
-import { html, toast } from "./ui.js?v=4.20";
-import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.20";
-import { legacyDiff } from "./settings.js?v=4.20";
-import { renderLastTimes, renderStory } from "./library.js?v=4.20";
-import { state } from "./state.js?v=4.20";
-import { ROUTINE, lastRoutine } from "../routine.js?v=4.20";
-import { suppliesHTML } from "./supplies-view.js?v=4.20";
-import { trainingHTML } from "./trainer.js?v=4.20";
+} from "./format.js?v=4.21";
+import { html, toast } from "./ui.js?v=4.21";
+import { detail, entry, eventLabel, hydratePhotos } from "./entries.js?v=4.21";
+import { legacyDiff } from "./settings.js?v=4.21";
+import { renderLastTimes, renderStory } from "./library.js?v=4.21";
+import { state } from "./state.js?v=4.21";
+import { ROUTINE, lastRoutine } from "../routine.js?v=4.21";
+import { suppliesHTML } from "./supplies-view.js?v=4.21";
+import { trainingHTML } from "./trainer.js?v=4.21";
 
 let shownWeather = 0;
 let roomReady = false,
   wallKey = null;
 export function roomObject(what) {
+  if (what === "lights") {
+    room.setLights(!room.lights);
+    try { localStorage.setItem("winnie:room-lights", room.lights ? "on" : "off"); } catch { /* Lighting still works without persistence. */ }
+    return renderRoomLights();
+  }
   const events = facts();
   if (what === "winnie") return room.react("pat");
   if (what === "fridge") return fridge.edit();
@@ -63,6 +68,12 @@ export function roomObject(what) {
   if (what === "toy") return room.react("toy");
   if (what === "ribbon") return toast("Canine Good Citizen");
   if (what === "shelf") return showPhotos("memories");
+}
+function renderRoomLights() {
+  const button = $("room-lights");
+  button.setAttribute("aria-pressed", String(room.lights));
+  button.title = room.lights ? "Turn room lights off" : "Turn room lights on";
+  button.innerHTML = `${icon("sun", "ic sm")}<span>Lights ${room.lights ? "on" : "off"}</span>`;
 }
 function updateWall(profile) {
   const p = fridgeState(profile).photo,
@@ -230,6 +241,7 @@ export function render() {
     { instant: !roomReady },
   );
   roomReady = true;
+  renderRoomLights();
   refreshWeather().then((w) => {
     if (w && w.at !== shownWeather) {
       shownWeather = w.at;

@@ -1,27 +1,27 @@
-import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.20';
-import { selectedPhotos, recordDay } from '../lifetime.js?v=4.20';
-import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.20";
-import { renderMemories } from "./memories-view.js?v=4.20";
-import { foodPoopStats } from "../pantry.js?v=4.20";
+import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.21';
+import { selectedPhotos, recordDay } from '../lifetime.js?v=4.21';
+import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.21";
+import { renderMemories } from "./memories-view.js?v=4.21";
+import { foodPoopStats } from "../pantry.js?v=4.21";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.20";
-import { elapsed } from "../care-state.js?v=4.20";
+import { placeLabel } from "../places.js?v=4.21";
+import { elapsed } from "../care-state.js?v=4.21";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.20";
-import { insightsView } from "../insight-view.js?v=4.20";
-import { photoCaption } from "../everyday.js?v=4.20";
-import { html, openDialog } from "./ui.js?v=4.20";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.20";
-import { facts, places } from "./services.js?v=4.20";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.20";
-import { addPhotos } from "./photos.js?v=4.20";
-import { state } from "./state.js?v=4.20";
-import { renderCalendarHistory } from './calendar-view.js?v=4.20';
+} from "../insights.js?v=4.21";
+import { insightsView } from "../insight-view.js?v=4.21";
+import { photoCaption } from "../everyday.js?v=4.21";
+import { html, openDialog } from "./ui.js?v=4.21";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.21";
+import { facts, places } from "./services.js?v=4.21";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.21";
+import { addPhotos } from "./photos.js?v=4.21";
+import { state } from "./state.js?v=4.21";
+import { renderCalendarHistory } from './calendar-view.js?v=4.21';
 
 let patternDays = 28,
   insightData = null,
