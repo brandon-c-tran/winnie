@@ -41,7 +41,7 @@ test("connect shared calendar, browse history, confirm once, refresh and disconn
   await expect(row).toContainText("View care record");
   await page.reload();
   await goTimeline(page);
-  await page.locator('[data-history="calendar"]').click();
+  await page.locator('#plans-tab').click();await page.locator('[data-history="calendar"]').click();
   await page.locator('[data-calendar-period="past"]').click();
   await page.getByLabel("Visits", { exact: true }).selectOption("trainer");
   await expect(page.locator("#calendar-results")).toContainText(
@@ -64,7 +64,7 @@ test("invalid connection explains recovery; history has a useful disconnected st
 }, info) => {
   const errors = await join(page, code(info));
   await goTimeline(page);
-  await page.locator('[data-history="calendar"]').click();
+  await page.locator('#plans-tab').click();await page.locator('[data-history="calendar"]').click();
   await page.getByRole("button", { name: "Connect Google Calendar" }).click();
   await page
     .getByLabel("Private calendar link")

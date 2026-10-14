@@ -3,7 +3,7 @@ import { code, join } from "./helpers.mjs";
 
 async function seed(page) {
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.22");
+    const { sync } = await import("/app/services.js?v=4.23");
     const blob = await (await fetch("/photos/winnie-wall.jpg")).blob();
     for (const [id, day, note] of [
       ["early", "2025-09-05", "Before home"],
@@ -74,6 +74,8 @@ test("chapter covers and separate recollections survive reload and export in a p
   await other
     .getByRole("button", { name: "Save recollection", exact: true })
     .click();
+  await expect(other.locator("#dialog")).not.toBeVisible();
+  await expect(other.locator(".album-chapter")).toContainText("Those tiny paws!");
   await expect(other.locator("#sync-status")).toHaveText("Up to date");
   await page.reload();
   await memories(page);
@@ -120,9 +122,9 @@ test("photo picker reaches the full library with a bounded grid and date search"
   const errors = await join(page, code(info));
   await seed(page);
   await page.evaluate(async () => {
-    const { pickMemoryPhoto } = await import("/app/photo-picker.js?v=4.22");
-    const { selectedPhotos } = await import("/lifetime.js?v=4.22");
-    const { facts } = await import("/app/services.js?v=4.22");
+    const { pickMemoryPhoto } = await import("/app/photo-picker.js?v=4.23");
+    const { selectedPhotos } = await import("/lifetime.js?v=4.23");
+    const { facts } = await import("/app/services.js?v=4.23");
     const source = selectedPhotos(facts())[0];
     const photos = Array.from({ length: 5000 }, (_, i) => ({
       ...source,

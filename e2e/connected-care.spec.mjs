@@ -115,7 +115,7 @@ test("photo draft resumes, selected care photo joins Winnie and can be unselecte
   await goPhotos(page);
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
   await page.locator('[data-filter="memories"]').click();
-  await expect(page.locator("#postcard")).toBeVisible();
+  await page.locator('.postcard-tool > summary').click();await expect(page.locator("#postcard")).toBeVisible();
   await page.locator("#postcard-photo").click();
   await expect(page.locator("#memory-picker-grid button")).toHaveCount(1);
   await page.locator("#memory-picker-grid button").click();
@@ -124,9 +124,9 @@ test("photo draft resumes, selected care photo joins Winnie and can be unselecte
   await page.locator("[data-keep-photo]").click();
   await page.locator("#dialog-close").click();
   await expect(page.locator("#photo-count")).toHaveText("0 photos");
-  await page.locator('[data-filter="care-photos"]').click();
+  await page.locator('#photo-collection').selectOption('care-photos');
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
-  await page.locator('[data-filter="moments"]').click();
+  await page.locator('#photo-collection').selectOption('moments');
   await page.locator("#story-add").click();
   await page.locator("[data-album-library]").click();
   await page
