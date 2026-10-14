@@ -1,4 +1,4 @@
-import { eventPosition, placeName } from "./places.js?v=4.15";
+import { eventPosition, placeName } from "./places.js?v=4.16";
 export function latestCare(events, now = Date.now()) {
   const actual = events
     .filter((e) => !e.deletedAt && Number.isFinite(e.time) && e.time <= now)
@@ -8,7 +8,7 @@ export function latestCare(events, now = Date.now()) {
     pee: actual.find((e) => e.type === "pee"),
     poop: actual.find((e) => e.type === "poop"),
     meal: actual.find((e) => e.type === "meal"),
-    sleep: sleep.find((e) => e.end_time == null) || sleep[0],
+    sleep: sleep.find((e) => !e.historical && e.end_time == null) || sleep[0],
   };
 }
 export function elapsed(time, now = Date.now()) {

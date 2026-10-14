@@ -100,6 +100,15 @@
         ],
         "createdAt": "2026-10-13T20:45:44.635Z",
         "reason": "Agent verified: data-photo IDs are hydrated to authenticated blob URLs by hydratePhotos after rendering the picker; this is not a placeholder asset."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/app/lifetime-view.js"
+        ],
+        "createdAt": "2026-10-14T00:49:15.981Z",
+        "reason": "Agent verified: authenticated data-photo references are resolved to real Blob URLs by hydratePhotos; browser tests confirm uploaded photos render after reload."
       }
     ]
   }

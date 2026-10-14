@@ -1,5 +1,7 @@
+import { readPhotoMetadata, wallInstants, wallTime } from '../photo-metadata.js?v=4.16';
+import { cityFor, cityLabel, loadCities } from '../places.js?v=4.16';
 // Photo picking, resizing, and saving.
-import { $, clock, dateLabel, dateTime, esc, uid } from "./format.js?v=4.15";
+import { $, clock, dateLabel, esc, uid } from "./format.js?v=4.16";
 import {
   closeDialog,
   openDialog,
@@ -11,13 +13,13 @@ import {
   draftFields,
   applyDraftFields,
   persistDialogDraft,
-} from "./ui.js?v=4.15";
-import { isCarePhoto } from "../keepsakes.js?v=4.15";
-import { facts, sync, photoURLs } from "./services.js?v=4.15";
-import { detail, eventLabel, hydratePhotos } from "./entries.js?v=4.15";
+} from "./ui.js?v=4.16";
+import { isCarePhoto } from "../keepsakes.js?v=4.16";
+import { facts, sync, photoURLs } from "./services.js?v=4.16";
+import { detail, eventLabel, hydratePhotos } from "./entries.js?v=4.16";
 import { icon } from "../icons.js?v=4.0";
-import { render } from "./today.js?v=4.15";
-import { state } from "./state.js?v=4.15";
+import { render } from "./today.js?v=4.16";
+import { state } from "./state.js?v=4.16";
 
 // The photo composer owns its previews; they never enter the shared log before Save.
 let draft = null;
@@ -56,12 +58,15 @@ export function addPhotos(care = false, restored = null) {
     return;
   }
   openDialog(
-    `<h2 id="dialog-title">Add photos</h2><form id="photo-composer"><div class="photo-composer-pick"><button type="button" class="primary" data-album-library>${icon("photo", "ic sm")} Choose photos</button><button type="button" class="secondary" data-album-camera>Take photo</button></div><div id="photo-draft" class="photo-draft"></div><p id="photo-draft-status" class="fine" role="status">No photos selected</p><label>Caption <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Add a caption"></textarea></label><label>Date taken<input name="time" type="datetime-local" value="${dateTime(Date.now())}" required></label><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary" type="submit" disabled>Save photos</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
+    `<h2 id="dialog-title">Add photos</h2><form id="photo-composer"><div class="photo-composer-pick"><button type="button" class="primary" data-album-library>${icon("photo", "ic sm")} Choose photos</button><button type="button" class="secondary" data-album-camera>Take photo</button></div><div id="photo-draft" class="photo-draft"></div><p id="photo-draft-status" class="fine" role="status">No photos selected</p><label>Caption <span class="fine">(optional)</span><textarea name="note" maxlength="10000" placeholder="Add a caption"></textarea></label><p class="fine">Each photo keeps its own date and place. Check any missing details below.</p><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary" type="submit" disabled>Save photos</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`,
   );
   draft = {
     id: restored?.id || uid(),
     items: (restored?.items || []).map((item) => ({
-      blob: item.blob,
+      ...item,
+      id: item.id || (restored?.saved ? restored.id : uid()),
+      photoId: item.photoId || uid(),
+      metadata: item.metadata || {wall: restored?.fields?.time || "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, origin: "manual"},
       url: URL.createObjectURL(item.blob),
     })),
     saved: restored?.saved || false,
@@ -85,12 +90,12 @@ export function addPhotos(care = false, restored = null) {
       kind: "photos",
       id: current.id,
       saved: current.saved,
-      items: current.items.map((item) => ({ blob: item.blob })),
+      items: current.items.map(({url: _url, ...item}) => item),
       fields: draftFields(composer),
     }),
   );
   composer.elements.note.disabled = current.saved;
-  composer.elements.time.disabled = current.saved;
+
   renderDraft();
   $("photo-composer").onsubmit = safe(async (event) => {
     event.preventDefault();
@@ -102,30 +107,37 @@ export function addPhotos(care = false, restored = null) {
       .querySelectorAll("button, input, textarea")
       .forEach((el) => (el.disabled = true));
     try {
-      if (!current.saved) {
-        await sync.enqueue("create", current.id, {
-          type: "moment",
-          time: new Date(data.get("time")).getTime(),
-          note: String(data.get("note")).trim(),
-          who: "us",
-          tags: [],
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          retroactive: true,
-        });
-        current.saved = true;
-        persistDialogDraft();
+      // Validate the whole batch before creating any records.
+      for (const item of current.items) {
+        const m = item.metadata;
+        let candidates = m.capturedAt && wallTime(m.capturedAt, m.timezone || 'UTC') === m.wall ? [m.capturedAt] : [];
+        if (m.offset && !m.timezone) candidates = [Date.parse(m.wall + ':00' + m.offset)];
+        else if (!(m.origin === 'exif-offset' && m.capturedAt && wallTime(m.capturedAt,m.timezone) === m.wall)) candidates = wallInstants(m.wall, m.timezone);
+        if (candidates.length !== 1 || !Number.isFinite(candidates[0]) || candidates[0] > Date.now()+60000)
+          throw Error('Check each photo’s date and time zone. A repeated daylight-saving hour needs the camera offset.');
+        // An explicit camera offset resolves a repeated hour if it still matches.
+        m.capturedAt = candidates[0];
       }
+      await persistDialogDraft();
       while (current.items.length) {
-        const item = current.items[0];
-        await sync.addPhoto(current.id, item.blob);
+        const item = current.items[0], m = item.metadata;
+        if (!sync.view().events.some(e => e.id === item.id)) {
+          await sync.enqueue('create', item.id, {
+            type: 'moment', time: m.capturedAt, note: String(data.get('note')).trim(),
+            who: 'us', tags: [], timezone: m.timezone || 'UTC', retroactive: true,
+            location: m.location || '',
+            ...(m.pin ? {placePin: {...m.pin, accuracy: 0, capturedAt: m.capturedAt}} : {}),
+          });
+        }
+        await sync.addPhoto(item.id, item.blob, m, item.photoId);
         current.items.shift();
         URL.revokeObjectURL(item.url);
-        persistDialogDraft();
+        await persistDialogDraft();
       }
       closeDialog();
       clearDraft();
       render();
-      toast("Photos saved", () => sync.enqueue("delete", current.id));
+      toast("Photos saved");
     } finally {
       current.busy = false;
       if (form.isConnected) {
@@ -134,7 +146,7 @@ export function addPhotos(care = false, restored = null) {
           .forEach((el) => (el.disabled = false));
         // A retry finishes attachments to the same saved entry.
         form.elements.note.disabled = current.saved;
-        form.elements.time.disabled = current.saved;
+
         renderDraft();
       }
     }
@@ -145,12 +157,18 @@ document.addEventListener("winnie:resume-draft", ({ detail: data }) => {
 });
 function renderDraft() {
   if (!draft || !$("photo-draft")) return;
-  $("photo-draft").innerHTML = draft.items
-    .map(
-      (item, index) =>
-        `<figure><img src="${item.url}" alt="Selected photo ${index + 1}"><button type="button" data-remove-draft="${index}" aria-label="Remove selected photo ${index + 1}">Remove</button></figure>`,
-    )
-    .join("");
+  const zones = Intl.supportedValuesOf?.('timeZone') || ['America/Los_Angeles','America/Chicago','America/New_York','UTC'];
+  $('photo-draft').innerHTML = draft.items.map((item, index) => {
+    const m = item.metadata;
+    const options = [...new Set([m.timezone, ...zones].filter(Boolean))];
+    return `<figure class="photo-import-row"><img src="${item.url}" alt="Selected photo ${index+1}"><figcaption><div class="photo-import-summary"><strong>${m.wall ? esc(new Date(m.wall).toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"})) : "Date needed"}</strong><span>${esc(m.location || (m.pin ? "Photo location saved" : "No location in this photo"))}</span></div><details ${!m.capturedAt ? "open" : ""}><summary>Date & place</summary>
+      <label>Date taken<input data-photo-field="wall" data-index="${index}" type="datetime-local" value="${esc(m.wall)}" required></label>
+      <label>Time zone<select data-photo-field="timezone" data-index="${index}" ${m.offset && !m.timezone ? '' : 'required'}><option value="">${m.offset ? 'Camera offset '+esc(m.offset) : 'Choose time zone'}</option>${options.map(zone => `<option value="${esc(zone)}" ${zone === m.timezone ? 'selected' : ''}>${esc(zone.replaceAll('_',' '))}</option>`).join('')}</select></label>
+      <label>Place <span class="fine">(optional)</span><input data-photo-field="location" data-index="${index}" value="${esc(m.location || '')}" maxlength="200" placeholder="Name a place"></label>
+      <p class="fine">${m.origin === 'missing' ? 'No capture date in this file. Add the date you took it.' : m.origin === 'exif-gps-zone' ? 'Camera date. Time zone estimated from photo location.' : m.origin === 'exif-offset' ? 'Date and offset from camera.' : m.origin === 'camera' ? 'Taken now.' : 'Check date and time zone.'}</p>
+      ${m.pin ? `<button type="button" class="text-button" data-remove-photo-pin="${index}">Remove photo location</button>` : '<p class="fine">No GPS location saved.</p>'}
+      </details><button type="button" class="text-button" data-remove-draft="${index}" aria-label="Remove selected photo ${index+1}">Remove photo</button></figcaption></figure>`;
+  }).join('');
   $("photo-draft-status").textContent =
     `${draft.items.length} ${draft.items.length === 1 ? "photo" : "photos"} selected`;
   $("photo-composer").querySelector('[type="submit"]').disabled =
@@ -161,9 +179,21 @@ function renderDraft() {
     )
     .forEach((button) => (button.disabled = draft.busy || draft.preparing));
 }
+document.addEventListener('input', event => {
+  const input = event.target.closest('[data-photo-field]');
+  if (!input || !draft || draft.busy) return;
+  const item = draft.items[Number(input.dataset.index)];
+  item.metadata[input.dataset.photoField] = input.value;
+  if (input.dataset.photoField !== 'location') { item.metadata.capturedAt = null; item.metadata.origin = 'manual'; }
+  markDialogDirty();
+});
 document.addEventListener("click", (event) => {
   const b = event.target.closest("button");
   if (!b) return;
+  if (b.hasAttribute("data-remove-photo-pin") && draft && !draft.busy) {
+    const m = draft.items[Number(b.dataset.removePhotoPin)].metadata;
+    m.pin = null; m.location = ""; markDialogDirty(); renderDraft();
+  }
   if (b.hasAttribute("data-album-library")) choosePhoto("album");
   if (b.hasAttribute("data-album-camera")) choosePhoto("album", true);
   if (b.hasAttribute("data-remove-draft") && draft && !draft.busy) {
@@ -177,6 +207,29 @@ document.addEventListener("click", (event) => {
     choosePhoto(b.dataset.attachEntry);
   }
 });
+
+document.addEventListener('click', safe(async event => {
+  const b=event.target.closest('button');
+  if(b?.dataset.reviewNote) {
+    const e=facts().find(e=>e.id===b.dataset.reviewNote);
+    if(!e)return;
+    await sync.enqueue('edit',e.id,{provenance:{...e.provenance,reviewed:true},tags:(e.tags||[]).filter(t=>t!=='needs-review')});
+    detail(e.id);toast('Source question marked reviewed');
+  }
+  if(!b?.dataset.editPhotoMeta)return;
+  const e=facts().find(e=>e.id===b.dataset.id), p=e?.photos?.find(p=>p.id===b.dataset.editPhotoMeta);
+  if(!p)return;
+  const m={...(p.metadata || {})};
+  const zone=m.timezone || e.timezone || 'America/Los_Angeles';
+  openDialog(`<h2 id="dialog-title">Photo date & place</h2><form id="photo-metadata-form"><label>Date taken<input name="wall" type="datetime-local" value="${esc(m.wall || wallTime(e.time,zone))}" required></label><label>Time zone<input name="zone" value="${esc(zone)}" required placeholder="America/Los_Angeles"></label><label>Place<input name="location" value="${esc(m.location || e.location || '')}" maxlength="200"></label>${m.pin ? '<label class="check"><input type="checkbox" name="removePin">Remove photo GPS location</label>':''}<p class="fine">This changes the photo’s place in Memories. The care entry keeps its own time.</p><p id="form-error" class="error" role="alert"></p><div class="button-row"><button class="primary">Save details</button><button type="button" class="secondary" data-act="close">Cancel</button></div></form>`);
+  $('photo-metadata-form').onsubmit=safe(async ev=>{
+    ev.preventDefault();const data=new FormData(ev.target),wall=String(data.get('wall')),timezone=String(data.get('zone')).trim();
+    const times=wallInstants(wall,timezone);
+    if(times.length!==1 || times[0]>Date.now()+60000)throw Error('Check the date and time zone. Use an unambiguous time up to now.');
+    await sync.enqueue('photoMetadata',e.id,{photoId:p.id,metadata:{...m,wall,timezone,capturedAt:times[0],location:String(data.get('location')).trim(),origin:'manual',...(data.has('removePin')?{pin:null}:{})}});
+    detail(e.id);render();toast('Photo details saved');
+  });
+}));
 
 async function photoFile(file) {
   if (file.size > 40000000)
@@ -257,20 +310,35 @@ for (const id of ["camera-input", "library-input"])
     toast("Preparing photo");
     try {
       for (const file of files) {
+        if (file.size > 40000000) throw Error('Please choose a photo smaller than 40 MB.');
+        const metadata = await readPhotoMetadata(file);
+        if (id === 'camera-input' && !metadata.wall) {
+          metadata.capturedAt = Date.now(); metadata.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          metadata.wall = wallTime(metadata.capturedAt, metadata.timezone); metadata.origin = 'camera';
+        }
+        if (metadata.pin) {
+          await loadCities().catch(() => {});
+          const city = cityFor({placePin: metadata.pin});
+          if (city) metadata.location = cityLabel(city);
+        }
         const blob = await photoFile(file);
         if (target === "album") {
           if (!albumDraft || draft !== albumDraft || albumDraft.busy) return;
-          albumDraft.items.push({ blob, url: URL.createObjectURL(blob) });
+          if (albumDraft.items.some(item => item.metadata.fingerprint === metadata.fingerprint) ||
+              facts().some(e => e.type === 'moment' && e.photos?.some(p => p.metadata?.fingerprint === metadata.fingerprint))) {
+            toast('This photo is already in Winnie.'); continue;
+          }
+          albumDraft.items.push({ id: uid(), photoId: uid(), blob, metadata, url: URL.createObjectURL(blob) });
           markDialogDirty();
           renderDraft();
         } else if (target === "form") {
           if (!$("event-form")) return;
-          state.formPhotos.push(blob);
+          state.formPhotos.push({blob, metadata, photoId: uid()});
           markDialogDirty();
           $("form-photo-status").textContent =
             `${state.formPhotos.length} ${state.formPhotos.length === 1 ? "photo" : "photos"} ready to keep.`;
         } else {
-          const photoId = await sync.addPhoto(target, blob);
+          const photoId = await sync.addPhoto(target, blob, metadata);
           photoURLs.set(photoId, URL.createObjectURL(blob));
           attached.push(photoId);
         }

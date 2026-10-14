@@ -236,6 +236,20 @@ export function createHandler(getStores, { runDispatch = dispatch } = {}) {
           return json({ unchanged: true, revision: doc.revision });
         return json(snapshot(doc));
       }
+      if (action === "history-import" && req.method === "POST") {
+        const input = await body(req, 2000000);
+        assert(typeof input.archiveSha256 === 'string' && /^[a-f0-9]{64}$/.test(input.archiveSha256), 'Back up history before importing.');
+        const archived = await backup.get(`device/${home}/${device.id}/${input.archiveSha256}`, {type:'json'});
+        assert(archived && hash(stable(archived)) === input.archiveSha256, 'The history backup could not be verified.', 409);
+        assert(Array.isArray(input.commands) && input.commands.length > 0 && input.commands.length <= 100, 'Import up to 100 entries at a time.');
+        assert(input.commands.every(c => ['recover','edit'].includes(c.kind) && c.payload?.historical === true), 'Only historical entries belong in this import.');
+        const result = await transact(main,key,d => {
+          const actor=authenticate(d,token);
+          const receipts=input.commands.map(c=>applyCommand(d,c,actor).receipt);
+          return {receipts};
+        });
+        return json({revision:result.doc.revision,receipts:result.receipts});
+      }
       if (action === "command" && req.method === "POST") {
         const command = await body(req, 2000000);
         if (command.kind === "attach") {

@@ -49,5 +49,5 @@ export const when = (time) => {
   if (dayKey(time) === dayKey(Date.now())) return clock(time);
   return shortDateFormat.format(time);
 };
-export const active = (e) => !e.deletedAt && e.end_time == null;
+export const active = (e) => !e.deletedAt && !e.historical && e.end_time == null;
 export const uid = () => crypto.randomUUID();

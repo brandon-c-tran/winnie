@@ -21,6 +21,8 @@ test("photo-first composer saves previews to Winnie and survives reload", async 
   await page
     .locator('#photo-composer [name="note"]')
     .fill("Afternoon in the garden");
+  await page.locator('[data-photo-field="wall"]').fill('2025-12-24T10:30');
+  await page.locator('[data-photo-field="timezone"]').selectOption('America/Chicago');
   await page.locator("#photo-composer [type=submit]").click();
   await expect(page.locator("#dialog")).not.toBeVisible();
   await expect(page.locator("#photo-count")).toHaveText("1 photo");

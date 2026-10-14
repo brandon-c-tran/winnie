@@ -1,24 +1,26 @@
-import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.15";
-import { renderMemories } from "./memories-view.js?v=4.15";
-import { foodPoopStats } from "../pantry.js?v=4.15";
+import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.16';
+import { selectedPhotos, recordDay } from '../lifetime.js?v=4.16';
+import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.16";
+import { renderMemories } from "./memories-view.js?v=4.16";
+import { foodPoopStats } from "../pantry.js?v=4.16";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.15";
-import { elapsed } from "../care-state.js?v=4.15";
+import { placeLabel } from "../places.js?v=4.16";
+import { elapsed } from "../care-state.js?v=4.16";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.15";
-import { insightsView } from "../insight-view.js?v=4.15";
-import { photoCaption } from "../everyday.js?v=4.15";
-import { html, openDialog } from "./ui.js?v=4.15";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.15";
-import { facts, places } from "./services.js?v=4.15";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.15";
-import { addPhotos } from "./photos.js?v=4.15";
-import { state } from "./state.js?v=4.15";
+} from "../insights.js?v=4.16";
+import { insightsView } from "../insight-view.js?v=4.16";
+import { photoCaption } from "../everyday.js?v=4.16";
+import { html, openDialog } from "./ui.js?v=4.16";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.16";
+import { facts, places } from "./services.js?v=4.16";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.16";
+import { addPhotos } from "./photos.js?v=4.16";
+import { state } from "./state.js?v=4.16";
 
 let patternDays = 28,
   insightData = null,
@@ -51,7 +53,8 @@ export function renderLastTimes(events) {
 export function renderStory() {
   const isPhotos = state.tab === "photos";
   if (isPhotos) return renderGallery();
-  const patterns = state.filter === "patterns";
+  const lifetime = state.filter === "lifetime";
+  const patterns = state.filter === "patterns" || lifetime;
   $("story-tools").hidden = patterns;
   $("last-care").hidden = patterns || !$("last-times").children.length;
   $("history-clear").hidden =
@@ -60,15 +63,16 @@ export function renderStory() {
       (id) => $(id).value,
     );
   $("story-count").hidden = patterns;
+  if (lifetime) return renderLifetime();
   if (patterns) return renderPatterns();
   const query = $("story-search").value.toLowerCase().trim();
   let events = facts().filter((e) => matches(e, query));
   if ($("history-type").value)
     events = events.filter((e) => e.type === $("history-type").value);
   if ($("history-from").value)
-    events = events.filter((e) => dayKey(e.time) >= $("history-from").value);
+    events = events.filter((e) => recordDay(e) >= $("history-from").value);
   if ($("history-to").value)
-    events = events.filter((e) => dayKey(e.time) <= $("history-to").value);
+    events = events.filter((e) => recordDay(e) <= $("history-to").value);
   const count = events.length;
   $("story-count").textContent =
     count.toLocaleString() + (count === 1 ? " entry" : " entries");
@@ -80,7 +84,7 @@ export function renderStory() {
           .slice(0, state.limit)
           .map(
             (e, i, a) =>
-              `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? '<h2 class="history-day">' + dateLabel(e.time) + "</h2>" : ""}${entry(e)}`,
+              `${i === 0 || recordDay(e) !== recordDay(a[i - 1]) ? '<h2 class="history-day">' + dateLabel(new Date(recordDay(e)+"T12:00").getTime()) + "</h2>" : ""}${entry(e)}`,
           )
           .join("")
       : '<div class="empty"><h3>' +
@@ -149,7 +153,7 @@ function renderGallery() {
           (album === "all" || e.type === album)
         : winniePhotos(e).length > 0),
   );
-  const photos = events.flatMap((e) => (care ? e.photos : winniePhotos(e)).map((p) => ({ e, p })));
+  const photos = care ? events.flatMap(e => e.photos.map(p => ({e,p}))) : selectedPhotos(events).map(({event:e,photo:p,day,location}) => ({e:{...e,time:new Date(day+"T12:00").getTime(),location,photoDay:day},p}));
   $("photo-count").textContent =
     photos.length + (photos.length === 1 ? " photo" : " photos");
   $("photo-more").hidden =
@@ -167,7 +171,7 @@ function renderGallery() {
             .slice(0, state.limit)
             .map(
               (e, i, a) =>
-                `${i === 0 || dayKey(e.time) !== dayKey(a[i - 1].time) ? '<h2 class="history-day">' + dateLabel(e.time) + "</h2>" : ""}${entry(e, { photoRecord: true, fullPhoto: true })}`,
+                `${i === 0 || recordDay(e) !== dayKey(a[i - 1].time) ? '<h2 class="history-day">' + dateLabel(e.time) + "</h2>" : ""}${entry(e, { photoRecord: true, fullPhoto: true })}`,
             )
             .join("")
         : '<div class="photo-grid">' +
@@ -247,9 +251,10 @@ export function renderPatterns() {
   $("load-more").hidden = true;
   html(
     "story-items",
-    insightsView(insightData, state.insightTopic, countsHTML(facts()) +
+    changesHTML(facts()) + insightsView(insightData, state.insightTopic, countsHTML(facts()) +
       (state.insightTopic === "poop" ? foodPoopHTML(facts()) : "")),
   );
+  bindChanges();
   $("pattern-window").onchange = (e) => {
     patternDays = Number(e.target.value);
     renderPatterns();

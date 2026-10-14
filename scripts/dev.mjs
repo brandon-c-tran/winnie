@@ -15,7 +15,7 @@ const root = path.resolve("public"),
 // WINNIE_DEV_SEED=large gives winnie-local-demo a log about the size of the real one.
 await stores.legacy.setJSON(
   "winnie-local-demo",
-  process.env.WINNIE_DEV_SEED === "large" ? largeLog() : smallLog(),
+  process.env.WINNIE_DEV_SNAPSHOT ? JSON.parse(await fs.readFile(process.env.WINNIE_DEV_SNAPSHOT,"utf8")) : process.env.WINNIE_DEV_SEED === "large" ? largeLog() : smallLog(),
 );
 // Browser tests get a fresh, isolated log for any code that starts with winnie-e2e-.
 const legacyGet = stores.legacy.get.bind(stores.legacy);
@@ -30,6 +30,7 @@ const api = createHandler(() => stores, { runDispatch: async () => {} });
 const mime = {
   ".html": "text/html",
   ".js": "text/javascript",
+  ".mjs": "text/javascript",
   ".css": "text/css",
   ".png": "image/png",
   ".json": "application/json",
