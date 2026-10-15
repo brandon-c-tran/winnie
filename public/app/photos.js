@@ -1,7 +1,7 @@
-import { readPhotoMetadata, wallInstants, wallTime } from '../photo-metadata.js?v=4.27';
-import { cityFor, cityLabel, loadCities } from '../places.js?v=4.27';
+import { readPhotoMetadata, wallInstants, wallTime } from '../photo-metadata.js?v=4.28';
+import { cityFor, cityLabel, loadCities } from '../places.js?v=4.28';
 // Photo picking, resizing, and saving.
-import { $, clock, dateLabel, esc, uid } from "./format.js?v=4.27";
+import { $, clock, dateLabel, esc, uid } from "./format.js?v=4.28";
 import {
   closeDialog,
   openDialog,
@@ -13,13 +13,13 @@ import {
   draftFields,
   applyDraftFields,
   persistDialogDraft,
-} from "./ui.js?v=4.27";
-import { isCarePhoto } from "../keepsakes.js?v=4.27";
-import { facts, sync, photoURLs } from "./services.js?v=4.27";
-import { detail, eventLabel, hydratePhotos } from "./entries.js?v=4.27";
+} from "./ui.js?v=4.28";
+import { isCarePhoto } from "../keepsakes.js?v=4.28";
+import { facts, sync, photoURLs } from "./services.js?v=4.28";
+import { detail, eventLabel, hydratePhotos } from "./entries.js?v=4.28";
 import { icon } from "../icons.js?v=4.0";
-import { render } from "./today.js?v=4.27";
-import { state } from "./state.js?v=4.27";
+import { render } from "./today.js?v=4.28";
+import { state } from "./state.js?v=4.28";
 
 // The photo composer owns its previews; they never enter the shared log before Save.
 let draft = null;
@@ -70,6 +70,8 @@ export function addPhotos(care = false, restored = null) {
       url: URL.createObjectURL(item.blob),
     })),
     saved: restored?.saved || false,
+    shown: 12,
+    completed: restored?.completed || 0,
     busy: false,
   };
   const current = draft;
@@ -90,6 +92,7 @@ export function addPhotos(care = false, restored = null) {
       kind: "photos",
       id: current.id,
       saved: current.saved,
+      completed: current.completed,
       items: current.items.map(({url: _url, ...item}) => item),
       fields: draftFields(composer),
     }),
@@ -101,11 +104,16 @@ export function addPhotos(care = false, restored = null) {
     event.preventDefault();
     if (current.busy || current.preparing || !current.items.length) return;
     current.busy = true;
+    current.pauseRequested = false;
     const form = event.target;
     const data = new FormData(form);
     form
       .querySelectorAll("button, input, textarea")
       .forEach((el) => (el.disabled = true));
+    const pause = document.createElement('button');
+    pause.type='button';pause.className='secondary';pause.textContent='Pause import';
+    pause.onclick=()=>{current.pauseRequested=true;pause.disabled=true;pause.textContent='Pausing…';};
+    form.append(pause);
     try {
       // Validate the whole batch before creating any records.
       for (const item of current.items) {
@@ -119,7 +127,7 @@ export function addPhotos(care = false, restored = null) {
         m.capturedAt = candidates[0];
       }
       await persistDialogDraft();
-      while (current.items.length) {
+      while (current.items.length && !current.pauseRequested) {
         const item = current.items[0], m = item.metadata;
         if (!sync.view().events.some(e => e.id === item.id)) {
           await sync.enqueue('create', item.id, {
@@ -129,16 +137,23 @@ export function addPhotos(care = false, restored = null) {
             ...(m.pin ? {placePin: {...m.pin, accuracy: 0, capturedAt: m.capturedAt}} : {}),
           });
         }
+        current.saved = true;
+        await persistDialogDraft();
         await sync.addPhoto(item.id, item.blob, m, item.photoId);
+        current.completed++;
         current.items.shift();
         URL.revokeObjectURL(item.url);
         await persistDialogDraft();
+        if ($('photo-draft-status')) $('photo-draft-status').textContent=`${current.completed} saved on this device. ${current.items.length} remaining.`;
       }
-      closeDialog();
-      clearDraft();
+      if (!current.items.length) {
+        if (form.isConnected) closeDialog();
+        clearDraft();
+      }
       render();
-      toast("Photos saved");
+      toast(current.items.length ? 'Import paused. Resume with Save photos.' : 'Photos saved on this device. Uploads continue while Winnie is open and online.');
     } finally {
+      pause.remove();
       current.busy = false;
       if (form.isConnected) {
         form
@@ -158,7 +173,7 @@ document.addEventListener("winnie:resume-draft", ({ detail: data }) => {
 function renderDraft() {
   if (!draft || !$("photo-draft")) return;
   const zones = Intl.supportedValuesOf?.('timeZone') || ['America/Los_Angeles','America/Chicago','America/New_York','UTC'];
-  $('photo-draft').innerHTML = draft.items.map((item, index) => {
+  $('photo-draft').innerHTML = draft.items.slice(0,draft.shown || 12).map((item, index) => {
     const m = item.metadata;
     const options = [...new Set([m.timezone, ...zones].filter(Boolean))];
     return `<figure class="photo-import-row"><img src="${item.url}" alt="Selected photo ${index+1}"><figcaption><div class="photo-import-summary"><strong>${m.wall ? esc(new Date(m.wall).toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"})) : "Date needed"}</strong><span>${esc(m.location || (m.pin ? "Photo location saved" : "No location in this photo"))}</span></div><details ${!m.capturedAt ? "open" : ""}><summary>Date & place</summary>
@@ -168,9 +183,9 @@ function renderDraft() {
       <p class="fine">${m.origin === 'missing' ? 'No capture date in this file. Add the date you took it.' : m.origin === 'exif-gps-zone' ? 'Camera date. Time zone estimated from photo location.' : m.origin === 'exif-offset' ? 'Date and offset from camera.' : m.origin === 'camera' ? 'Taken now.' : 'Check date and time zone.'}</p>
       ${m.pin ? `<button type="button" class="text-button" data-remove-photo-pin="${index}">Remove photo location</button>` : '<p class="fine">No GPS location saved.</p>'}
       </details><button type="button" class="text-button" data-remove-draft="${index}" aria-label="Remove selected photo ${index+1}">Remove photo</button></figcaption></figure>`;
-  }).join('');
+  }).join('') + (draft.items.length>(draft.shown || 12)?'<button type="button" class="text-button" data-more-draft>Review more photos</button>':'');
   $("photo-draft-status").textContent =
-    `${draft.items.length} ${draft.items.length === 1 ? "photo" : "photos"} selected`;
+    `${draft.preparing ? 'Preparing photos… ' : ''}${draft.items.length} ${draft.items.length === 1 ? "photo" : "photos"} selected${draft.completed ? `. ${draft.completed} already saved on this device.` : ''}`;
   $("photo-composer").querySelector('[type="submit"]').disabled =
     !draft.items.length || draft.busy || draft.preparing;
   $("photo-composer")
@@ -190,6 +205,7 @@ document.addEventListener('input', event => {
 document.addEventListener("click", (event) => {
   const b = event.target.closest("button");
   if (!b) return;
+  if (b.hasAttribute('data-more-draft') && draft && !draft.busy) { draft.shown=(draft.shown||12)+12;renderDraft(); }
   if (b.hasAttribute("data-remove-photo-pin") && draft && !draft.busy) {
     const m = draft.items[Number(b.dataset.removePhotoPin)].metadata;
     m.pin = null; m.location = ""; markDialogDirty(); renderDraft();
@@ -305,6 +321,7 @@ for (const id of ["camera-input", "library-input"])
     const fingerprints = new Set(facts().filter(e=>e.type==='moment').flatMap(e=>(e.photos||[]).map(p=>p.metadata?.fingerprint)).filter(Boolean));
     if (target === "album") {
       if (!albumDraft || albumDraft.busy || albumDraft.preparing) return;
+      if (albumDraft.items.length + files.length > 100) throw Error('Save this batch before adding more. Each batch holds up to 100 photos.');
       albumDraft.preparing = true;
       $("form-error").textContent = "";
       renderDraft();
@@ -332,6 +349,7 @@ for (const id of ["camera-input", "library-input"])
           }
           albumDraft.items.push({ id: uid(), photoId: uid(), blob, metadata, url: URL.createObjectURL(blob) });
           markDialogDirty();
+          await persistDialogDraft();
           renderDraft();
         } else if (target === "form") {
           if (!$("event-form")) return;

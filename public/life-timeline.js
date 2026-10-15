@@ -4,8 +4,8 @@ import {
   recordDay,
   selectedPhotos,
   usable,
-} from "./lifetime.js?v=4.27";
-import { ageMonth } from "./story-album.js?v=4.27";
+} from "./lifetime.js?v=4.28";
+import { ageMonth } from "./story-album.js?v=4.28";
 
 // A memory has a capture day; its care entry retains its own occurrence time.
 export function lifeTimeline(events, today = recordDay({ time: Date.now() })) {

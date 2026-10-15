@@ -3804,3 +3804,48 @@ details {
 .life-day:focus { outline:2px solid var(--muted); outline-offset:4px; }
 @media(max-width:360px) { .life-age { font-size:25px; padding-left:18px; } .life-day { padding-left:18px; } .life-date { flex-wrap:wrap; } .life-continue { padding-left:18px; } }
 @media(prefers-reduced-motion:no-preference) { .life-photo:active { transform:translateY(2px); transition:transform 120ms steps(2,end); } }
+/* Photo discoveries extend the library: image pairs first, quiet editing controls. */
+#photo-discovery { margin-block: 1.25rem 1.75rem; padding-block: 1.25rem; border-block: 1px solid var(--line); }
+.discovery-heading, .discovery-pair-title { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+.discovery-heading h2, .discovery-heading h3, .discovery-pair-title h3 { margin:0; font-family:var(--px); }
+.discovery-heading h2 { font-size:1.35rem; }
+.discovery-intro { max-width:58ch; margin-block:.65rem 1rem; }
+.discovery-pair { margin-block:1.25rem; }
+.discovery-pair-title { margin-bottom:.65rem; }
+.discovery-pair-title span { color:var(--muted); font-size:.85rem; }
+.discovery-spread { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; }
+.discovery-photo { padding:0; border:0; background:transparent; color:var(--text); text-align:left; min-width:0; }
+.discovery-photo img { width:100%; aspect-ratio:4/5; object-fit:contain; background:var(--sunk); display:block; }
+.discovery-photo span { display:grid; gap:.2rem; padding-block:.6rem; }
+.discovery-photo strong { font-size:.9rem; }
+.discovery-photo small { color:var(--muted); }
+.discovery-pair-footer { display:flex; justify-content:space-between; align-items:center; gap:.65rem; flex-wrap:wrap; }
+.discovery-pair-footer p { margin:.4rem 0; font-size:.9rem; }
+.discovery-pair-footer .button-row { margin:0; }
+.discovery-saved { margin-block:1rem; }
+.discovery-saved .discovery-spread { margin-top:1rem; }
+.discovery-collections { margin-top:1.3rem; }
+.collection-links { display:flex; flex-wrap:wrap; gap:.4rem 1.2rem; margin-block:.6rem; }
+.collection-links [aria-pressed=true] { text-decoration-thickness:3px; color:var(--text); }
+.collection-links span { color:var(--muted); }
+.collection-choices { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.75rem; margin-block:1rem; }
+.collection-choice { position:relative; cursor:pointer; min-width:0; gap:.3rem; }
+.collection-choice img { width:100%; aspect-ratio:1; object-fit:cover; background:var(--sunk); }
+.collection-choice input { position:absolute; top:.4rem; left:.4rem; width:24px; height:24px; accent-color:var(--ink); }
+.collection-choice:has(input:checked) img { outline:3px solid var(--ink); outline-offset:2px; }
+.collection-choice:has(input:focus-visible) { outline:3px solid var(--focus-pink, #ff6fae); outline-offset:4px; }
+.collection-choice span { font-size:.75rem; }
+.scan-status { display:grid; gap:.4rem; padding-block:.8rem; border-block:1px solid var(--line); margin-block:1rem; }
+.scan-status small { color:var(--muted); }
+.scan-result { display:grid; grid-template-columns:84px minmax(0,1fr); gap:1rem; padding-block:1rem; border-bottom:1px solid var(--line); }
+.scan-result img { width:84px; height:100px; object-fit:contain; background:var(--sunk); }
+.scan-result p { margin:0 0 .5rem; }
+.scan-result .text-button { display:block; margin-top:.4rem; }
+.observation-preview { display:block; max-width:100%; width:100%; max-height:280px; object-fit:contain; background:var(--sunk); margin-block:1rem; }
+.concept-choices { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.45rem; }
+#scan-controls .check, .concept-choices .check { display:grid; grid-template-columns:24px minmax(0,1fr); align-items:start; gap:.7rem; font-family:inherit; font-size:.95rem; font-weight:400; line-height:1.45; margin-block:.8rem; }
+#scan-controls input[type=checkbox], .concept-choices input[type=checkbox] { width:22px; height:22px; margin:0; accent-color:var(--ink); }
+.scan-usage { margin-block:1.25rem; }
+.discovery-sheet-title { margin-bottom:1.25rem; }
+.scan-result-date { display:block; margin-top:.25rem; }
+@media(min-width:700px) { .discovery-pair, .discovery-saved { max-width:660px; } }

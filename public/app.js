@@ -1,24 +1,24 @@
 // Winnie: startup. Everything else lives in ./app/.
-import { protectAppSelection } from "./selection.js?v=4.27";
-import { sync } from "./app/services.js?v=4.27";
-import { render } from "./app/today.js?v=4.27";
-import { detail, refreshReactions } from "./app/entries.js?v=4.27";
-import { $ } from "./app/format.js?v=4.27";
-import { setTab } from "./app/nav.js?v=4.27";
-import { error, hasDialogDrafts, restoreDrafts } from "./app/ui.js?v=4.27";
-import "./app/format.js?v=4.27";
-import "./app/services.js?v=4.27";
-import "./app/ui.js?v=4.27";
-import "./app/nav.js?v=4.27";
-import "./app/today.js?v=4.27";
-import "./app/library.js?v=4.27";
-import "./app/entries.js?v=4.27";
-import "./app/logging.js?v=4.27";
-import "./app/forms.js?v=4.27";
-import "./app/settings.js?v=4.27";
-import "./app/photos.js?v=4.27";
-import "./app/clicks.js?v=4.27";
-import "./app/trainer.js?v=4.27";
+import { protectAppSelection } from "./selection.js?v=4.28";
+import { sync } from "./app/services.js?v=4.28";
+import { render } from "./app/today.js?v=4.28";
+import { detail, refreshReactions } from "./app/entries.js?v=4.28";
+import { $ } from "./app/format.js?v=4.28";
+import { setTab } from "./app/nav.js?v=4.28";
+import { error, hasDialogDrafts, restoreDrafts } from "./app/ui.js?v=4.28";
+import "./app/format.js?v=4.28";
+import "./app/services.js?v=4.28";
+import "./app/ui.js?v=4.28";
+import "./app/nav.js?v=4.28";
+import "./app/today.js?v=4.28";
+import "./app/library.js?v=4.28";
+import "./app/entries.js?v=4.28";
+import "./app/logging.js?v=4.28";
+import "./app/forms.js?v=4.28";
+import "./app/settings.js?v=4.28";
+import "./app/photos.js?v=4.28";
+import "./app/clicks.js?v=4.28";
+import "./app/trainer.js?v=4.28";
 
 if (["localhost", "127.0.0.1"].includes(location.hostname))
   document.querySelectorAll('img[src^="/.netlify/images"]').forEach((img) => {

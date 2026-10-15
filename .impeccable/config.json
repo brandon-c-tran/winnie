@@ -163,6 +163,15 @@
         ],
         "createdAt": "2026-10-14T16:28:06.641Z",
         "reason": "Authenticated data-photo references are hydrated from private blobs; iPhone WebKit and Chrome tests verify decoded graduation images after reload."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "public/app/photo-discovery-view.js"
+        ],
+        "createdAt": "2026-10-15T00:33:03.533Z",
+        "reason": "Private images use data-photo IDs and hydratePhotos() to resolve authenticated blobs; browser tests verify loaded pixels. A public src would bypass the private-photo architecture."
       }
     ]
   }

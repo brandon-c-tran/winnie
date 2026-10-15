@@ -1,4 +1,7 @@
 import { validatePhotoMetadata } from '../../public/photo-fields.js';
+import { validateMemoryLibrary } from '../../public/photo-discovery.js';
+import { winniePhotos } from '../../public/keepsakes.js';
+import { publicPhotoAI } from './photo-ai.mjs';
 import { validateFridge } from "../../public/fridge-model.js";
 import { validatePantry } from "../../public/pantry.js";
 import { validateSupplies } from "../../public/routine.js";
@@ -105,6 +108,7 @@ export function snapshot(doc) {
     events: doc.events,
     profile: doc.profile,
     calendar: doc.calendar || null,
+    photoAI: publicPhotoAI(doc),
     migration: doc.migration,
     devices: Object.values(doc.devices).map(
       ({ id, person, name, created, revoked, subscription }) => ({
@@ -349,6 +353,11 @@ export function applyCommand(doc, command, device, now = Date.now()) {
       409,
       { current: doc.profile },
     );
+    if (Object.hasOwn(payload, 'memoryLibrary')) {
+      const ids = new Set(doc.events.filter(e=>!e.deletedAt).flatMap(e=>winniePhotos(e).map(p=>p.id)));
+      try { doc.profile.memoryLibrary = validateMemoryLibrary(payload.memoryLibrary, ids); }
+      catch (error) { throw new Fault(400, error.message); }
+    }
     if (Object.hasOwn(payload, 'cgcMemory')) {
       const link = payload.cgcMemory;
       assert(link && typeof link === 'object' && validId(link.eventId) && validId(link.photoId), 'Choose a saved graduation photo.');

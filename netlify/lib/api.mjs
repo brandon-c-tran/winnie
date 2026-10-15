@@ -13,6 +13,7 @@ import {
 import { pushKeys, dispatch } from "./push.mjs";
 import { randomInt } from "node:crypto";
 import { calendarAction } from './calendar.mjs';
+import { photoAIAction, publicPhotoAI, runPhotoAI } from './photo-ai.mjs';
 export const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -96,7 +97,7 @@ async function registerDevice(main, key, { person, deviceId, secret, name }) {
   });
   return result.doc;
 }
-export function createHandler(getStores, { runDispatch = dispatch, calendarFetch = fetch } = {}) {
+export function createHandler(getStores, { runDispatch = dispatch, calendarFetch = fetch, photoAIFetch = fetch, photoAIKey = process.env.OPENAI_API_KEY } = {}) {
   return async (req) => {
     try {
       const url = new URL(req.url),
@@ -232,6 +233,17 @@ export function createHandler(getStores, { runDispatch = dispatch, calendarFetch
       const doc = await main.get(key, { type: "json" });
       assert(doc, "Shared log not found.", 404);
       const device = authenticate(doc, token);
+      if (action === 'photo-ai' && req.method === 'GET')
+        return json({configured:!!photoAIKey, ...publicPhotoAI(doc)});
+      if (action === 'photo-ai' && req.method === 'POST') {
+        const input = await body(req, 5000);
+        assert(input && typeof input === 'object' && !Array.isArray(input), 'Invalid photo request.');
+        if (input.action === 'run') {
+          await runPhotoAI(main, photos, key, {apiKey:photoAIKey,fetcher:photoAIFetch});
+          return json({configured:!!photoAIKey,...publicPhotoAI(await main.get(key,{type:'json'}))});
+        }
+        return json({configured:!!photoAIKey,...await photoAIAction({action:input.action,input,main,key,token,apiKey:photoAIKey})});
+      }
       if (['calendar-connect','calendar-refresh','calendar-disconnect','calendar-confirm'].includes(action)) {
         assert(req.method === 'POST', 'Use POST for calendar changes.', 405);
         const input = await body(req, 3000);
