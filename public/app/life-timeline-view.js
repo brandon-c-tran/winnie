@@ -1,10 +1,10 @@
-import { lifeTimeline } from "../life-timeline.js?v=4.28";
-import { ageAt } from "../lifetime.js?v=4.28";
-import { facts } from "./services.js?v=4.28";
-import { $, esc } from "./format.js?v=4.28";
-import { hydratePhotos } from "./entries.js?v=4.28";
-import { recollectionsHTML } from "./recollections.js?v=4.28";
-import { state } from "./state.js?v=4.28";
+import { lifeTimeline } from "../life-timeline.js?v=4.29";
+import { ageAt } from "../lifetime.js?v=4.29";
+import { facts } from "./services.js?v=4.29";
+import { $, esc } from "./format.js?v=4.29";
+import { hydratePhotos } from "./entries.js?v=4.29";
+import { recollectionsHTML } from "./recollections.js?v=4.29";
+import { state } from "./state.js?v=4.29";
 
 const BATCH = 8;
 let start = 0,
@@ -67,7 +67,7 @@ export function lifeTimelineHTML() {
   const ageDays = new Map();
   for (const g of rows) if (!ageDays.has(g.age)) ageDays.set(g.age, g.day);
   const ages = [...ageDays.entries()];
-  return `<section class="life-timeline" aria-label="Winnie's life in memories"><div class="life-browse"><label><span class="sr-only">Jump to an age</span><select id="life-jump"><option value="">Jump to an age</option>${ages.map(([n, day]) => `<option value="${day}">${age(n)}</option>`).join("")}</select></label><button class="text-button" id="life-latest">Latest</button><button class="text-button" id="life-yearbook">Make an album</button></div>
+  return `<section class="life-timeline" aria-label="Winnie's life in memories"><div class="life-browse"><label><span class="sr-only">Jump to an age</span><select id="life-jump"><option value="">Jump to an age</option>${ages.map(([n, day]) => `<option value="${day}">${age(n)}</option>`).join("")}</select></label><button class="text-button" id="life-latest">Latest</button><details class="timeline-tools"><summary>More</summary><div><button class="text-button" id="life-yearbook">Make an album</button><button class="text-button" id="life-postcard">Make a postcard</button><button class="text-button" data-history="lifetime">Milestones & dates</button></div></details></div>
     <button class="secondary life-earlier" id="life-earlier" ${start === 0 ? "hidden" : ""}>Earlier memories</button>
     <div id="life-stream">${entriesHTML()}</div><div class="life-continue"><button class="secondary" id="life-continue" ${end >= rows.length ? "hidden" : ""}>Keep going</button><p id="life-end" class="fine" ${end < rows.length ? "hidden" : ""}>${rows.some((g) => g.photos.length) ? "You’re all caught up." : "His photos belong here."}</p><button class="text-button" data-add-photos>Add more photos</button></div></section>`;
 }
@@ -111,6 +111,10 @@ export function bindLifeTimeline() {
   };
   $("life-jump").onchange = (e) => jump(e.target.value);
   $("life-latest").onclick = () => jump(rows.at(-1)?.day);
+  $("life-postcard").onclick = () => {
+    const el=document.querySelector(".postcard-tool");
+    el.open=true; el.scrollIntoView({block:"start",behavior:"instant"}); el.querySelector("summary").focus({preventScroll:true});
+  };
   $("life-yearbook").onclick = () => {
     const el = $("life-yearbook-tool");
     el.open = true;

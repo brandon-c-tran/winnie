@@ -384,7 +384,7 @@ One line under the room that states the room's state in words.
 Square labels on the room's dedicated top ledge, clear of the wall photograph: white at 92%, 2px ink border, Pixelify 600 13px, min 28px tall. Name ("Winnie", 15px 700), SF clock, the sync pill (8px square dot: green up to date, amber on Pending Paper while waiting, red on Review Paper for review or offline), and the person initial on Sun Yellow, which opens Settings. Room lights is a physical rocker beside the door inside the canvas, with a transparent 44×44px target aligned to its position. The target exposes the Room lights accessible name and pressed state and shows a keyboard focus outline; the rocker itself indicates on or off.
 
 ### People (Brandon and Kim)
-Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). All placements use the existing full-bust `brandon-pixel.png` and `kim-pixel.png` artwork. Today, Journal and Care photos contain the whole portrait in a frameless 24×24px area inline beside the author's name, below the event, result and optional note. Entry details retain a 64×64px portrait area beside the title and logger attribution. Portraits use `object-fit: contain`, a bottom baseline and pixelated rendering; the close-cropped head assets are not used.
+Their own Stardew-style portraits, restored to true pixel art (`scripts/clean-portrait.mjs`). All placements use the existing full-bust `brandon-pixel.png` and `kim-pixel.png` artwork. Today, Care log and Care photos contain the whole portrait in a frameless 24×24px area inline beside the author's name, below the event, result and optional note. Entry details retain a 64×64px portrait area beside the title and logger attribution. Portraits use `object-fit: contain`, a bottom baseline and pixelated rendering; the close-cropped head assets are not used.
 - Other placements retain the full artwork: `xs` and `sm` occupy 28×32px, Notes byline portraits occupy 28×28px, `md` occupies 44×52px, and the room's Settings portrait occupies 32×32px, centred inside its 44×44px target. Names remain separate text and portraits are decorative.
 - **Dialogue box.** When the other phone logs something, a game dialogue box rises over the bottom of the room: the 48px full portrait, the name in Pixelify 700, "Logged meal 12:40 PM" in Rubik. Cream paper, 3px ink edge, gold inner rim. Tap opens the entry; it leaves on its own after 7 seconds. It replaces the old "Kim logged" toast.
 - The weekly postcard puts both faces on the footer line with each person's count for the week.
@@ -452,7 +452,7 @@ A canvas diorama, the centre of the identity. Care behavior follows recorded fac
 - **CGC ribbon:** a long flat blue ribbon with gold marks under the picture, drawn at 9x20 art px. Its transparent touch and keyboard target opens the Canine Good Citizen keepsake. The sheet contains the full photograph (`object-fit: contain`, maximum height 52svh), recorded date and age, original note, caregiver recollections and a link to the original entry. The photograph is linked to that shared entry, never copied into a new milestone; absent evidence does not establish a graduation date.
 - **Closet:** a wood wardrobe with a small hanger sign and transparent 44×52px touch and keyboard target. Its sheet presents three actual 64px sprite previews in equal columns: blue bandanna, adventure harness and striped shirt. Each choice exposes its selected state and a visible “Wearing now” label; the selection uses Sticky Yellow paper with navy text and border. The gap narrows from 12px to 6px below 360px. Shared clothing is a presentation preference, separate from care state.
 - **Rug, arch lamp and plant box:** cream-and-ochre botanical blocks sit below every actor; the black arch lamp has a tiered wooden shade, and a wood box frames the plant above the wardrobe. These are physical room materials, not additional care colours or controls.
-- **Trophy shelf:** one trophy per milestone from the last 30 days, up to three; no shelf when there are none. Tapping opens Life.
+- **Trophy shelf:** one trophy per milestone from the last 30 days, up to three; no shelf when there are none. Tapping opens Timeline.
 - **Seasons:** a pumpkin by the door in October (its face glows after dark), string lights along the rail from December 1 to January 6, flowers on the plant in spring.
 
 **Poses.** The sheet is `public/photos/winnie-room-v3.png`, packed by `scripts/pack-poses.mjs` from the existing 15 frames and generated scratch, tilt, bow, roll, jump, shake, eating, greeting and toy poses. The harness replaces the bandanna with a cream chest piece, red and yellow straps and green hardware, either as the shared outfit or during the bathroom acknowledgment. The striped shirt is cream and blue with broad cream trim and a red collar. Both clothing sheets cover the same 30-cell pose grid as the bandanna, including fetching, carrying, resting with and returning Snuggle Puppy. `scripts/pack-outfits.mjs` preserves the six released base poses in each v1 sheet and packs the 24 generated extensions with matching silhouettes and baselines; `assets/animation/full-outfits-prompt.md` records their provenance. The original six-pose sources and prompts remain documented in `assets/animation/harness-prompt.md` and `assets/animation/stripes-prompt.md`. Personal clothing reference photographs are not bundled or published. All outfits use the same frame coordinates and timing; an unavailable or incomplete clothing sheet falls back to the corresponding bandanna pose. Idle time mixes wandering, wagging, sniffing, playing with the plush, and an evening yawn; night sleep starts with a yawn.
@@ -507,14 +507,20 @@ which also use labeled date/time fields. Prefer concise
 sentences when a relationship genuinely needs prose. This is a standing user
 preference for future interfaces as well as the care log.
 
-Story owns Life, Photos, Places and Journal beneath one shared heading.
-Life is the initial view. Search, type and date filters belong to Journal;
-Browse by month & milestones opens a drilldown with Back to Journal. The drilldown
+Story owns Timeline, Photos, Places and Care log beneath one shared heading.
+Timeline is the initial view. Search, type and date filters belong to Care log;
+Timeline's More menu opens Milestones & dates with Back to Timeline. The drilldown
 uses the same flat sections, Pixelify labels and Rubik reading text for source search,
 monthly photos and recorded days, milestones and source notes. Its age label explicitly
-describes age at mid-month. Insights is an independent bottom destination, beginning
-with a date span and whole-life horizon selector above six chart sections. Recent
-routine and meal tools sit in a disclosure below the charts and month inspector.
+describes age at mid-month. Insights is an independent bottom destination with a
+Recent, Over time and Compare navigation row. Recent is the initial view, with
+Activity and Period filters followed by the answer and chart, then supporting
+counts and relevant meal information. Over time shows one chart group at a time:
+Bathroom, Sleep or Photos & places, beside the Whole life, Last 12 months or
+Last 6 months period selector. The month inspector and source history remain below.
+Compare presents two month selectors and an activity selector, with training history
+below the comparison. Source entries open Care log; Back to Insights restores the
+chosen view, controls and scroll position.
 Calendar opens from Plans with Back to Plans and reuses the agenda rows beneath month headings. Upcoming and Past use
 pressed-state buttons; the visit-kind selector wraps beside them, with search and
 the cancelled/removed checkbox below. Past Will counts and scheduled hours share
@@ -535,7 +541,7 @@ the details, before the right-hand time and reaction column. The contained previ
 is 80×88px, reducing to 64×80px at widths of 360px or less. Rows use 12px padding
 and gaps, reducing to 10px horizontal padding and 8px gaps at that breakpoint.
 A count overlays the preview when there are multiple photos; opening it leads
-to the entry details. Journal uses the same compact preview for standalone moments
+to the entry details. Care log uses the same compact preview for standalone moments
 with photos; care records retain their compact photo-count links.
 
 After a quick poop log saves, an optional Poop photo sheet opens with Take photo,
@@ -549,14 +555,16 @@ in Pixelify Sans 700 at 24px and logger attribution. Labeled date/time fields,
 full notes, recorded facts, consistency, place and photos follow. Logger and
 care-provider attribution remain distinct.
 
-Life, Photos, Places and Journal share a stable primary navigation row beneath
+Timeline, Photos, Places and Care log share a stable primary navigation row beneath
 the Story heading. Flat, equal-width controls use an ink underline and sunk fill
-for the selected view. Journal's month/milestone and Add entry actions are tools
-below that row; the month drilldown has an explicit back action.
-Add photos remains in the Story header across views; Care photos changes it to
-Attach photos. Winnie and Care photos use one subordinate collection selector shown
-only within Photos; returning to Photos restores the selected collection. Switching
-Story views preserves their filters. Winnie groups photos by
+for the selected view. Care log offers Add entry in the header; photo-led views
+offer Add photos, changing to Attach photos in Care photos. Timeline's secondary
+tools sit in More; the month drilldown has an explicit back action.
+All memory photos, Care photos and named collections share one subordinate selector
+shown only within Photos; returning to Photos restores the selected collection.
+Search and images lead the library. Collections & photo tools is initially collapsed,
+keeping scan setup, label review, Then & now suggestions and collection editing quiet.
+Switching Story views preserves their filters. All memory photos groups images by
 their capture month in a two-column album, including individually selected care
 keepsakes. Care photos groups care entries by day, using the same signed
 record heading with a large uncropped photo below. The `fullPhoto` entry option
@@ -572,9 +580,11 @@ adding opens a searchable picker of existing
 poop and meal entries so each photo stays attached to its care record. Entry
 detail sheets also offer Take photo and Choose photo beside the Photos heading.
 
-Life uses a continuous chronological photo stream in the existing Pixelify,
+Timeline uses a continuous chronological photo stream in the existing Pixelify,
 Rubik, ink and paper vocabulary. A wrapping toolbar holds Jump to an age, Latest
-and Make an album. Birthday-based age headings use square markers beside a fine
+and More. More opens Make an album, Make a postcard and Milestones & dates;
+it closes on selection, outside click, Escape or navigation. Birthday-based age
+headings use square markers beside a fine
 vertical chronology line; each dated group pairs its date with the age calculated
 from that day. Birth, homecoming, saved milestones and named trips remain in context.
 The lead photo spans the stream, followed by subordinate pairs, all contained
@@ -588,7 +598,7 @@ days and photos expand incrementally, with Earlier memories after a jump beyond
 the current window. The existing 560px desktop column and light/dark palettes remain.
 
 Make a yearly album is a secondary disclosure below the stream, opened directly
-by Make an album. It retains the age-chapter album: when distinct photos exist, the first and last
+by More → Make an album. It retains the age-chapter album: when distinct photos exist, the first and last
 selected photos form a two-column bookend row with age labels. A horizontally
 scrollable month strip precedes one active chapter cover, its date and place,
 saved caption and separately attributed caregiver words. Covers and bookends
@@ -606,7 +616,7 @@ no new visual identity or token set. Their behavioral limits are recorded in
 PRODUCT.md and `.impeccable/surfaces/public-app-library-js.md`.
 
 Places leads with region controls and a bordered local atlas beneath the Story heading
-and the Life / Photos / Places / Journal row. Natural Earth geography uses restrained
+and the Timeline / Photos / Places / Care log row. Natural Earth geography uses restrained
 land and water fills; pink destination markers, square map controls and Pixelify
 labels connect it to the incumbent world. Selected destinations and dated replay
 appear below the map, followed by a horizontal outing list and a divided directory.
@@ -627,7 +637,8 @@ entries retain their saved-pin links. Named places without pins stay separate.
 First saved refers to the available records, never a first-ever visit; year-filtered
 views say Earliest shown. This extension introduces no new identity or token set.
 
-Lifetime Insights uses full-width, divided sections with Pixelify headings and Rubik
+Over time in Insights uses full-width, divided sections within the selected chart
+group, with Pixelify headings and Rubik
 chart labels, units, legends and values. Separate monthly dots preserve gaps in
 bathroom and recorded-night data; hollow dots mark fewer than five samples, with
 dashed logging-era lines explained by the key and source-history disclosure.

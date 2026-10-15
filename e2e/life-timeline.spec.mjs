@@ -4,7 +4,7 @@ import {join,code} from './helpers.mjs';
 test('Life scrolls through photo days, jumps by age, and preserves source memories and album tools', async ({page},info)=>{
   const errors=await join(page,code(info));
   await page.evaluate(async()=>{
-    const {sync}=await import('/app/services.js?v=4.28');
+    const {sync}=await import('/app/services.js?v=4.29');
     const blob=await(await fetch('/photos/winnie-wall.jpg')).blob();
     for(let i=0;i<12;i++) {
       const day=`2025-${i<6?'10':'11'}-${String(i%6+4).padStart(2,'0')}`,time=Date.parse(day+'T12:00:00-08:00');
@@ -30,6 +30,7 @@ test('Life scrolls through photo days, jumps by age, and preserves source memori
   await expect(page.locator('#dialog')).toBeVisible();
   await page.locator('#dialog-close').click();
   expect(Math.abs(await page.evaluate(()=>scrollY)-position)).toBeLessThan(10);
+  await page.locator('.timeline-tools > summary').click();
   await page.locator('#life-yearbook').click();
   await expect(page.locator('#album-title')).toBeVisible();
   await page.setViewportSize({width:320,height:740});

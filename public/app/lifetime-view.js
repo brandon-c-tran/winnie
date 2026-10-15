@@ -1,11 +1,12 @@
-import { BIRTHDAY, HOMECOMING, ERAS, recordDay, ageAt, chapters, selectedPhotos, trainingMonths, comparePeriods, milestoneCandidates, destinationCollections, answerRecords } from '../lifetime.js?v=4.28';
-import { facts, sync } from './services.js?v=4.28';
-import { $, esc, uid } from './format.js?v=4.28';
-import { html, openDialog, closeDialog, safe, toast } from './ui.js?v=4.28';
-import { entry, hydratePhotos } from './entries.js?v=4.28';
-import { openHistory } from './nav.js?v=4.28';
-import { wallInstants } from '../photo-metadata.js?v=4.28';
+import { BIRTHDAY, HOMECOMING, ERAS, recordDay, ageAt, chapters, selectedPhotos, trainingMonths, comparePeriods, milestoneCandidates, destinationCollections, answerRecords } from '../lifetime.js?v=4.29';
+import { facts, sync } from './services.js?v=4.29';
+import { $, esc, uid } from './format.js?v=4.29';
+import { html, openDialog, closeDialog, safe, toast } from './ui.js?v=4.29';
+import { entry, hydratePhotos } from './entries.js?v=4.29';
+import { openHistory } from './nav.js?v=4.29';
+import { wallInstants } from '../photo-metadata.js?v=4.29';
 let month = '', question = '', answerLimit = 20;
+let comparison = null;
 const monthName = value => new Date(value+'-15T12:00Z').toLocaleDateString([], {month:'long',year:'numeric',timeZone:'UTC'});
 const photosHTML = photos => `<div class="chapter-photos">${photos.map(p => `<button data-open="${esc(p.event.id)}" aria-label="Photo from ${esc(p.day)}"><img data-photo="${esc(p.photo.id)}" alt="${esc(p.event.note || 'Winnie')}" loading="lazy"></button>`).join('')}</div>`;
 const dates = rows => [...new Set(rows.map(recordDay))].sort();
@@ -42,17 +43,23 @@ function renderAnswer() {
 }
 export function changesHTML(events) {
   const months=chapters(events).filter(g=>g.events.length).map(g=>g.month);
-  const options=months.map(m=>`<option value="${m}">${monthName(m)}</option>`).join('');
+  const options=months.map(m=>`<option value="${m}">${new Date(m+"-15T12:00Z").toLocaleDateString("en-US",{month:"short",year:"numeric",timeZone:"UTC"})}</option>`).join('');
   return `<section class="life-changes"><h2>What changed?</h2><div class="comparison-controls"><label>Earlier month<select id="compare-a">${options}</select></label><label>Later month<select id="compare-b">${options}</select></label><label>Activity<select id="compare-type"><option value="pee">Pee</option><option value="poop">Poop</option><option value="meal">Meals</option></select></label></div><div id="compare-result" aria-live="polite"></div><details><summary>Indoor to outdoor training</summary><p class="fine">Indoor use and accidents are separate. Unlabeled entries are unknown, not outdoor successes.</p><div class="training-months">${trainingMonths(events).filter(g=>g.known || g.accidents).reverse().map(g=>`<article class="training-month"><button class="text-button" data-life-month="${g.month}">${monthName(g.month)}</button><div><strong>${g.known ? g.outdoor+' of '+g.known : 'Place unknown'}</strong><span>${g.known ? 'labeled entries were outdoors' : 'No indoor/outdoor labels'}</span></div>${g.known ? `<div class="setting-bar" role="img" aria-label="${g.outdoor} outdoor, ${g.indoor} indoor"><span style="width:${g.outdoor/g.known*100}%"></span></div>` : ''}<p class="fine">Place labeled on ${g.known} of ${g.total} bathroom records.</p><p class="fine">${g.accidents} accidents explicitly noted</p></article>`).join('')}</div><p class="fine">Accident counts are recorded observations, not a success rate. Place annotations drop sharply in early 2026.</p></details><details><summary>Training with Will and at home</summary>${trainingMonths(events).filter(g=>g.training.length).map(g=>`<div class="candidate-row"><button class="text-button" data-training-month="${g.month}">${monthName(g.month)}</button><span>${g.training.length} recorded sessions</span></div>`).join('') || '<p class="fine">No named training sessions yet.</p>'}<p class="fine">Sessions are counted from training annotations. This does not establish what caused a behavior change.</p></details></section>`;
 }
 export function bindChanges() {
   const a=$('compare-a'),b=$('compare-b');
   if(!a || !b)return;
   a.selectedIndex=Math.min(1,a.options.length-1);
+  if(comparison) {
+    if([...a.options].some(o=>o.value===comparison.a))a.value=comparison.a;
+    if([...b.options].some(o=>o.value===comparison.b))b.value=comparison.b;
+    $('compare-type').value=comparison.type;
+  }
   const update=()=>{
     if(!a.value || !b.value)return;
-    const result=comparePeriods(facts(),a.value,b.value,$('compare-type').value);
-    html('compare-result', `<div class="comparison-values">${[result.a,result.b].map(p=>`<div><span>${monthName(p.month)}</span><strong>${p.median ?? '—'}</strong><span>median records per logged day</span><small>${p.count} entries across ${p.days} days</small></div>`).join('')}</div><p>${result.comparable?`${result.change===0?'No change in the median':Math.abs(result.change)+' '+(result.change>0?'more':'fewer')+' records per logged day'}. Both months use the same logging era.`:'Descriptive totals only: the logging eras or coverage differ, or fewer than 14 days were recorded.'}</p><p class="fine">These are logging patterns. They do not measure unrecorded activity or establish a medical change.</p><div class="button-row"><button class="text-button" data-life-month="${a.value}">Earlier entries</button><button class="text-button" data-life-month="${b.value}">Later entries</button></div>`);
+    comparison={a:a.value,b:b.value,type:$('compare-type').value};
+    const result=comparePeriods(facts(),a.value,b.value,comparison.type);
+    html('compare-result', `<p class="fine">Median records per logged day</p><div class="comparison-values">${[result.a,result.b].map(p=>`<div><span>${monthName(p.month)}</span><strong>${p.median ?? '—'}</strong><small>${p.count} entries across ${p.days} days</small></div>`).join('')}</div><p>${result.comparable?`${result.change===0?'No change in the median':Math.abs(result.change)+' '+(result.change>0?'more':'fewer')+' records per logged day'}. Both months use the same logging era.`:'Descriptive totals only: the logging eras or coverage differ, or fewer than 14 days were recorded.'}</p><p class="fine">These are logging patterns. They do not measure unrecorded activity or establish a medical change.</p><div class="button-row"><button class="text-button" data-life-month="${a.value}">Earlier entries</button><button class="text-button" data-life-month="${b.value}">Later entries</button></div>`);
   };
   for(const el of [a,b,$('compare-type')])el.onchange=update;
   update();

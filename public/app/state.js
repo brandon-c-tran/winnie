@@ -1,6 +1,7 @@
 // Mutable state shared across modules.
 export const state = {
   insightTopic: "poop",
+  insightView: "recent",
   evidenceKey: null,
   tab: "today",
   filter: "moments",

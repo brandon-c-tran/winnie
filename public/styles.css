@@ -1476,37 +1476,6 @@ details > summary {
 }
 
 /* trends */
-.rhythm-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
-.rhythm-topics {
-  display: flex;
-  gap: 8px;
-}
-.rhythm-topics button {
-  appearance: none;
-  border: 2px solid var(--ink);
-  border-radius: 0;
-  background: var(--btn);
-  color: var(--ink);
-  font: 600 13px var(--px);
-  padding: 6px 10px 5px;
-}
-.rhythm-topics button.selected {
-  background: var(--ink);
-  color: #fff;
-}
-@media (prefers-color-scheme: dark) {
-  .rhythm-topics button.selected {
-    background: var(--pee);
-    color: var(--ink);
-  }
-}
 .rhythm-period {
   font: 600 13px var(--px);
   color: var(--muted);
@@ -1647,6 +1616,8 @@ details > summary {
   height: 100%;
   align-items: stretch;
 }
+.counts.dense { gap:1px; }
+.counts.dense .seg-pee, .counts.dense .seg-poop { border:0; }
 .counts .seg-pee,
 .counts .seg-poop {
   border: 2px solid var(--ink);
@@ -1660,6 +1631,7 @@ details > summary {
 }
 .legend {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   font-size: 13px;
   color: var(--muted);
@@ -3714,10 +3686,10 @@ details {
   .memory-picker-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 /* Story has one stable navigation row; collections and dates are tools. */
-.story-journal-tools, .story-back { display:flex; justify-content:space-between; gap:16px; margin:18px var(--gut); flex-wrap:wrap; }
-.story-journal-tools .text-button, .story-back .text-button { margin-inline:0; }
+.story-back { display:flex; justify-content:space-between; gap:16px; margin:18px var(--gut); flex-wrap:wrap; }
+.story-back .text-button { margin-inline:0; }
 .photo-collection-control { display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--muted); }
-.photo-collection-control select { flex:1; max-width:220px; }
+.photo-collection-control select { flex:1; min-width:0; }
 .postcard-tool, .album-collections { margin:26px 0; border-top:1px solid var(--line); padding-top:18px; }
 .postcard-tool > summary, .album-collections > summary { font:600 19px var(--px); cursor:pointer; min-height:44px; }
 .insights-range { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:6px 0 24px; }
@@ -3739,7 +3711,7 @@ details {
 .chart-key span { display:flex; align-items:center; gap:6px; }
 .chart-key i { display:inline-block; width:12px; height:12px; }
 .chart-data { margin-top:18px; font-size:14px; }
-.chart-data summary, .insight-method summary, .recent-insights > summary { min-height:44px; cursor:pointer; font:600 18px var(--px); }
+.chart-data summary, .insight-method summary { min-height:44px; cursor:pointer; font:600 18px var(--px); }
 .chart-table { overflow:auto; }
 .chart-table table { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
 .chart-table th, .chart-table td { padding:10px 8px; text-align:left; border-bottom:1px solid var(--line); }
@@ -3760,7 +3732,7 @@ details {
 .month-facts div { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); }
 .month-facts dt { color:var(--muted); font-size:14px; }
 .month-facts dd { margin:0; font-variant-numeric:tabular-nums; }
-.insight-method, .recent-insights { padding:22px 0; border-top:1px solid var(--line); }
+.insight-method { padding:22px 0; border-top:1px solid var(--line); }
 .insight-method p { margin:16px 0; font-size:14px; }
 @media(max-width:370px) { .insights-range { align-items:flex-start; gap:12px; } .insights-range label { width:135px; } .insights-range p { font-size:17px; } .insight-section h2 { font-size:23px; } }
 
@@ -3805,7 +3777,28 @@ details {
 @media(max-width:360px) { .life-age { font-size:25px; padding-left:18px; } .life-day { padding-left:18px; } .life-date { flex-wrap:wrap; } .life-continue { padding-left:18px; } }
 @media(prefers-reduced-motion:no-preference) { .life-photo:active { transform:translateY(2px); transition:transform 120ms steps(2,end); } }
 /* Photo discoveries extend the library: image pairs first, quiet editing controls. */
-#photo-discovery { margin-block: 1.25rem 1.75rem; padding-block: 1.25rem; border-block: 1px solid var(--line); }
+#photo-discovery { margin-block: 4px 8px; border-bottom: 1px solid var(--line); }
+#photo-discovery > summary { cursor:pointer; min-height:44px; padding-block:10px; font:600 17px var(--px); }
+#photo-discovery-content { padding:14px 0 22px; }
+.insight-filters, .rhythm-toolbar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:18px 0; }
+.insight-filters label, .rhythm-toolbar label { min-width:0; margin:0; font-size:14px; }
+.insight-filters select, .rhythm-toolbar select { width:100%; min-width:0; }
+.rhythm-period { display:flex; flex-wrap:wrap; gap:6px 20px; justify-content:space-between; }
+.timeline-tools { position:relative; flex:none; }
+.timeline-tools > summary { min-height:44px; display:flex; align-items:center; cursor:pointer; font:600 17px var(--px); text-decoration:underline; text-underline-offset:4px; }
+.timeline-tools > div { position:absolute; z-index:5; right:0; top:100%; width:210px; padding:10px 16px; border:2px solid var(--text); background:var(--surface); display:grid; gap:4px; }
+.timeline-tools button { text-align:left; white-space:normal; }
+.life-insights .insights-range { margin:0 0 16px; }
+.life-insights .insights-range p { display:flex; flex-wrap:wrap; gap:6px 16px; align-items:baseline; font:500 14px var(--ui); color:var(--muted); }
+.life-insights .insights-range p span { margin:0; font:inherit; }
+.life-insights .insight-section { padding-block:20px; }
+.life-changes h2 { font:700 25px var(--px); margin:18px 0; }
+.comparison-controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.comparison-controls label:last-child { grid-column:1/-1; }
+.comparison-controls label { min-width:0; }
+.comparison-values { gap:12px; }
+.comparison-values strong { font-size:28px; }
+.comparison-values small { font-size:13px; }
 .discovery-heading, .discovery-pair-title { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
 .discovery-heading h2, .discovery-heading h3, .discovery-pair-title h3 { margin:0; font-family:var(--px); }
 .discovery-heading h2 { font-size:1.35rem; }
@@ -3849,3 +3842,5 @@ details {
 .discovery-sheet-title { margin-bottom:1.25rem; }
 .scan-result-date { display:block; margin-top:.25rem; }
 @media(min-width:700px) { .discovery-pair, .discovery-saved { max-width:660px; } }
+
+.evidence-row > p { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 16px; }

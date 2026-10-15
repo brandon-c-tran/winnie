@@ -1,73 +1,65 @@
 import { test, expect } from "@playwright/test";
 import { join, code, goTimeline } from "./helpers.mjs";
-test("Story has one navigation row and keeps exploration, calendar and chart evidence connected", async ({
-  page,
-}, info) => {
-  const errors = await join(page, code(info));
+
+test("Story and Insights have distinct destinations with reversible evidence paths", async ({ page }, info) => {
+  const errors = await join(page, code(info, "-large"));
   await page.locator("#story-tab").click();
-  await expect(page.locator("#story-navigation button")).toHaveText([
-    "Life",
-    "Photos",
-    "Places",
-    "Journal",
-  ]);
+  await expect(page.locator("#story-navigation button")).toHaveText(["Timeline", "Photos", "Places", "Care log"]);
   await expect(page.locator(".life-timeline")).toBeVisible();
-  await page.locator("#places-home").click();
-  await page.locator("#photo-search").fill("beach");
-  await page.locator("#photo-collection").selectOption("care-photos");
-  await page.locator("#insights-tab").click();
-  await expect(page.locator("#life-horizon")).toHaveValue("all");
-  await expect(page.locator(".life-plot")).toHaveCount(2);
-  await expect(page.locator("#story-navigation")).toBeHidden();
-  await page.locator("#story-tab").click();
-  await expect(page.locator("#photo-search")).toHaveValue("beach");
-  await expect(page.locator("#photo-collection")).toHaveValue("care-photos");
-  await goTimeline(page);
-  await page.locator("#story-search").fill("pee");
+  await page.locator(".timeline-tools > summary").click();
   await page.locator('[data-history="lifetime"]').click();
   await expect(page.locator("#life-month")).toBeVisible();
-  await expect(page.locator("#timeline-navigation")).toBeHidden();
+  await expect(page.locator('[data-filter="memories"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-story="care"]')).toHaveAttribute("aria-pressed", "false");
   await page.locator("#story-back-button").click();
-  await expect(page.locator("#story-search")).toHaveValue("pee");
-  await page.locator("#plans-tab").click();
-  await page.locator('[data-history="calendar"]').click();
-  await expect(page.locator("#story-title")).toHaveText("Calendar");
-  await expect(page.locator("#plans-tab")).toHaveAttribute(
-    "aria-current",
-    "page",
-  );
-  await expect(page.locator("#story-navigation")).toBeHidden();
-  await page.locator("#story-back-button").click();
-  await expect(page.locator("#plans-view")).toBeVisible();
+  await expect(page.locator(".life-timeline")).toBeVisible();
+  await goTimeline(page);
+  await expect(page.locator("#story-add")).toHaveText("Add entry");
+  await page.locator("#story-add").click();
+  await expect(page.locator("#dialog")).toContainText("Log earlier");
+  await page.locator("#dialog-close").click();
+  await page.locator("#places-home").click();
+  await expect(page.locator("#photo-discovery")).not.toHaveAttribute("open");
+  await page.locator("#photo-search").fill("beach");
+  await page.locator("#photo-collection").selectOption("care-photos");
+  await expect(page.locator("#story-add")).toHaveText("Attach photos");
   await page.locator("#insights-tab").click();
+  await expect(page.locator("#insights-navigation button")).toHaveText(["Recent", "Over time", "Compare"]);
+  await expect(page.locator("#story-navigation")).toBeHidden();
+  await expect(page.locator("article.rhythm-answer")).toBeVisible();
+  await page.locator("#insight-activity").selectOption("pee");
+  await page.locator("#pattern-window").selectOption("90");
+  await page.locator('[data-insights-view="lifetime"]').click();
   await page.locator("#life-horizon").selectOption("6");
   await expect(page.locator(".heat-row")).toHaveCount(6);
-  await page.locator("#life-rhythm").selectOption("poop");
-  await expect(page.locator("#life-rhythm")).toHaveValue("poop");
+  await page.locator("#life-chart").selectOption("memories");
+  await expect(page.locator(".photo-coverage")).toBeVisible();
+  await expect(page.locator(".life-heatmap")).toBeHidden();
   await page.locator("#insight-records").click();
-  await expect(page.locator("#story-navigation")).toBeVisible();
   await expect(page.locator("#history-from")).not.toHaveValue("");
+  await expect(page.locator("#story-back-button")).toHaveText("Back to Insights");
+  await page.locator("#story-back-button").click();
+  await expect(page.locator("#life-chart")).toHaveValue("memories");
+  await expect(page.locator("#life-horizon")).toHaveValue("6");
+  await page.locator('[data-insights-view="compare"]').click();
+  await page.locator("#compare-a").selectOption({ index: 2 });
+  const earlier = await page.locator("#compare-a").inputValue();
+  await page.locator("#compare-type").selectOption("poop");
+  await page.locator('[data-insights-view="recent"]').click();
+  await expect(page.locator("#insight-activity")).toHaveValue("pee");
+  await expect(page.locator("#pattern-window")).toHaveValue("90");
+  await page.locator('[data-insights-view="compare"]').click();
+  await expect(page.locator("#compare-a")).toHaveValue(earlier);
+  await expect(page.locator("#compare-type")).toHaveValue("poop");
   await page.setViewportSize({ width: 320, height: 740 });
-  await page.locator("#insights-tab").click();
-  await expect
-    .poll(() =>
-      page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-    )
-    .toBe(true);
-  const smallestAxis = await page
-    .locator(".life-plot text")
-    .evaluateAll((nodes) =>
-      Math.min(
-        ...nodes.map(
-          (node) =>
-            parseFloat(getComputedStyle(node).fontSize) * node.getScreenCTM().a,
-        ),
-      ),
-    );
-  expect(smallestAxis).toBeGreaterThanOrEqual(11);
-  await expect(page.locator(".heat-key")).toContainText("40%+");
-  await expect(page.locator(".heat-missing").first()).toHaveText(
-    "No timed records",
-  );
+  for (const view of ["recent", "lifetime", "compare"]) {
+    await page.locator(`[data-insights-view="${view}"]`).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.locator("#plans-tab").click();
+  await page.locator('[data-history="calendar"]').click();
+  await expect(page.locator("#story-back-button")).toHaveText("Back to Plans");
+  await page.locator("#story-back-button").click();
+  await expect(page.locator("#plans-view")).toBeVisible();
   expect(errors).toEqual([]);
 });

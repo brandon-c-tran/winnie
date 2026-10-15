@@ -1,14 +1,15 @@
 // Tabs and day navigation.
 import { icon } from "../icons.js?v=4.0";
-import { $, dayKey } from "./format.js?v=4.28";
-import { render } from "./today.js?v=4.28";
-import { state } from "./state.js?v=4.28";
+import { $, dayKey } from "./format.js?v=4.29";
+import { render } from "./today.js?v=4.29";
+import { state } from "./state.js?v=4.29";
 
 $("day-picker").value = dayKey(Date.now());
 let historySection = "care",
   photosSection = "memories",
   photoCollection = "moments",
   storyTab = "photos";
+let insightReturn = null;
 document.addEventListener("winnie:calendar", () => {
   setTab("calendar");
 });
@@ -17,6 +18,7 @@ document
   .querySelectorAll(".tab-ic, [data-icon]")
   .forEach((s) => (s.innerHTML = icon(s.dataset.icon)));
 export function setTab(next) {
+  document.querySelectorAll('.timeline-tools[open]').forEach(el => { el.open = false; });
   if (next === "story") next = storyTab;
   document.dispatchEvent(new Event("winnie:surface-change"));
   if (state.tab !== next) state.limit = 60;
@@ -51,26 +53,29 @@ export function setTab(next) {
   $("story-navigation").hidden = next === "insights" || calendar;
   $("story-add").hidden = next === "insights" || calendar;
   $("story-add").textContent =
-    next === "photos" && photosSection === "care-photos"
+    next === "history" ? "Add entry" : photosSection === "care-photos"
       ? "Attach photos"
       : "Add photos";
-  $("timeline-navigation").hidden = !timeline || historySection === "lifetime";
+  $("insights-navigation").hidden = next !== "insights";
   $("story-back").hidden =
-    !calendar && !(timeline && historySection === "lifetime");
+    !calendar && !(timeline && (historySection === "lifetime" || insightReturn));
   $("story-back-button").textContent = calendar
     ? "Back to Plans"
-    : "Back to Journal";
+    : historySection === "lifetime" ? "Back to Timeline" : "Back to Insights";
   $("story-back-button").onclick = () => {
     if (calendar) setTab("plans");
-    else {
-      historySection = "care";
-      setTab("history");
+    else if (historySection === "lifetime") showPhotos("memories");
+    else if (insightReturn) {
+      const position = insightReturn.scroll;
+      insightReturn = null;
+      setTab("insights");
+      window.scrollTo(0, position);
     }
   };
   $("photo-collection").value = photoCollection;
   document
     .querySelector('[data-story="care"]')
-    .setAttribute("aria-pressed", String(timeline));
+    .setAttribute("aria-pressed", String(timeline && historySection !== "lifetime"));
   document
     .querySelectorAll("[data-history]")
     .forEach((b) =>
@@ -79,8 +84,7 @@ export function setTab(next) {
         String(
           !calendar &&
             next === "history" &&
-            (b.dataset.history === historySection ||
-              b.dataset.history === "care"),
+            b.dataset.history === historySection,
         ),
       ),
     );
@@ -89,7 +93,7 @@ export function setTab(next) {
     .forEach((b) =>
       b.setAttribute(
         "aria-pressed",
-        String(next === "photos" && b.dataset.filter === photosSection),
+        String((next === "photos" && b.dataset.filter === photosSection) || (timeline && historySection === "lifetime" && b.dataset.filter === "memories")),
       ),
     );
   $("places-home").setAttribute(
@@ -111,22 +115,20 @@ export function setTab(next) {
 }
 // Open a photo-led view inside Story, preserving the selected collection.
 export function showPhotos(section) {
-  if (["moments", "care-photos"].includes(section)) photoCollection = section;
-  photosSection = section;
+  insightReturn = null;
+  if (["moments", "care-photos"].includes(section) || section.startsWith("collection:")) photoCollection = section;
+  photosSection = section.startsWith("collection:") ? "moments" : section;
   state.limit = 60;
   setTab("photos");
 }
 $("places-home").onclick = () => showPhotos(photoCollection);
-document.querySelector('[data-story="care"]').onclick = () => {
-  if (historySection === "lifetime") historySection = "care";
-  setTab("history");
-};
 $("photo-collection").onchange = (e) => showPhotos(e.target.value);
 document
   .querySelectorAll("[data-filter]")
   .forEach((b) => (b.onclick = () => showPhotos(b.dataset.filter)));
 // Open the History log with no filters, optionally narrowed to one type.
 export function openHistory({ type = "", from = "", to = "" } = {}) {
+  insightReturn = state.tab === "insights" ? {scroll:window.scrollY} : null;
   historySection = "care";
   $("history-type").value = type;
   $("story-search").value = "";
@@ -138,17 +140,24 @@ export function openHistory({ type = "", from = "", to = "" } = {}) {
 }
 document
   .querySelectorAll("[data-tab]")
-  .forEach((b) => (b.onclick = () => setTab(b.dataset.tab)));
-document.querySelectorAll("[data-history]").forEach(
-  (b) =>
-    (b.onclick = () => {
-      if (b.dataset.history === "calendar") setTab("calendar");
-      else {
-        historySection = b.dataset.history;
-        setTab("history");
-      }
-    }),
-);
+  .forEach((b) => (b.onclick = () => { insightReturn = null; setTab(b.dataset.tab); }));
+document.addEventListener("click", (event) => {
+  const b=event.target.closest('[data-history]'); if(!b)return;
+  insightReturn=null;
+  if(b.dataset.history==='calendar')setTab('calendar');
+  else {historySection=b.dataset.history;setTab('history');}
+});
+document.addEventListener("click", event => {
+  document.querySelectorAll('.timeline-tools[open]').forEach(el => {
+    if (!el.contains(event.target) || event.target.closest('button')) el.open = false;
+  });
+});
+document.addEventListener("keydown", event => {
+  if (event.key !== "Escape") return;
+  const menu = document.querySelector('.timeline-tools[open]');
+  if (menu) { menu.open = false; menu.querySelector('summary').focus(); }
+});
+
 document.addEventListener("click", (ev) => {
   const b = ev.target.closest("[data-care-nav]");
   if (!b) return;

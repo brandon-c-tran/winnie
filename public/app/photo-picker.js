@@ -1,7 +1,7 @@
-import { filterPhotoChoices } from "../story-album.js?v=4.28";
-import { $, esc } from "./format.js?v=4.28";
-import { openDialog, safe } from "./ui.js?v=4.28";
-import { hydratePhotos } from "./entries.js?v=4.28";
+import { filterPhotoChoices } from "../story-album.js?v=4.29";
+import { $, esc } from "./format.js?v=4.29";
+import { openDialog, safe } from "./ui.js?v=4.29";
+import { hydratePhotos } from "./entries.js?v=4.29";
 
 // A bounded window over the complete library. No photo becomes unreachable as it grows.
 export function pickMemoryPhoto({

@@ -1,29 +1,30 @@
-import { lifeInsightsHTML, bindLifeInsights } from './life-insights-view.js?v=4.28';
-import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.28';
-import { selectedPhotos, recordDay } from '../lifetime.js?v=4.28';
-import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.28";
-import { renderMemories } from "./memories-view.js?v=4.28";
-import { foodPoopStats } from "../pantry.js?v=4.28";
+import { lifeInsightsHTML, bindLifeInsights } from './life-insights-view.js?v=4.29';
+import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.29';
+import { selectedPhotos, recordDay } from '../lifetime.js?v=4.29';
+import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.29";
+import { renderMemories } from "./memories-view.js?v=4.29";
+import { foodPoopStats } from "../pantry.js?v=4.29";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.28";
-import { elapsed } from "../care-state.js?v=4.28";
+import { placeLabel } from "../places.js?v=4.29";
+import { elapsed } from "../care-state.js?v=4.29";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.28";
-import { insightsView } from "../insight-view.js?v=4.28";
-import { photoCaption } from "../everyday.js?v=4.28";
-import { html, openDialog } from "./ui.js?v=4.28";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.28";
-import { facts, places } from "./services.js?v=4.28";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.28";
-import { addPhotos } from "./photos.js?v=4.28";
-import { state } from "./state.js?v=4.28";
-import { renderCalendarHistory } from './calendar-view.js?v=4.28';
-import { renderPhotoDiscovery, discoveryMatch, collectionPhotoIds } from './photo-discovery-view.js?v=4.28';
+} from "../insights.js?v=4.29";
+import { insightsView } from "../insight-view.js?v=4.29";
+import { photoCaption } from "../everyday.js?v=4.29";
+import { html, openDialog } from "./ui.js?v=4.29";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.29";
+import { facts, places } from "./services.js?v=4.29";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.29";
+import { addPhotos } from "./photos.js?v=4.29";
+import { earlierSheet } from "./logging.js?v=4.29";
+import { state } from "./state.js?v=4.29";
+import { renderCalendarHistory } from './calendar-view.js?v=4.29';
+import { renderPhotoDiscovery, discoveryMatch, collectionPhotoIds } from './photo-discovery-view.js?v=4.29';
 
 let patternDays = 28,
   insightData = null,
@@ -236,7 +237,7 @@ $("load-more").onclick = () => {
   state.limit += 60;
   renderStory();
 };
-$("story-add").onclick = () => addPhotos(state.filter === "care-photos");
+$("story-add").onclick = () => state.tab === "history" ? earlierSheet() : addPhotos(state.filter === "care-photos");
 document.addEventListener("click", (event) => {
   if (event.target.closest("[data-add-photos]"))
     addPhotos(state.filter === "care-photos");
@@ -248,17 +249,26 @@ $("photo-clear").onclick = () => {
   renderStory();
 };
 export function renderPatterns() {
-  const recentOpen = document.querySelector('.recent-insights')?.open;
   insightData = rhythmInsights(facts(), patternDays);
   $("story-count").textContent = "";
   $("load-more").hidden = true;
   html(
     "story-items",
-    lifeInsightsHTML() + `<details class="recent-insights" ${recentOpen?'open':''}><summary>Recent routine & meal patterns</summary>` + insightsView(insightData, state.insightTopic, countsHTML(facts()) +
-      (state.insightTopic === "poop" ? foodPoopHTML(facts()) : "")) + changesHTML(facts()) + `</details>`,
+    state.insightView === "lifetime" ? lifeInsightsHTML() : state.insightView === "compare" ? changesHTML(facts()) : insightsView(insightData, state.insightTopic,
+      (state.insightTopic === "nights" ? "" : countsHTML(facts())) +
+      (state.insightTopic === "poop" ? foodPoopHTML(facts()) : "")),
   );
-  bindChanges();
-  bindLifeInsights(renderPatterns);
+  document.querySelectorAll('[data-insights-view]').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.insightsView === state.insightView));
+    b.onclick = () => { state.insightView = b.dataset.insightsView; renderPatterns(); b.focus(); };
+  });
+  if (state.insightView === "compare") return bindChanges();
+  if (state.insightView === "lifetime") return bindLifeInsights(renderPatterns);
+  $("insight-activity").onchange = e => {
+    state.insightTopic = e.target.value;
+    renderPatterns();
+    $("insight-activity").focus();
+  };
   $("pattern-window").onchange = (e) => {
     patternDays = Number(e.target.value);
     renderPatterns();
@@ -310,7 +320,7 @@ function countsHTML(events) {
       month: "short",
       day: "numeric",
     });
-  return `<section class="rhythm-answer"><h3>Pee and poop, last ${patternDays} days</h3><div class="counts" role="img" aria-label="${rows.map(([k, p, q]) => `${short(k)}: ${p} pee, ${q} poop`).join("; ")}">${rows.map(([, p, q]) => `<span class="day">${p ? `<span class="seg-pee" style="height:${(p / max) * 100}%"></span>` : ""}${q ? `<span class="seg-poop" style="height:${(q / max) * 100}%"></span>` : ""}</span>`).join("")}</div><div class="rhythm-axis"><span>${short(days[0])}</span><span>Today</span></div><div class="legend"><span><i style="background:var(--pee)"></i>Pee</span><span><i style="background:var(--poop)"></i>Poop</span><span>On days with logs: ${avg(1)} pee, ${avg(2)} poop</span></div></section>`;
+  return `<section class="rhythm-answer"><h3>Pee and poop, last ${patternDays} days</h3><div class="counts ${patternDays > 28 ? "dense" : ""}" role="img" aria-label="${rows.map(([k, p, q]) => `${short(k)}: ${p} pee, ${q} poop`).join("; ")}">${rows.map(([, p, q]) => `<span class="day">${p ? `<span class="seg-pee" style="height:${(p / max) * 100}%"></span>` : ""}${q ? `<span class="seg-poop" style="height:${(q / max) * 100}%"></span>` : ""}</span>`).join("")}</div><div class="rhythm-axis"><span>${short(days[0])}</span><span>Today</span></div><div class="legend"><span><i style="background:var(--pee)"></i>Pee</span><span><i style="background:var(--poop)"></i>Poop</span><span>On days with logs: ${avg(1)} pee, ${avg(2)} poop</span></div></section>`;
 }
 export function showEvidence(key, more = false) {
   state.evidenceKey = key;
@@ -373,7 +383,7 @@ export function showEvidence(key, more = false) {
           day: "numeric",
           year: "numeric",
         }) +
-        (row.gap != null ? " · " + durationLabel(row.gap) + " apart" : "") +
+        (row.gap != null ? "<span>" + durationLabel(row.gap) + " apart</span>" : "") +
         "</p><div>" +
         row.ids
           .map((id) => {
