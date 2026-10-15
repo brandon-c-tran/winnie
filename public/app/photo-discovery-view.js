@@ -4,13 +4,14 @@ import {
   suggestedPairs,
   suggestedCollections,
   pairKey,
-} from "../photo-discovery.js?v=4.28";
-import { selectedPhotos, ageAt } from "../lifetime.js?v=4.28";
-import { $, esc, uid } from "./format.js?v=4.28";
-import { facts, sync } from "./services.js?v=4.28";
-import { html, openDialog, closeDialog, safe, toast } from "./ui.js?v=4.28";
-import { hydratePhotos } from "./entries.js?v=4.28";
-import { renderStory } from "./library.js?v=4.28";
+} from "../photo-discovery.js?v=4.29";
+import { selectedPhotos, ageAt } from "../lifetime.js?v=4.29";
+import { $, esc, uid } from "./format.js?v=4.29";
+import { facts, sync } from "./services.js?v=4.29";
+import { html, openDialog, closeDialog, safe, toast } from "./ui.js?v=4.29";
+import { hydratePhotos } from "./entries.js?v=4.29";
+import { renderStory } from "./library.js?v=4.29";
+import { showPhotos } from "./nav.js?v=4.29";
 
 const library = () =>
   sync.view().profile.memoryLibrary || { collections: [], pairs: {} };
@@ -50,6 +51,10 @@ export const discoveryMatch = (e, p, query) =>
 export function renderPhotoDiscovery(show) {
   const box = $("photo-discovery");
   box.hidden = !show;
+  const picker = $("photo-collection"), chosen = picker.value;
+  picker.innerHTML = `<option value="moments">All memory photos</option><option value="care-photos">Care photos</option>${library().collections.length ? `<optgroup label="Your collections">${library().collections.map(c => `<option value="collection:${esc(c.id)}">${esc(c.name)}</option>`).join("")}</optgroup>` : ""}`;
+  picker.value = [...picker.options].some(o => o.value === chosen) ? chosen : "moments";
+  activeCollection = picker.value.startsWith("collection:") ? picker.value.slice(11) : "";
   if (!show) return;
   const all = selectedPhotos(facts()),
     ai = sync.view().photoAI || {},
@@ -77,7 +82,7 @@ export function renderPhotoDiscovery(show) {
     )
     .slice(0, 4);
   html(
-    "photo-discovery",
+    "photo-discovery-content",
     `<div class="discovery-heading"><h2>Rediscover Winnie</h2><button class="text-button" data-discovery-settings>${Object.keys(observations()).length ? "Review photo labels" : "Photo discovery setup"}</button></div>
     ${!Object.keys(observations()).length ? '<p class="fine discovery-intro">Photo search and comparisons start with a five-photo sample.</p>' : ""}
     ${ai.pending ? `<p class="fine" role="status">${ai.pending} photos waiting to be described. You can keep browsing.</p>` : ""}
@@ -97,7 +102,7 @@ export function renderPhotoDiscovery(show) {
         : ""
     }
     <div class="discovery-collections"><div class="discovery-heading"><h3>Your collections</h3><button class="text-button" data-new-collection>Create collection</button></div>
-    ${lib.collections.length ? `<div class="collection-links"><button class="text-button" data-filter-collection="" aria-pressed="${!activeCollection}">All Winnie photos</button>${lib.collections.map((c) => `<button class="text-button" data-filter-collection="${esc(c.id)}" aria-pressed="${c.id === activeCollection}">${esc(c.name)} <span>(${c.photoIds.filter((id) => all.some((p) => p.photo.id === id)).length})</span></button>`).join("")}</div>` : '<p class="fine">No collections yet.</p>'}
+    ${lib.collections.length ? `<p class="fine">Choose a collection from the photo filter above.</p>` : '<p class="fine">Group photos you want to revisit together.</p>'}
     ${activeCollection ? `<button class="text-button" data-edit-collection="${esc(activeCollection)}">Edit this collection</button>` : ""}
     ${suggestions.length ? `<details><summary>Suggested collections</summary><p class="fine">Based on photo labels. Review the selection before saving.</p><div class="collection-links">${suggestions.map((c) => `<button class="secondary" data-suggest-collection="${esc(c.concept)}">${esc(c.concept)} <span>(${c.photoIds.length})</span></button>`).join("")}</div></details>` : ""}</div>`,
   );
@@ -173,9 +178,8 @@ function collectionEditor(existing = null, suggested = null) {
       .filter((c) => c.id !== value.id)
       .concat(value);
     await saveLibrary(lib);
-    activeCollection = value.id;
     closeDialog();
-    renderStory();
+    showPhotos("collection:" + value.id);
     toast("Collection saved on this device");
   });
   if (existing)
@@ -365,10 +369,6 @@ document.addEventListener(
           (c) => c.concept === b.dataset.suggestCollection,
         ),
       );
-    if (b.hasAttribute("data-filter-collection")) {
-      activeCollection = b.dataset.filterCollection;
-      renderStory();
-    }
     if (b.dataset.keepPair || b.dataset.dismissPair) {
       const lib = structuredClone(library());
       lib.pairs[b.dataset.keepPair || b.dataset.dismissPair] = b.dataset

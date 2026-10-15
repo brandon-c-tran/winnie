@@ -1,10 +1,11 @@
-import { lifetimeInsights } from "../life-insights.js?v=4.28";
-import { ageAt, ERAS } from "../lifetime.js?v=4.28";
-import { facts } from "./services.js?v=4.28";
-import { $, esc } from "./format.js?v=4.28";
-import { openHistory } from "./nav.js?v=4.28";
+import { lifetimeInsights } from "../life-insights.js?v=4.29";
+import { ageAt, ERAS } from "../lifetime.js?v=4.29";
+import { facts } from "./services.js?v=4.29";
+import { $, esc } from "./format.js?v=4.29";
+import { openHistory } from "./nav.js?v=4.29";
 
-let horizon = "all",
+let chart = "bathroom",
+  horizon = "all",
   rhythm = "pee",
   selected = "";
 const label = (m) =>
@@ -48,9 +49,9 @@ export function lifeInsightsHTML() {
     photoCount = months.reduce((n, m) => n + m.photos.length, 0);
   if (!months.some((m) => m.month === selected))
     selected = months.at(-1)?.month || "";
-  return `<div class="life-insights"><div class="insights-range"><p>${label(months[0].month)} – ${label(months.at(-1).month)}<span>${rows.length.toLocaleString()} saved records</span></p><label>Time horizon<select id="life-horizon"><option value="all" ${horizon === "all" ? "selected" : ""}>Whole life</option><option value="12" ${horizon === "12" ? "selected" : ""}>Last 12 months</option><option value="6" ${horizon === "6" ? "selected" : ""}>Last 6 months</option></select></label></div>
+  return `<div class="life-insights"><div class="insight-filters"><label>Show<select id="life-chart">${[["bathroom","Bathroom"],["sleep","Sleep"],["memories","Photos & places"]].map(([key,title]) => `<option value="${key}" ${chart === key ? "selected" : ""}>${title}</option>`).join("")}</select></label><label>Period<select id="life-horizon"><option value="all" ${horizon === "all" ? "selected" : ""}>Whole life</option><option value="12" ${horizon === "12" ? "selected" : ""}>Last 12 months</option><option value="6" ${horizon === "6" ? "selected" : ""}>Last 6 months</option></select></label></div><div class="insights-range"><p>${label(months[0].month)} – ${label(months.at(-1).month)}<span>${rows.length.toLocaleString()} saved records</span></p></div>
   ${!rows.length ? '<p class="empty">Add photos or care records to begin. Months without records stay blank.</p>' : ""}
-  <section class="insight-section"><h2>Bathroom breaks as he grew</h2><p class="fine">Median records on days that activity was logged. Separate dots keep missing months and changing logging habits visible.</p>
+  <section class="insight-section" ${chart !== "bathroom" ? "hidden" : ""}><h2>Bathroom breaks as he grew</h2>
   ${plot(
     months,
     [
@@ -70,16 +71,17 @@ export function lifeInsightsHTML() {
     "records per logged day",
   )}
   <div class="chart-key"><span><i style="background:var(--pee)"></i>Pee</span><span><i style="background:var(--poop)"></i>Poop</span><span>Hollow dots: fewer than 5 logged days</span><span>Dashed lines: logging era changes</span></div>
+  <p class="fine">Median records on days that activity was logged. Separate dots keep missing months and changing logging habits visible.</p>
   ${table(months, [
     ["Pee", (m) => num(m.pee.median)],
     ["Pee days", (m) => m.pee.counts.size],
     ["Poop", (m) => num(m.poop.median)],
     ["Poop days", (m) => m.poop.counts.size],
   ])}</section>
-  <section class="insight-section"><div class="chart-heading"><h2>When his breaks happen</h2><label><span class="sr-only">Rhythm activity</span><select id="life-rhythm"><option value="pee" ${rhythm === "pee" ? "selected" : ""}>Pee</option><option value="poop" ${rhythm === "poop" ? "selected" : ""}>Poop</option></select></label></div><p class="fine">Share of each month’s timed entries, in recorded local time. Compare each two-hour window using the share key below. Unknown clocks are excluded.</p>
+  <section class="insight-section" ${chart !== "bathroom" ? "hidden" : ""}><div class="chart-heading"><h2>When his breaks happen</h2><label><span class="sr-only">Rhythm activity</span><select id="life-rhythm"><option value="pee" ${rhythm === "pee" ? "selected" : ""}>Pee</option><option value="poop" ${rhythm === "poop" ? "selected" : ""}>Poop</option></select></label></div><p class="fine">Share of each month’s timed entries, in recorded local time. Compare each two-hour window using the share key below. Unknown clocks are excluded.</p>
   <div class="heat-key" aria-label="Share of timed records"><span>Share</span>${[0, 0.1, 0.2, 0.4].map((n) => `<span><i style="--heat:${n / 0.4}"></i>${n * 100}%${n === 0.4 ? "+" : ""}</span>`).join("")}</div>
   <div class="heat-axis"><span></span><span>12a</span><span>6a</span><span>12p</span><span>6p</span></div><div class="life-heatmap">${months.map((m) => `<div class="heat-row"><span>${label(m.month)}</span><div role="img" aria-label="${label(m.month)}, ${m[rhythm].timed} timed entries. ${m[rhythm].bins.map((n, i) => `${i * 2}:00: ${n}`).join("; ")}">${m[rhythm].timed ? m[rhythm].bins.map((n) => `<span style="--heat:${Math.min(1, n / m[rhythm].timed / 0.4)}" title="${n} of ${m[rhythm].timed} timed entries (${Math.round((n / m[rhythm].timed) * 100)}%)"></span>`).join("") : `<span class="heat-missing">No timed records</span>`}</div></div>`).join("")}</div></section>
-  <section class="insight-section"><h2>Learning where to go</h2><p class="fine">Indoor, outdoor and unlabeled bathroom records. Indoor use is not an accident; only explicit accident notes count.</p><div class="chart-key"><span><i style="background:var(--text)"></i>Outdoor</span><span><i style="background:var(--muted)"></i>Indoor</span><span><i style="background:var(--sunk);border:1px solid var(--muted)"></i>Unknown</span></div>
+  <section class="insight-section" ${chart !== "bathroom" ? "hidden" : ""}><h2>Learning where to go</h2><p class="fine">Indoor, outdoor and unlabeled bathroom records. Indoor use is not an accident; only explicit accident notes count.</p><div class="chart-key"><span><i style="background:var(--text)"></i>Outdoor</span><span><i style="background:var(--muted)"></i>Indoor</span><span><i style="background:var(--sunk);border:1px solid var(--muted)"></i>Unknown</span></div>
   <div class="training-plot">${months
     .map((m) => {
       const total = m.indoor + m.outdoor + m.unknown;
@@ -92,21 +94,21 @@ export function lifeInsightsHTML() {
     ["Unlabeled", (m) => m.unknown],
     ["Accidents noted", (m) => m.accidents],
   ])}</section>
-  <section class="insight-section"><h2>Recorded nights</h2><p class="fine">Median length of completed night-sleep records, with naps excluded. This is recorded sleep, not his total sleep; open or invalid intervals stay out. Hollow dots have fewer than 5 completed records.</p>${plot(months, [{ name: "Night", color: "sleep", count: (m) => m.nights.length, value: (m) => m.nightMedian }], "hours")}${table(
+  <section class="insight-section" ${chart !== "sleep" ? "hidden" : ""}><h2>Recorded nights</h2><p class="fine">Median length of completed night-sleep records, with naps excluded. This is recorded sleep, not his total sleep; open or invalid intervals stay out. Hollow dots have fewer than 5 completed records.</p>${plot(months, [{ name: "Night", color: "sleep", count: (m) => m.nights.length, value: (m) => m.nightMedian }], "hours")}${table(
     months,
     [
       ["Hours", (m) => num(m.nightMedian)],
       ["Completed records", (m) => m.nights.length],
     ],
   )}</section>
-  <section class="insight-section"><h2>His life in photographs</h2><p>${photoCount.toLocaleString()} selected photos in this period.</p><p class="fine">Photos use capture dates. The lower marks show days with care records, making gaps in both histories visible.</p><div class="photo-coverage">${months.map((m) => `<div class="coverage-row"><span>${label(m.month)}</span><div><div class="photo-volume" style="width:${(m.photos.length / photoMax) * 100}%"></div><div class="care-coverage" style="width:${(m.days.size / Math.max(1, m.elapsedDays)) * 100}%"></div></div><span>${m.photos.length}</span></div>`).join("")}</div><div class="chart-key"><span><i style="background:var(--photo)"></i>Photos</span><span><i style="background:var(--muted)"></i>Care-day coverage</span></div>${table(
+  <section class="insight-section" ${chart !== "memories" ? "hidden" : ""}><h2>His life in photographs</h2><p>${photoCount.toLocaleString()} selected photos in this period.</p><p class="fine">Photos use capture dates. The lower marks show days with care records, making gaps in both histories visible.</p><div class="photo-coverage">${months.map((m) => `<div class="coverage-row"><span>${label(m.month)}</span><div><div class="photo-volume" style="width:${(m.photos.length / photoMax) * 100}%"></div><div class="care-coverage" style="width:${(m.days.size / Math.max(1, m.elapsedDays)) * 100}%"></div></div><span>${m.photos.length}</span></div>`).join("")}</div><div class="chart-key"><span><i style="background:var(--photo)"></i>Photos</span><span><i style="background:var(--muted)"></i>Care-day coverage</span></div>${table(
     months,
     [
       ["Photos", (m) => m.photos.length],
       ["Care days", (m) => `${m.days.size}/${m.elapsedDays}`],
     ],
   )}</section>
-  <section class="insight-section"><h2>Places in his world</h2><p class="fine">Distinct destinations accumulated in the available records. Each place enters at its earliest saved day, not necessarily his first visit.</p><div class="place-growth">${months.map((m) => `<div class="coverage-row"><span>${label(m.month)}</span><div><div class="place-volume" style="width:${(m.cumulativePlaces / placeMax) * 100}%"></div></div><span>${m.cumulativePlaces}</span></div>`).join("")}</div>${table(
+  <section class="insight-section" ${chart !== "memories" ? "hidden" : ""}><h2>Places in his world</h2><p class="fine">Distinct destinations accumulated in the available records. Each place enters at its earliest saved day, not necessarily his first visit.</p><div class="place-growth">${months.map((m) => `<div class="coverage-row"><span>${label(m.month)}</span><div><div class="place-volume" style="width:${(m.cumulativePlaces / placeMax) * 100}%"></div></div><span>${m.cumulativePlaces}</span></div>`).join("")}</div>${table(
     months,
     [
       ["Places so far", (m) => m.cumulativePlaces],
@@ -117,6 +119,7 @@ export function lifeInsightsHTML() {
   <details class="insight-method"><summary>Read the history behind the charts</summary><p>These charts describe saved records. More logging is not necessarily more activity. Recent photo uploads can fill earlier months; unrecorded days remain unknown.</p>${ERAS.map(([d, title, body]) => `<p><strong>${esc(title)}</strong><br><time>${d}</time><br>${esc(body)}</p>`).join("")}</details></div>`;
 }
 export function bindLifeInsights(render) {
+  $("life-chart").onchange = e => { chart=e.target.value; render(); $("life-chart").focus(); };
   const describe = () => {
     const m = lifetimeInsights(facts()).months.find(
       (m) => m.month === selected,

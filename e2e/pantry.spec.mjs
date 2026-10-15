@@ -63,7 +63,7 @@ test("poop quality: tag right after a poop, then it shows by food in Trends", as
 
   await goTimeline(page);
   await page.locator('#insights-tab').click();
-  await page.locator('.recent-insights > summary').click();await page.locator('[data-rhythm="poop"]').click();
+  await page.locator('#insight-activity').selectOption('poop');
   await expect(page.locator(".by-food")).toContainText("Chicken");
   await expect(page.locator(".by-food")).toContainText("1 of 3 soft or loose");
   expect(errors).toEqual([]);

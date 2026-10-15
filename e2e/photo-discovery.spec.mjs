@@ -4,7 +4,7 @@ test.use({ serviceWorkers: "block" });
 
 async function addFixtures(page) {
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.28");
+    const { sync } = await import("/app/services.js?v=4.29");
     for (let i = 0; i < 7; i++) {
       const day = `2026-0${i + 1}-10`,
         time = Date.parse(day + "T12:00:00-08:00");
@@ -39,6 +39,7 @@ test("photo discovery scans opt-in samples, corrects labels, keeps pairs and sha
   const errors = await join(page, code(info));
   await addFixtures(page);
   await goPhotos(page);
+  await page.locator("#photo-discovery > summary").click();
   await page.locator("[data-discovery-settings]").first().click();
   await expect(
     page.locator("#scan-controls [type=checkbox]").first(),
@@ -48,7 +49,7 @@ test("photo discovery scans opt-in samples, corrects labels, keeps pairs and sha
   await expect
     .poll(() =>
       page.evaluate(async () => {
-        const { sync } = await import("/app/services.js?v=4.28");
+        const { sync } = await import("/app/services.js?v=4.29");
         return Object.keys((await sync.request("photo-ai")).results).length;
       }),
     )
@@ -101,9 +102,7 @@ test("photo discovery scans opt-in samples, corrects labels, keeps pairs and sha
   await expect(page.locator("#sync-status")).toHaveText("Up to date");
   await page.reload();
   await goPhotos(page);
-  await page
-    .getByRole("button", { name: "All Winnie photos", exact: true })
-    .click();
+  await page.locator("#photo-collection").selectOption("moments");
   await page.locator("#photo-search").fill("couch");
   await expect(page.locator("#photo-count")).toHaveText("1 photo");
   await expect(page.locator("#photo-items")).toContainText(
@@ -131,6 +130,7 @@ test("disconnected scan setup is explicit and collections still work", async ({
       json: { ...json, configured: false },
     });
   });
+  await page.locator("#photo-discovery > summary").click();
   await page.locator("[data-discovery-settings]").first().click();
   await expect(
     page.getByRole("button", { name: "Try five photos" }),
@@ -146,7 +146,7 @@ test("disconnected scan setup is explicit and collections still work", async ({
   await page
     .getByRole("button", { name: "Save collection", exact: true })
     .click();
-  await expect(page.locator("[data-filter-collection]").last()).toContainText(
+  await expect(page.locator("#photo-collection option:checked")).toContainText(
     "Adventures to come",
   );
   expect(errors).toEqual([]);
@@ -174,7 +174,7 @@ test("photo import survives reload and a mid-batch pause without losing captions
   for (const field of await page.locator("[data-photo-field=timezone]").all())
     await field.selectOption("America/Los_Angeles");
   await page.evaluate(async () => {
-    const { persistDialogDraft } = await import("/app/ui.js?v=4.28");
+    const { persistDialogDraft } = await import("/app/ui.js?v=4.29");
     await persistDialogDraft();
   });
   await page.reload();
@@ -183,7 +183,7 @@ test("photo import survives reload and a mid-batch pause without losing captions
     .click();
   await expect(page.locator("#photo-draft img")).toHaveCount(2);
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.28");
+    const { sync } = await import("/app/services.js?v=4.29");
     const original = sync.addPhoto.bind(sync);
     sync.addPhoto = async (...args) => {
       window.photoPaused = true;
@@ -214,7 +214,7 @@ test("photo import survives reload and a mid-batch pause without losing captions
   await expect(page.locator("#dialog")).not.toBeVisible();
   await expect(page.locator("#sync-status")).toHaveText("Up to date");
   const result = await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.28");
+    const { sync } = await import("/app/services.js?v=4.29");
     return sync
       .view()
       .events.filter((e) => e.type === "moment")

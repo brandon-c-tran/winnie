@@ -24,8 +24,8 @@ for(const outfit of ['harness','stripes']) {
   test(`${outfit} renders the complete animation grid without substituting sitting`,async({page},info)=>{
     const errors=await setup(page,info);
     const failures=await page.evaluate(async(outfit)=>{
-      const {room}=await import('/app/services.js?v=4.28');
-      const {FRAMES}=await import('/room.js?v=4.28');
+      const {room}=await import('/app/services.js?v=4.29');
+      const {FRAMES}=await import('/room.js?v=4.29');
       room.set({outfit,sleep:null,walk:false},{instant:true});room.pause(true);
       const failures=[];
       for(const [pose,coords] of Object.entries(FRAMES)){
@@ -42,10 +42,10 @@ for(const outfit of ['harness','stripes']) {
     test.setTimeout(45000);
     const errors=await setup(page,info);
     await page.evaluate(async(outfit)=>{
-      const {room}=await import('/app/services.js?v=4.28');
+      const {room}=await import('/app/services.js?v=4.29');
       room.set({outfit,sleep:null,walk:false},{instant:true});room.react('toy');
     },outfit);
-    const pose=()=>page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.28');return {pose:room.dog.pose,toy:room.dog.toy,outfit:room.outfit};});
+    const pose=()=>page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.29');return {pose:room.dog.pose,toy:room.dog.toy,outfit:room.outfit};});
     await expect.poll(pose,{timeout:15000,intervals:[50]}).toEqual({pose:'carry',toy:true,outfit});
     expect(await page.evaluate(outfit=>window.outfitDraws.some(d=>d.src.endsWith(`winnie-${outfit}-v2.png`)&&d.y===576),outfit)).toBe(true);
     await expect.poll(pose,{timeout:15000,intervals:[50]}).toEqual({pose:'sleepToy',toy:true,outfit});
@@ -56,10 +56,10 @@ for(const outfit of ['harness','stripes']) {
 
 test('sleep interruption and reduced motion preserve clothes and clear toy carrying',async({page},info)=>{
   await setup(page,info);
-  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.28');room.set({outfit:'stripes',sleep:null,walk:false},{instant:true});room.react('toy');});
-  await expect.poll(()=>page.evaluate(async()=>(await import('/app/services.js?v=4.28')).room.dog.toy),{timeout:15000}).toBe(true);
-  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.28');room.set({sleep:'slumber'},{instant:true});});
-  expect(await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.28');return {toy:room.dog.toy,outfit:room.outfit};})).toEqual({toy:false,outfit:'stripes'});
+  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.29');room.set({outfit:'stripes',sleep:null,walk:false},{instant:true});room.react('toy');});
+  await expect.poll(()=>page.evaluate(async()=>(await import('/app/services.js?v=4.29')).room.dog.toy),{timeout:15000}).toBe(true);
+  await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.29');room.set({sleep:'slumber'},{instant:true});});
+  expect(await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.29');return {toy:room.dog.toy,outfit:room.outfit};})).toEqual({toy:false,outfit:'stripes'});
   await page.emulateMedia({reducedMotion:'reduce'});
-  expect(await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.28');room.set({sleep:null,outfit:'harness'},{instant:true});room.react('toy');return {toy:room.dog.toy,outfit:room.outfit};})).toEqual({toy:false,outfit:'harness'});
+  expect(await page.evaluate(async()=>{const {room}=await import('/app/services.js?v=4.29');room.set({sleep:null,outfit:'harness'},{instant:true});room.react('toy');return {toy:room.dog.toy,outfit:room.outfit};})).toEqual({toy:false,outfit:'harness'});
 });

@@ -1,6 +1,6 @@
-import { sync, room } from './services.js?v=4.28';
-import { $, esc } from './format.js?v=4.28';
-import { openDialog, closeDialog, safe, toast } from './ui.js?v=4.28';
+import { sync, room } from './services.js?v=4.29';
+import { $, esc } from './format.js?v=4.29';
+import { openDialog, closeDialog, safe, toast } from './ui.js?v=4.29';
 
 const outfits = [
   ['bandanna', 'Blue bandanna', '/photos/winnie-room-v3.png'],

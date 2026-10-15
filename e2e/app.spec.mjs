@@ -146,7 +146,7 @@ test("All entries in Trends opens the full History log", async ({
   await join(page, code(info));
   await goTimeline(page);
   await page.locator('#insights-tab').click();
-  await page.locator('.recent-insights > summary').click();await page.locator('[data-act="all-history"]').click();
+  await page.locator('[data-act="all-history"]').click();
   await expect(page.locator('[data-history="care"]')).toHaveAttribute(
     "aria-pressed",
     "true",
@@ -256,6 +256,7 @@ test("a log the size of the real one opens and stays responsive", async ({
   await goTimeline(page);
   await expect(page.locator("#story-count")).toContainText("entries");
   await page.locator('#insights-tab').click();
-  await expect(page.locator("#story-items")).toContainText(/poop timing/i);
+  await expect(page.locator("#insight-activity")).toHaveValue("poop");
+  await expect(page.locator("article.rhythm-answer").first()).toBeVisible();
   expect(errors).toEqual([]);
 });
