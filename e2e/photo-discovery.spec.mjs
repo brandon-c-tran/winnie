@@ -151,3 +151,78 @@ test("disconnected scan setup is explicit and collections still work", async ({
   );
   expect(errors).toEqual([]);
 });
+
+test("photo import survives reload and a mid-batch pause without losing captions or duplicating photos", async ({
+  page,
+}, info) => {
+  const errors = await join(page, code(info));
+  await goPhotos(page);
+  await page.locator("#story-add").click();
+  await page.locator("[data-album-library]").click();
+  await page
+    .locator("#library-input")
+    .setInputFiles([
+      "public/photos/winnie-wall.jpg",
+      "public/photos/winnie-smile.png",
+    ]);
+  await expect(page.locator("#photo-draft img")).toHaveCount(2);
+  await page
+    .locator("#photo-composer [name=note]")
+    .fill("Our afternoon together");
+  for (const field of await page.locator("[data-photo-field=wall]").all())
+    await field.fill("2026-01-10T12:00");
+  for (const field of await page.locator("[data-photo-field=timezone]").all())
+    await field.selectOption("America/Los_Angeles");
+  await page.evaluate(async () => {
+    const { persistDialogDraft } = await import("/app/ui.js?v=4.28");
+    await persistDialogDraft();
+  });
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Resume add photos", exact: true })
+    .click();
+  await expect(page.locator("#photo-draft img")).toHaveCount(2);
+  await page.evaluate(async () => {
+    const { sync } = await import("/app/services.js?v=4.28");
+    const original = sync.addPhoto.bind(sync);
+    sync.addPhoto = async (...args) => {
+      window.photoPaused = true;
+      await new Promise((resolve) => {
+        window.releasePhoto = resolve;
+      });
+      sync.addPhoto = original;
+      return original(...args);
+    };
+  });
+  await page.getByRole("button", { name: "Save photos", exact: true }).click();
+  await page.waitForFunction(() => window.photoPaused);
+  await page.getByRole("button", { name: "Pause import", exact: true }).click();
+  await page.evaluate(() => window.releasePhoto());
+  await expect(page.locator("#photo-draft-status")).toContainText(
+    "1 already saved",
+  );
+  await expect(page.locator("#photo-composer [type=submit]")).toBeEnabled();
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Resume add photos", exact: true })
+    .click();
+  await expect(page.locator("#photo-composer [name=note]")).toHaveValue(
+    "Our afternoon together",
+  );
+  await expect(page.locator("#photo-composer [name=note]")).toBeDisabled();
+  await page.getByRole("button", { name: "Save photos", exact: true }).click();
+  await expect(page.locator("#dialog")).not.toBeVisible();
+  await expect(page.locator("#sync-status")).toHaveText("Up to date");
+  const result = await page.evaluate(async () => {
+    const { sync } = await import("/app/services.js?v=4.28");
+    return sync
+      .view()
+      .events.filter((e) => e.type === "moment")
+      .map((e) => ({ caption: e.note, photos: e.photos?.length }));
+  });
+  expect(result).toEqual([
+    { caption: "Our afternoon together", photos: 1 },
+    { caption: "Our afternoon together", photos: 1 },
+  ]);
+  expect(errors).toEqual([]);
+});

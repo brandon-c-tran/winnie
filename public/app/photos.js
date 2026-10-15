@@ -106,7 +106,8 @@ export function addPhotos(care = false, restored = null) {
     current.busy = true;
     current.pauseRequested = false;
     const form = event.target;
-    const data = new FormData(form);
+    // A resumed batch locks the caption, so FormData would omit this disabled field.
+    const caption = form.elements.note.value.trim();
     form
       .querySelectorAll("button, input, textarea")
       .forEach((el) => (el.disabled = true));
@@ -131,7 +132,7 @@ export function addPhotos(care = false, restored = null) {
         const item = current.items[0], m = item.metadata;
         if (!sync.view().events.some(e => e.id === item.id)) {
           await sync.enqueue('create', item.id, {
-            type: 'moment', time: m.capturedAt, note: String(data.get('note')).trim(),
+            type: 'moment', time: m.capturedAt, note: caption,
             who: 'us', tags: [], timezone: m.timezone || 'UTC', retroactive: true,
             location: m.location || '',
             ...(m.pin ? {placePin: {...m.pin, accuracy: 0, capturedAt: m.capturedAt}} : {}),
