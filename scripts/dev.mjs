@@ -29,6 +29,8 @@ stores.legacy.get = async (key, options) =>
 const api = createHandler(() => stores, {
   runDispatch: async () => {},
   ...(process.env.WINNIE_DEV_CALENDAR ? {calendarFetch: async () => new Response(await fs.readFile(process.env.WINNIE_DEV_CALENDAR,'utf8'))} : {}),
+  // Explicit local test fixture only. Never loaded by a Netlify function or production build.
+  ...(process.env.WINNIE_DEV_PHOTO_AI === 'fixture' ? {photoAIKey:'local-test-only',photoAIFetch:async()=>new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({description:'Fixture observation: a dog resting in a pink bed.',concepts:['pink bed','sleeping']})}}],usage:{prompt_tokens:120,completion_tokens:30}}))} : {}),
 });
 const mime = {
   ".html": "text/html",

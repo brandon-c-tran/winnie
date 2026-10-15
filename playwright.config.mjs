@@ -17,7 +17,7 @@ export default defineConfig({
   },
   webServer: {
     command: "node scripts/dev.mjs",
-    env: { WINNIE_DEV_PORT: String(port), WINNIE_DEV_CALENDAR: 'tests/fixtures/winnie-calendar.ics' },
+    env: { WINNIE_DEV_PORT: String(port), WINNIE_DEV_CALENDAR: 'tests/fixtures/winnie-calendar.ics', WINNIE_DEV_PHOTO_AI:'fixture' },
     url: `http://localhost:${port}`,
     reuseExistingServer: !ci,
   },

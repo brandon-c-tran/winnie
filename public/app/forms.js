@@ -1,14 +1,14 @@
 // Entry, shared plan, and place forms.
-import { eventPosition, placeName, placeLabel } from "../places.js?v=4.27";
+import { eventPosition, placeName, placeLabel } from "../places.js?v=4.28";
 import {
   validPin,
   mapURL,
   canCaptureHere,
   capturePlace,
-} from "../care-state.js?v=4.27";
+} from "../care-state.js?v=4.28";
 import { GROOMING } from "../icons.js?v=4.0";
-import { normalizeFood } from "../everyday.js?v=4.27";
-import { autoPlace, facts, fridge, sync } from "./services.js?v=4.27";
+import { normalizeFood } from "../everyday.js?v=4.28";
+import { autoPlace, facts, fridge, sync } from "./services.js?v=4.28";
 import {
   $,
   TYPES,
@@ -17,7 +17,7 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.27";
+} from "./format.js?v=4.28";
 import {
   closeDialog,
   openDialog,
@@ -28,10 +28,10 @@ import {
   draftFields,
   applyDraftFields,
   persistDialogDraft,
-} from "./ui.js?v=4.27";
-import { render } from "./today.js?v=4.27";
-import { detail, eventLabel } from "./entries.js?v=4.27";
-import { state } from "./state.js?v=4.27";
+} from "./ui.js?v=4.28";
+import { render } from "./today.js?v=4.28";
+import { detail, eventLabel } from "./entries.js?v=4.28";
+import { state } from "./state.js?v=4.28";
 
 export function editForm(
   type = "note",
