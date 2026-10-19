@@ -1,20 +1,20 @@
 // Logging: one-tap logs, sleep and walks, grooming, Earlier, meals, More, press-and-hold.
-import { careStates, completionId } from "../care-plans.js?v=4.29";
-import { elapsed } from "../care-state.js?v=4.29";
+import { careStates, completionId } from "../care-plans.js?v=4.30";
+import { elapsed } from "../care-state.js?v=4.30";
 import { icon, GROOMING, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { durationLabel } from "../insights.js?v=4.29";
+import { durationLabel } from "../insights.js?v=4.30";
 import {
   sleepContext,
   foodChoices,
   normalizeFood,
-} from "../everyday.js?v=4.29";
+} from "../everyday.js?v=4.30";
 import {
   autoPlace,
   autoPlaceEnabled,
   facts,
   room,
   sync,
-} from "./services.js?v=4.29";
+} from "./services.js?v=4.30";
 import {
   $,
   TYPES,
@@ -23,7 +23,7 @@ import {
   dateTime,
   esc,
   uid,
-} from "./format.js?v=4.29";
+} from "./format.js?v=4.30";
 import {
   closeDialog,
   retainDialogDraft,
@@ -35,12 +35,12 @@ import {
   renderedHTML,
   safe,
   toast,
-} from "./ui.js?v=4.29";
-import { editForm } from "./forms.js?v=4.29";
-import { render } from "./today.js?v=4.29";
-import { state } from "./state.js?v=4.29";
-import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.29";
-import { pantryNow, savePantry } from "./pantry-view.js?v=4.29";
+} from "./ui.js?v=4.30";
+import { editForm } from "./forms.js?v=4.30";
+import { render } from "./today.js?v=4.30";
+import { state } from "./state.js?v=4.30";
+import { rotation, lastEaten, QUALITY } from "../pantry.js?v=4.30";
+import { pantryNow, savePantry } from "./pantry-view.js?v=4.30";
 
 let mealSubmitting = false;
 let pressTimer = 0;
@@ -320,7 +320,7 @@ function pottyPhoto(id, type) {
     }<p class="fine" id="auto-place-status" data-event="${esc(id)}" role="status">${autoPlaceEnabled() ? "Location is added when this phone allows it." : "Automatic location is off on this phone."}</p><button class="text-button" data-act="close">Not now</button><p id="form-error" class="error" role="alert"></p>`,
   );
 }
-// Foods in rotation order (eaten longest ago first), with when each was last eaten and what's left.
+// In-stock foods first, preserving rotation order (eaten longest ago first) within each group.
 function mealOptions() {
   const events = facts(),
     pantry = pantryNow(),
@@ -331,7 +331,13 @@ function mealOptions() {
       lastEaten(n, events),
   );
   const rest = names.filter((n) => !used.includes(n));
-  return [...rotation(used, events), ...rest].map((food) => {
+  const inStock = new Set(
+    pantry.foods.filter((f) => f.left > 0).map((f) => f.name.toLowerCase()),
+  );
+  const ordered = [...rotation(used, events), ...rest].sort(
+    (a, b) => Number(inStock.has(b.toLowerCase())) - Number(inStock.has(a.toLowerCase())),
+  );
+  return ordered.map((food) => {
     const t = lastEaten(food, events),
       stock = pantry.foods.find(
         (f) => f.name.toLowerCase() === food.toLowerCase(),

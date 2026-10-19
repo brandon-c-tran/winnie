@@ -1,17 +1,17 @@
-import { recordDay } from '../lifetime.js?v=4.29';
-import { isCarePhoto } from "../keepsakes.js?v=4.29";
-import { createReactionPicker } from "./reaction-picker.js?v=4.29";
-import { recollectionsHTML } from './recollections.js?v=4.29';
+import { recordDay } from '../lifetime.js?v=4.30';
+import { isCarePhoto } from "../keepsakes.js?v=4.30";
+import { createReactionPicker } from "./reaction-picker.js?v=4.30";
+import { recollectionsHTML } from './recollections.js?v=4.30';
 // Entry rows, reactions, the entry detail sheet, and photo loading.
-import { QUALITY } from "../pantry.js?v=4.29";
-import { placeLabel } from "../places.js?v=4.29";
+import { QUALITY } from "../pantry.js?v=4.30";
+import { placeLabel } from "../places.js?v=4.30";
 import { icon, typeIcon, typeColor } from "../icons.js?v=4.0";
-import { photoCaption } from "../everyday.js?v=4.29";
-import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.29";
-import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.29";
-import { openDialog, safe, toast } from "./ui.js?v=4.29";
-import { placeSummary } from "./forms.js?v=4.29";
-import { state } from "./state.js?v=4.29";
+import { photoCaption } from "../everyday.js?v=4.30";
+import { photoLoading, photoURLs, room, sync } from "./services.js?v=4.30";
+import { TYPES, clock, dateLabel, esc, person, face } from "./format.js?v=4.30";
+import { openDialog, safe, toast } from "./ui.js?v=4.30";
+import { placeSummary } from "./forms.js?v=4.30";
+import { state } from "./state.js?v=4.30";
 
 document.addEventListener("click", safe(async ev => {
   const button = ev.target.closest("[data-keep-photo]");

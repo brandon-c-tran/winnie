@@ -1,12 +1,12 @@
-import { graduationMemory } from '../room-memory.js?v=4.29';
-import { ageAt, recordDay, selectedPhotos } from '../lifetime.js?v=4.29';
-import { facts, sync } from './services.js?v=4.29';
-import { $, esc } from './format.js?v=4.29';
-import { openDialog } from './ui.js?v=4.29';
-import { detail, hydratePhotos } from './entries.js?v=4.29';
-import { recollectionsHTML, remember } from './recollections.js?v=4.29';
-import { pickMemoryPhoto } from './photo-picker.js?v=4.29';
-import { addPhotos } from './photos.js?v=4.29';
+import { graduationMemory } from '../room-memory.js?v=4.30';
+import { ageAt, recordDay, selectedPhotos } from '../lifetime.js?v=4.30';
+import { facts, sync } from './services.js?v=4.30';
+import { $, esc } from './format.js?v=4.30';
+import { openDialog } from './ui.js?v=4.30';
+import { detail, hydratePhotos } from './entries.js?v=4.30';
+import { recollectionsHTML, remember } from './recollections.js?v=4.30';
+import { pickMemoryPhoto } from './photo-picker.js?v=4.30';
+import { addPhotos } from './photos.js?v=4.30';
 
 export function openGraduation() {
   const memory = graduationMemory(facts(), sync.view().profile);
