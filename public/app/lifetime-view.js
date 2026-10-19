@@ -1,10 +1,10 @@
-import { BIRTHDAY, HOMECOMING, ERAS, recordDay, ageAt, chapters, selectedPhotos, trainingMonths, comparePeriods, milestoneCandidates, destinationCollections, answerRecords } from '../lifetime.js?v=4.29';
-import { facts, sync } from './services.js?v=4.29';
-import { $, esc, uid } from './format.js?v=4.29';
-import { html, openDialog, closeDialog, safe, toast } from './ui.js?v=4.29';
-import { entry, hydratePhotos } from './entries.js?v=4.29';
-import { openHistory } from './nav.js?v=4.29';
-import { wallInstants } from '../photo-metadata.js?v=4.29';
+import { BIRTHDAY, HOMECOMING, ERAS, recordDay, ageAt, chapters, selectedPhotos, trainingMonths, comparePeriods, milestoneCandidates, destinationCollections, answerRecords } from '../lifetime.js?v=4.30';
+import { facts, sync } from './services.js?v=4.30';
+import { $, esc, uid } from './format.js?v=4.30';
+import { html, openDialog, closeDialog, safe, toast } from './ui.js?v=4.30';
+import { entry, hydratePhotos } from './entries.js?v=4.30';
+import { openHistory } from './nav.js?v=4.30';
+import { wallInstants } from '../photo-metadata.js?v=4.30';
 let month = '', question = '', answerLimit = 20;
 let comparison = null;
 const monthName = value => new Date(value+'-15T12:00Z').toLocaleDateString([], {month:'long',year:'numeric',timeZone:'UTC'});

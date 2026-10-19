@@ -4,14 +4,14 @@ import {
   suggestedPairs,
   suggestedCollections,
   pairKey,
-} from "../photo-discovery.js?v=4.29";
-import { selectedPhotos, ageAt } from "../lifetime.js?v=4.29";
-import { $, esc, uid } from "./format.js?v=4.29";
-import { facts, sync } from "./services.js?v=4.29";
-import { html, openDialog, closeDialog, safe, toast } from "./ui.js?v=4.29";
-import { hydratePhotos } from "./entries.js?v=4.29";
-import { renderStory } from "./library.js?v=4.29";
-import { showPhotos } from "./nav.js?v=4.29";
+} from "../photo-discovery.js?v=4.30";
+import { selectedPhotos, ageAt } from "../lifetime.js?v=4.30";
+import { $, esc, uid } from "./format.js?v=4.30";
+import { facts, sync } from "./services.js?v=4.30";
+import { html, openDialog, closeDialog, safe, toast } from "./ui.js?v=4.30";
+import { hydratePhotos } from "./entries.js?v=4.30";
+import { renderStory } from "./library.js?v=4.30";
+import { showPhotos } from "./nav.js?v=4.30";
 
 const library = () =>
   sync.view().profile.memoryLibrary || { collections: [], pairs: {} };

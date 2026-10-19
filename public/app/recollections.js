@@ -1,13 +1,13 @@
-import { $, esc, person } from "./format.js?v=4.29";
+import { $, esc, person } from "./format.js?v=4.30";
 import {
   openDialog,
   closeDialog,
   safe,
   toast,
   markDialogDirty,
-} from "./ui.js?v=4.29";
-import { sync } from "./services.js?v=4.29";
-import { hydratePhotos } from "./entries.js?v=4.29";
+} from "./ui.js?v=4.30";
+import { sync } from "./services.js?v=4.30";
+import { hydratePhotos } from "./entries.js?v=4.30";
 
 export function recollectionsHTML(event, exceptPerson) {
   const words = Object.entries(event.recollections || {}).filter(

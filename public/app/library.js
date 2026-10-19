@@ -1,30 +1,30 @@
-import { lifeInsightsHTML, bindLifeInsights } from './life-insights-view.js?v=4.29';
-import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.29';
-import { selectedPhotos, recordDay } from '../lifetime.js?v=4.29';
-import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.29";
-import { renderMemories } from "./memories-view.js?v=4.29";
-import { foodPoopStats } from "../pantry.js?v=4.29";
+import { lifeInsightsHTML, bindLifeInsights } from './life-insights-view.js?v=4.30';
+import { renderLifetime, changesHTML, bindChanges } from './lifetime-view.js?v=4.30';
+import { selectedPhotos, recordDay } from '../lifetime.js?v=4.30';
+import { isCarePhoto, winniePhotos } from "../keepsakes.js?v=4.30";
+import { renderMemories } from "./memories-view.js?v=4.30";
+import { foodPoopStats } from "../pantry.js?v=4.30";
 // History, Trends, and Photos: search, filters, counters, charts, evidence.
-import { placeLabel } from "../places.js?v=4.29";
-import { elapsed } from "../care-state.js?v=4.29";
+import { placeLabel } from "../places.js?v=4.30";
+import { elapsed } from "../care-state.js?v=4.30";
 import { icon } from "../icons.js?v=4.0";
 import {
   rhythmInsights,
   clockMinute,
   durationLabel,
   localParts,
-} from "../insights.js?v=4.29";
-import { insightsView } from "../insight-view.js?v=4.29";
-import { photoCaption } from "../everyday.js?v=4.29";
-import { html, openDialog } from "./ui.js?v=4.29";
-import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.29";
-import { facts, places } from "./services.js?v=4.29";
-import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.29";
-import { addPhotos } from "./photos.js?v=4.29";
-import { earlierSheet } from "./logging.js?v=4.29";
-import { state } from "./state.js?v=4.29";
-import { renderCalendarHistory } from './calendar-view.js?v=4.29';
-import { renderPhotoDiscovery, discoveryMatch, collectionPhotoIds } from './photo-discovery-view.js?v=4.29';
+} from "../insights.js?v=4.30";
+import { insightsView } from "../insight-view.js?v=4.30";
+import { photoCaption } from "../everyday.js?v=4.30";
+import { html, openDialog } from "./ui.js?v=4.30";
+import { $, TYPES, dateLabel, dayKey, esc, person } from "./format.js?v=4.30";
+import { facts, places } from "./services.js?v=4.30";
+import { entry, eventLabel, hydratePhotos } from "./entries.js?v=4.30";
+import { addPhotos } from "./photos.js?v=4.30";
+import { earlierSheet } from "./logging.js?v=4.30";
+import { state } from "./state.js?v=4.30";
+import { renderCalendarHistory } from './calendar-view.js?v=4.30';
+import { renderPhotoDiscovery, discoveryMatch, collectionPhotoIds } from './photo-discovery-view.js?v=4.30';
 
 let patternDays = 28,
   insightData = null,

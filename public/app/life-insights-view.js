@@ -1,8 +1,8 @@
-import { lifetimeInsights } from "../life-insights.js?v=4.29";
-import { ageAt, ERAS } from "../lifetime.js?v=4.29";
-import { facts } from "./services.js?v=4.29";
-import { $, esc } from "./format.js?v=4.29";
-import { openHistory } from "./nav.js?v=4.29";
+import { lifetimeInsights } from "../life-insights.js?v=4.30";
+import { ageAt, ERAS } from "../lifetime.js?v=4.30";
+import { facts } from "./services.js?v=4.30";
+import { $, esc } from "./format.js?v=4.30";
+import { openHistory } from "./nav.js?v=4.30";
 
 let chart = "bathroom",
   horizon = "all",

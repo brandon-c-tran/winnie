@@ -4,7 +4,7 @@ import { join, code } from './helpers.mjs';
 test('ribbon opens a full photo, saves a shared recollection and survives reload', async ({page},info)=>{
   const errors=await join(page,code(info));
   await page.evaluate(async()=>{
-    const {sync}=await import('/app/services.js?v=4.29');
+    const {sync}=await import('/app/services.js?v=4.30');
     await sync.enqueue('create','graduation',{type:'moment',time:Date.parse('2026-08-15T12:00:00-07:00'),time_precision:'date',timezone:'America/Los_Angeles',note:'His big day',milestone:'Canine Good Citizen',retroactive:true});
     await sync.addPhoto('graduation',await(await fetch('/photos/winnie-wall.jpg')).blob());
   });
@@ -42,5 +42,5 @@ test('unlinked ribbon offers setup without creating a made-up graduation',async(
   await expect(page.locator('.graduation-photo')).toHaveCount(0);
   await page.getByRole('button',{name:'Choose graduation photo',exact:true}).click();
   await expect(page.locator('#memory-picker-count')).toContainText('No photos match');
-  expect(await page.evaluate(async()=>{const {facts}=await import('/app/services.js?v=4.29');return facts().filter(e=>e.milestone==='Canine Good Citizen').length;})).toBe(0);
+  expect(await page.evaluate(async()=>{const {facts}=await import('/app/services.js?v=4.30');return facts().filter(e=>e.milestone==='Canine Good Citizen').length;})).toBe(0);
 });
