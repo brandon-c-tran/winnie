@@ -4,7 +4,7 @@ test.use({ serviceWorkers: "block" });
 
 async function addFixtures(page) {
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.29");
+    const { sync } = await import("/app/services.js?v=4.30");
     for (let i = 0; i < 7; i++) {
       const day = `2026-0${i + 1}-10`,
         time = Date.parse(day + "T12:00:00-08:00");
@@ -49,7 +49,7 @@ test("photo discovery scans opt-in samples, corrects labels, keeps pairs and sha
   await expect
     .poll(() =>
       page.evaluate(async () => {
-        const { sync } = await import("/app/services.js?v=4.29");
+        const { sync } = await import("/app/services.js?v=4.30");
         return Object.keys((await sync.request("photo-ai")).results).length;
       }),
     )
@@ -174,7 +174,7 @@ test("photo import survives reload and a mid-batch pause without losing captions
   for (const field of await page.locator("[data-photo-field=timezone]").all())
     await field.selectOption("America/Los_Angeles");
   await page.evaluate(async () => {
-    const { persistDialogDraft } = await import("/app/ui.js?v=4.29");
+    const { persistDialogDraft } = await import("/app/ui.js?v=4.30");
     await persistDialogDraft();
   });
   await page.reload();
@@ -183,7 +183,7 @@ test("photo import survives reload and a mid-batch pause without losing captions
     .click();
   await expect(page.locator("#photo-draft img")).toHaveCount(2);
   await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.29");
+    const { sync } = await import("/app/services.js?v=4.30");
     const original = sync.addPhoto.bind(sync);
     sync.addPhoto = async (...args) => {
       window.photoPaused = true;
@@ -214,7 +214,7 @@ test("photo import survives reload and a mid-batch pause without losing captions
   await expect(page.locator("#dialog")).not.toBeVisible();
   await expect(page.locator("#sync-status")).toHaveText("Up to date");
   const result = await page.evaluate(async () => {
-    const { sync } = await import("/app/services.js?v=4.29");
+    const { sync } = await import("/app/services.js?v=4.30");
     return sync
       .view()
       .events.filter((e) => e.type === "moment")

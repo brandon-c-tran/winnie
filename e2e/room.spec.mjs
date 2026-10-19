@@ -11,9 +11,9 @@ test('potty harness returns to bandanna and yields to sleep, replacement and red
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   });
   await expect.poll(() => page.locator('#room').evaluate(c => Math.abs(c.getBoundingClientRect().width-c.parentElement.clientWidth))).toBeLessThan(1);
-  const outfit = () => page.evaluate(async () => (await import('/app/services.js?v=4.29')).room.dog.harness);
+  const outfit = () => page.evaluate(async () => (await import('/app/services.js?v=4.30')).room.dog.harness);
   const react = kind => page.evaluate(async kind => {
-    const {room}=await import('/app/services.js?v=4.29');
+    const {room}=await import('/app/services.js?v=4.30');
     room.set({sleep:null,walk:false},{instant:true});
     room.react(kind);
   },kind);
@@ -23,13 +23,13 @@ test('potty harness returns to bandanna and yields to sleep, replacement and red
   await react('poop');
   await expect.poll(outfit).toBe(true);
   await page.evaluate(async()=>{
-    const {room}=await import('/app/services.js?v=4.29');
+    const {room}=await import('/app/services.js?v=4.30');
     room.set({sleep:'slumber'});
   });
   await expect.poll(outfit).toBe(false);
   await react('pee');
   await expect.poll(outfit).toBe(true);
-  await page.evaluate(async()=> (await import('/app/services.js?v=4.29')).room.react('meal'));
+  await page.evaluate(async()=> (await import('/app/services.js?v=4.30')).room.react('meal'));
   await expect.poll(outfit).toBe(false);
   await react('pee');
   await expect.poll(outfit).toBe(true);
@@ -45,12 +45,12 @@ test('room lights brighten a sleeping room, remember the choice, and leave care 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const errors = await join(page, code(info));
   await page.evaluate(async () => {
-    const { room } = await import('/app/services.js?v=4.29');
+    const { room } = await import('/app/services.js?v=4.30');
     room.pause(true);
     room.set({ epoch: Date.parse('2026-10-13T23:00:00-07:00'), sleep: 'slumber' }, { instant: true });
   });
   const sample = () => page.evaluate(async () => {
-    const { room, sync } = await import('/app/services.js?v=4.29');
+    const { room, sync } = await import('/app/services.js?v=4.30');
     const c = document.querySelector('#room'), k = c.height / 112, ctx = c.getContext('2d');
     const at = (x,y) => [...ctx.getImageData(Math.floor(x*k), Math.floor(y*k),1,1).data].slice(0,3).reduce((a,b)=>a+b,0)/3;
     return { wall: at(30,55), sky: at(50,20), pose: room.dog.pose, count: sync.view().events.length };
@@ -60,7 +60,7 @@ test('room lights brighten a sleeping room, remember the choice, and leave care 
   // The target must follow the HUD inset without waiting for canvas measurement.
   await page.locator('#room-wrap').evaluate(el=>el.style.setProperty('--room-hud-height','84px'));
   expect(await page.evaluate(async()=>{
-    const {room}=await import('/app/services.js?v=4.29');
+    const {room}=await import('/app/services.js?v=4.30');
     const canvas=document.querySelector('#room').getBoundingClientRect(),button=document.querySelector('#room-lights').getBoundingClientRect(),s=room.layout.lightSwitch;
     return Math.abs(button.y+button.height/2-(canvas.y+(s.y+s.h/2)*canvas.height/112));
   })).toBeLessThan(1);
@@ -92,7 +92,7 @@ test('larger wall photo remains selectable at narrow phone widths', async ({ pag
     Math.abs(canvas.getBoundingClientRect().width - canvas.parentElement.clientWidth)
   )).toBeLessThan(1);
   const point = await page.evaluate(async () => {
-    const { room } = await import('/app/services.js?v=4.29');
+    const { room } = await import('/app/services.js?v=4.30');
     const { frame, door } = room.layout;
     const canvas = document.querySelector('#room'), rect = canvas.getBoundingClientRect();
     const scale = rect.height / 112;
